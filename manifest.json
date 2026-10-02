@@ -1,7 +1,7 @@
 {
   "id": "personal-accounts",
   "name": "Personal Accounts",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "minAppVersion": "1.0.0",
   "description": "Personal debts & receivables manager. One central data note, full UI — no per-person notes.",
   "author": "saeedghobadi",
