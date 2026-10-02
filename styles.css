@@ -303,12 +303,6 @@ button.pa-btn.icon svg { width: 16px; height: 16px; }
 .pa-field input,
 .pa-field select,
 .pa-field textarea { width: 100%; }
-.pa-seg { display: flex; gap: 4px; flex-wrap: wrap; }
-.pa-seg button.pa-btn.active {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  border-color: transparent;
-}
 .pa-locked { font-weight: 600; }
 .pa-form-error {
   color: var(--color-red);
@@ -317,6 +311,130 @@ button.pa-btn.icon svg { width: 16px; height: 16px; }
   display: none;
 }
 .pa-form-error.show { display: block; }
+
+/* ===== ۸.۵) دکمه‌های انتخابی نوع تراکنش ===== */
+
+.pa-seg {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pa-seg button.pa-btn {
+  flex: 1 1 auto;
+  min-width: 90px;
+  padding: 8px 12px;
+  font-size: .85em;
+  font-weight: 500;
+  border: 1.5px solid var(--background-modifier-border);
+  background: var(--background-modifier-form-field, var(--pa-surface));
+  color: var(--text-muted);
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: all .15s ease;
+  padding-inline-start: 28px;
+}
+
+.pa-seg button.pa-btn::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--text-faint);
+  background: transparent;
+  transition: all .15s ease;
+}
+
+.pa-seg button.pa-btn:hover:not(.active) {
+  border-color: var(--interactive-accent);
+  color: var(--text-normal);
+  background: var(--pa-hover);
+}
+
+.pa-seg button.pa-btn:hover:not(.active)::before {
+  border-color: var(--interactive-accent);
+}
+
+.pa-seg button.pa-btn.active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent, #fff);
+  border-color: var(--interactive-accent);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
+}
+
+.pa-seg button.pa-btn.active::before {
+  border-color: var(--text-on-accent, #fff);
+  background: var(--text-on-accent, #fff);
+  box-shadow: inset 0 0 0 2px var(--interactive-accent);
+}
+
+/* طلب — سبز */
+.pa-seg button.pa-btn[data-type="receivable"].active {
+  background: var(--color-green);
+  border-color: var(--color-green);
+  color: #fff;
+}
+.pa-seg button.pa-btn[data-type="receivable"].active::before {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--color-green);
+}
+
+/* بدهی — قرمز */
+.pa-seg button.pa-btn[data-type="debt"].active {
+  background: var(--color-red);
+  border-color: var(--color-red);
+  color: #fff;
+}
+.pa-seg button.pa-btn[data-type="debt"].active::before {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--color-red);
+}
+
+/* دریافت شد — سبز */
+.pa-seg button.pa-btn[data-type="payment_received"].active {
+  background: var(--color-green);
+  border-color: var(--color-green);
+  color: #fff;
+}
+.pa-seg button.pa-btn[data-type="payment_received"].active::before {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--color-green);
+}
+
+/* پرداخت شد — قرمز */
+.pa-seg button.pa-btn[data-type="payment_made"].active {
+  background: var(--color-red);
+  border-color: var(--color-red);
+  color: #fff;
+}
+.pa-seg button.pa-btn[data-type="payment_made"].active::before {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--color-red);
+}
+
+@media (max-width: 600px) {
+  .pa-seg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .pa-seg button.pa-btn {
+    min-width: 0;
+    padding: 10px 10px;
+    padding-inline-start: 30px;
+    font-size: .82em;
+  }
+}
 
 /* ===== ۹) جزئیات تراکنش ===== */
 
@@ -351,30 +469,84 @@ button.pa-btn.icon svg { width: 16px; height: 16px; }
 /* ===== ۱۳) فیلد تاریخ + تقویم پاپ‌آپ ===== */
 
 .pa-datefield { width: 100%; }
+
 button.pa-date-btn {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--pa-border);
+  padding: 8px 10px;
+  border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
-  background: var(--pa-surface);
+  background: var(--background-modifier-form-field, var(--pa-surface));
   cursor: pointer;
   color: var(--text-normal);
   font-size: .95em;
   text-align: start;
+  position: relative;
   transition: background .12s ease, border-color .12s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .04);
 }
-button.pa-date-btn:hover { background: var(--pa-hover); }
-button.pa-date-btn.pa-open { border-color: var(--interactive-accent); }
-button.pa-date-btn .pa-date-icon { display: inline-flex; color: var(--text-muted); }
+
+button.pa-date-btn:hover {
+  background: var(--pa-hover);
+  border-color: var(--interactive-accent);
+}
+
+button.pa-date-btn.pa-open {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+button.pa-date-btn.pa-empty-date {
+  color: var(--text-faint);
+}
+
+button.pa-date-btn.pa-empty-date .pa-date-label {
+  font-style: italic;
+}
+
+button.pa-date-btn:not(.pa-empty-date) .pa-date-label {
+  color: var(--text-normal);
+  font-weight: 500;
+}
+
+button.pa-date-btn .pa-date-icon {
+  display: inline-flex;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+button.pa-date-btn:hover .pa-date-icon {
+  color: var(--interactive-accent);
+}
+
 button.pa-date-btn .pa-date-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
-button.pa-date-btn.pa-empty-date .pa-date-label { color: var(--text-faint); }
+
+button.pa-date-btn::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--text-faint);
+  flex-shrink: 0;
+  transition: transform .15s ease, border-top-color .15s ease;
+}
+
+button.pa-date-btn:hover::after {
+  border-top-color: var(--interactive-accent);
+}
+
+button.pa-date-btn.pa-open::after {
+  transform: rotate(180deg);
+  border-top-color: var(--interactive-accent);
+}
 
 .pa-cal-pop {
   position: fixed;
@@ -529,8 +701,6 @@ button.pa-cal-day.selected .pa-cal-dot { background: var(--text-on-accent); }
 .theme-dark button.pa-cal-day.selected {
   color: var(--text-on-accent);
 }
-/* ===== تم تاریک — اصلاح دکمه primary ===== */
-
 .theme-dark button.pa-btn.primary {
   background: var(--interactive-accent);
   color: var(--text-on-accent, #fff);
@@ -540,35 +710,35 @@ button.pa-cal-day.selected .pa-cal-dot { background: var(--text-on-accent); }
   background: var(--interactive-accent-hover);
   border-color: var(--interactive-accent-hover);
 }
-/* ===== مودال موبایل — جلوگیری از رفتن زیر کیبورد ===== */
+
+/* ===== ۱۶) مودال موبایل — سازگار با کیبورد ===== */
 
 .modal.pa-mobile-modal {
-  max-height: 90vh;
+  top: var(--pa-modal-top, 0);
+  max-height: var(--pa-modal-height, 90vh);
   height: auto;
+  transition: max-height .15s ease, top .15s ease;
 }
 
 .modal.pa-mobile-modal .modal-content {
-  max-height: calc(90vh - 80px);
+  max-height: calc(var(--pa-modal-height, 90vh) - 60px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 20px;
 }
 
-@media (max-width: 600px) {
-  .modal.pa-mobile-modal {
-    max-height: 85vh;
-    margin-top: 5vh;
-  }
-  .modal.pa-mobile-modal .modal-content {
-    max-height: calc(85vh - 70px);
-    padding-bottom: 40px;
-  }
-  .modal.pa-mobile-modal .modal-content textarea,
-  .modal.pa-mobile-modal .modal-content input {
-    scroll-margin-bottom: 60px;
-  }
+.modal.pa-mobile-modal.pa-keyboard-open .modal-content {
+  padding-bottom: 80px;
 }
-/* ===== کارت‌های تبلیغات کانال ===== */
+
+.modal.pa-mobile-modal .modal-content textarea,
+.modal.pa-mobile-modal .modal-content input,
+.modal.pa-mobile-modal .modal-content select {
+  scroll-margin-bottom: 90px;
+  scroll-margin-top: 20px;
+}
+
+/* ===== ۱۷) کارت‌های تبلیغات کانال ===== */
 
 .uts-channel-promo-wrap {
   display: grid;
