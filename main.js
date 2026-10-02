@@ -1346,6 +1346,119 @@ function dueChip(due, fallbackLabel) {
 function modalRtl(modal) {
   if (CURRENT.locale === 'fa') modal.modalEl.addClass('pa-rtl-modal');
 }
+/* ===== مدیریت کیبورد موبایل برای مودال‌ها ===== */
+
+/* ===== مدیریت کیبورد موبایل برای مودال‌ها (نسخه قوی) ===== */
+
+/* ===== مودال موبایل: کوچیک + اسکرول داخلی + سازگار با کیبورد ===== */
+
+function attachMobileKeyboardHandler(modal) {
+  if (!modal.app.isMobile) return () => {};
+
+  const modalEl = modal.modalEl;
+  const content = modal.contentEl;
+  const vv = window.visualViewport;
+  if (!vv) return () => {};
+
+  let rafId = null;
+  let scrollTimer = null;
+
+  const updateLayout = () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      const viewportHeight = vv.height;
+      const viewportTop = vv.offsetTop;
+      const keyboardOpen = window.innerHeight - viewportHeight > 150;
+
+      // ارتفاع مودال: نصف صفحه وقتی کیبورد بازه، ۸۰٪ صفحه وقتی بسته‌ست
+      let modalHeight;
+      if (keyboardOpen) {
+        // وقتی کیبورد بازه، ارتفاع مودال = ارتفاع viewport منهای یه حاشیه
+        modalHeight = Math.max(200, viewportHeight - 40);
+      } else {
+        modalHeight = Math.min(window.innerHeight * 0.8, viewportHeight * 0.9);
+      }
+
+      // top مودال: چسبیده به بالای viewport
+      const top = keyboardOpen
+        ? viewportTop + 10
+        : Math.max(20, viewportTop + (viewportHeight - modalHeight) / 2);
+
+      modalEl.style.setProperty('--pa-modal-height', modalHeight + 'px');
+      modalEl.style.setProperty('--pa-modal-top', top + 'px');
+
+      if (keyboardOpen) modalEl.addClass('pa-keyboard-open');
+      else modalEl.removeClass('pa-keyboard-open');
+
+      scheduleScroll();
+    });
+  };
+
+  // اسکرول داخلی تا فیلد فعال دیده بشه
+  const scrollActiveIntoView = () => {
+    const active = document.activeElement;
+    if (!active || !content.contains(active)) return;
+    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
+
+    const rect = active.getBoundingClientRect();
+    const vv2 = window.visualViewport;
+    const viewportBottom = vv2 ? (vv2.offsetTop + vv2.height) : window.innerHeight;
+    const safeBottom = viewportBottom - 50;
+
+    // اگه فیلد زیر کیبورده، داخل content اسکرول کن
+    if (rect.bottom > safeBottom) {
+      const delta = rect.bottom - safeBottom;
+      content.scrollTop += delta + 20;
+    }
+  };
+
+  const scheduleScroll = () => {
+    if (scrollTimer) clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      scrollActiveIntoView();
+      setTimeout(scrollActiveIntoView, 100);
+      setTimeout(scrollActiveIntoView, 250);
+    }, 60);
+  };
+
+  const onFocusIn = (e) => {
+    const tag = e.target.tagName;
+    if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') {
+      scheduleScroll();
+      setTimeout(scrollActiveIntoView, 200);
+      setTimeout(scrollActiveIntoView, 400);
+      setTimeout(scrollActiveIntoView, 700);
+      setTimeout(scrollActiveIntoView, 1000);
+    }
+  };
+
+  const onInput = (e) => {
+    if (e.target.tagName === 'TEXTAREA') scrollActiveIntoView();
+  };
+
+  const onFocusOut = () => setTimeout(updateLayout, 100);
+
+  content.addEventListener('focusin', onFocusIn);
+  content.addEventListener('focusout', onFocusOut);
+  content.addEventListener('input', onInput, true);
+  vv.addEventListener('resize', updateLayout);
+  vv.addEventListener('scroll', updateLayout);
+
+  updateLayout();
+
+  return () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    if (scrollTimer) clearTimeout(scrollTimer);
+    content.removeEventListener('focusin', onFocusIn);
+    content.removeEventListener('focusout', onFocusOut);
+    content.removeEventListener('input', onInput, true);
+    vv.removeEventListener('resize', updateLayout);
+    vv.removeEventListener('scroll', updateLayout);
+    modalEl.style.removeProperty('--pa-modal-height');
+    modalEl.style.removeProperty('--pa-modal-top');
+    modalEl.removeClass('pa-keyboard-open');
+  };
+}
 function inputText(placeholder) {
   const i = el('input');
   i.type = 'text';
@@ -1682,35 +1795,8 @@ class PersonModal extends Modal {
       if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); void submit(); }
     });
 
-    if (this.app.isMobile) {
-      this.modalEl.addClass('pa-mobile-modal');
-      const content = this.contentEl;
-      const scrollIntoView = () => {
-        const active = document.activeElement;
-        if (!active || !content.contains(active)) return;
-        const rect = active.getBoundingClientRect();
-        const vv = window.visualViewport;
-        const viewportBottom = vv ? vv.height : window.innerHeight;
-        if (rect.bottom > viewportBottom - 80) {
-          active.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }
-      };
-      const onFocusIn = (e) => {
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
-          setTimeout(scrollIntoView, 300);
-        }
-      };
-      content.addEventListener('focusin', onFocusIn);
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', scrollIntoView);
-      }
-      this._cleanupKeyboard = () => {
-        content.removeEventListener('focusin', onFocusIn);
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', scrollIntoView);
-        }
-      };
-    }
+        this.modalEl.addClass('pa-mobile-modal');
+    this._cleanupKeyboard = attachMobileKeyboardHandler(this);
 
     name.focus();
   }
@@ -1767,7 +1853,8 @@ class TransactionFormModal extends Modal {
       : ['receivable', 'debt', 'payment_received', 'payment_made'];
     const segBtns = new Map();
     for (const ty of typeOptions) {
-      const b = el('button', 'pa-btn small' + (ty === this.type ? ' active' : ''), typeLabel(ty));
+      const b = el('button', 'pa-btn' + (ty === this.type ? ' active' : ''), typeLabel(ty));
+      b.setAttribute('data-type', ty);
       b.onclick = () => {
         this.type = ty;
         segBtns.forEach((bb, tt) => bb.toggleClass('active', tt === ty));
@@ -1865,36 +1952,10 @@ class TransactionFormModal extends Modal {
       if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); void submit(); }
     });
 
-    if (this.app.isMobile) {
-      this.modalEl.addClass('pa-mobile-modal');
-      const content = this.contentEl;
-      const scrollIntoView = () => {
-        const active = document.activeElement;
-        if (!active || !content.contains(active)) return;
-        const rect = active.getBoundingClientRect();
-        const vv = window.visualViewport;
-        const viewportBottom = vv ? vv.height : window.innerHeight;
-        if (rect.bottom > viewportBottom - 80) {
-          active.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }
-      };
-      const onFocusIn = (e) => {
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
-          setTimeout(scrollIntoView, 300);
-        }
-      };
-      content.addEventListener('focusin', onFocusIn);
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', scrollIntoView);
-      }
-      this._cleanupKeyboard = () => {
-        content.removeEventListener('focusin', onFocusIn);
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', scrollIntoView);
-        }
-      };
-    }
+       this.modalEl.addClass('pa-mobile-modal');
+    this._cleanupKeyboard = attachMobileKeyboardHandler(this);
 
+    name.focus();
     amount.focus();
   }
   onClose() {
@@ -2561,3 +2622,4 @@ class PersonalAccountsPlugin extends Plugin {
 
 module.exports = PersonalAccountsPlugin;
 module.exports.default = PersonalAccountsPlugin;
+/* nosourcemap */
