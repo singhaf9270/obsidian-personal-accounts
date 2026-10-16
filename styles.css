@@ -1270,37 +1270,96 @@ a.uts-channel-card:hover .uts-channel-arrow {
   border-color: var(--background-modifier-border);
   background: var(--background-primary);
 }
+
 .theme-dark button.pa-btn {
   background: var(--background-secondary);
   border-color: var(--background-modifier-border-hover);
 }
-.theme-dark button.pa-btn:hover { background: var(--background-modifier-hover); }
+
+.theme-dark button.pa-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
 .theme-dark .pa-chip {
   background: var(--background-modifier-hover);
   color: var(--text-muted);
 }
-.theme-dark .pa-cal-pop { box-shadow: 0 8px 24px rgba(0, 0, 0, .5); }
-.theme-dark button.pa-cal-day.selected { color: var(--text-on-accent); }
+
+.theme-dark .pa-cal-pop {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.theme-dark button.pa-cal-day.selected {
+  color: var(--text-on-accent);
+}
+
 .theme-dark button.pa-btn.primary {
   background: var(--interactive-accent);
   color: var(--text-on-accent, #fff);
   border-color: var(--interactive-accent);
 }
+
 .theme-dark button.pa-btn.primary:hover {
   background: var(--interactive-accent-hover);
   border-color: var(--interactive-accent-hover);
 }
+
 .theme-dark .pa-kpi-card {
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     var(--background-primary) 0%,
-    var(--background-secondary) 100%);
+    var(--background-secondary) 100%
+  );
 }
+
 .theme-dark .pa-kpi {
   background: var(--background-secondary);
 }
+
 .theme-dark .pa-hbar-track {
   background: var(--background-modifier-border);
 }
+
 .theme-dark .pa-tooltip {
-  box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+/* ==========================================================================
+   اصلاح border کارت‌ها و آمار
+   ========================================================================== */
+
+.pa-card {
+  border: 1px solid var(--background-modifier-border) !important;
+}
+
+.pa-stat {
+  border: 1px solid var(--background-modifier-border) !important;
+}
+
+.pa-stats-primary .pa-stat,
+.pa-stats-secondary .pa-stat {
+  border: 1px solid var(--background-modifier-border) !important;
+}
+
+.pa-kpi {
+  border: 1px solid var(--background-modifier-border) !important;
+}
+
+.pa-row {
+  border-bottom: 1px solid var(--background-modifier-border) !important;
+}
+
+.pa-person-info {
+  border-top: 1px solid var(--background-modifier-border) !important;
+}
+
+.pa-remaining {
+  border-top: 1px solid var(--background-modifier-border) !important;
+}
+
+.pa-analytics-tabs {
+  border-bottom: 1px solid var(--background-modifier-border) !important;
+}
+
+.pa-cashflow-row {
+  border-inline-start: 3px solid var(--background-modifier-border) !important;
 }
