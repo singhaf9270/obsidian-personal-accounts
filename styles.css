@@ -1,24 +1,55 @@
 /* ==========================================================================
-   Personal Accounts — حساب‌های شخصی
-   فایل کامل استایل — ریسپانسیو + سازگار با تم تاریک
+   Personal Accounts — styles.css (v2.0.0)
+   ساختار: ۱) پایه  ۲) هدر  ۳) کارت‌ها و آمار  ۴) مبالغ و چیپ‌ها
+           ۵) ردیف‌ها  ۶) نوار ابزار  ۷) دکمه‌ها  ۸) فرم‌ها
+           ۹) Date Picker  ۱۰) Tooltip و Help  ۱۱) نمودارها
+           ۱۲) مودال موبایل  ۱۳) تبلیغات  ۱۴) ریسپانسیو  ۱۵) تم تاریک
    ========================================================================== */
 
-/* ===== ۱) پایه ===== */
+/* ==========================================================================
+   ۱) پایه و متغیرها
+   ========================================================================== */
 
-.pa-view {
+:root {
   --pa-radius: 10px;
   --pa-gap: 10px;
   --pa-border: var(--background-modifier-border);
   --pa-surface: var(--background-primary);
   --pa-surface-2: var(--background-secondary);
   --pa-hover: var(--background-modifier-hover);
+
+  /* رنگ‌های fallback (اگه Obsidian تعریف نکرده باشه) */
+  --pa-color-orange: var(--color-orange, #ff8c00);
+  --pa-color-blue: var(--color-blue, #4e79a7);
+  --pa-color-green: var(--color-green, #4caf50);
+  --pa-color-red: var(--color-red, #e15759);
+  --pa-color-yellow: var(--color-yellow, #edc949);
+
+  /* مودال موبایل */
+  --pa-modal-top: 5vh;
+  --pa-modal-height: 90vh;
+}
+
+.pa-view {
   padding: 12px 16px 40px;
 }
 .pa-view.pa-rtl { direction: rtl; }
-.pa-muted { color: var(--text-muted); font-size: .9em; white-space: pre-wrap; }
-.pa-hidden { display: none !important; }
 
-/* ===== ۲) هدر و تب‌ها ===== */
+.pa-muted {
+  color: var(--text-muted);
+  font-size: .9em;
+  white-space: pre-wrap;
+}
+.pa-hidden { display: none !important; }
+.pa-hint {
+  font-size: .75em;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   ۲) هدر و تب‌ها
+   ========================================================================== */
 
 .pa-header {
   display: flex;
@@ -56,7 +87,9 @@
   font-weight: 600;
 }
 
-/* ===== ۳) کارت‌ها و آمار ===== */
+/* ==========================================================================
+   ۳) کارت‌ها و آمار
+   ========================================================================== */
 
 .pa-card {
   border: 1px solid var(--pa-border);
@@ -85,6 +118,87 @@
 }
 .pa-link:hover { color: var(--text-normal); }
 
+/* --- ردیف اصلی: ۳ کارت بزرگ --- */
+.pa-stats-primary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.pa-stats-primary .pa-stat {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--pa-border);
+  background: var(--pa-surface);
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+.pa-stats-primary .pa-stat-label {
+  font-size: .78em;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.pa-stats-primary .pa-stat-value {
+  font-size: 1.55em;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-stats-primary .pa-stat::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+.pa-stats-primary .pa-stat.accent-rec::before { background: var(--pa-color-green); }
+.pa-stats-primary .pa-stat.accent-debt::before { background: var(--pa-color-red); }
+.pa-stats-primary .pa-stat.accent-net::before { background: var(--pa-color-blue); }
+.pa-stats-primary .pa-stat.accent-rec .pa-stat-value { color: var(--pa-color-green); }
+.pa-stats-primary .pa-stat.accent-debt .pa-stat-value { color: var(--pa-color-red); }
+.pa-stats-primary .pa-stat.accent-net .pa-stat-value { color: var(--pa-color-blue); }
+
+/* --- ردیف ثانویه: آمار کوچک --- */
+.pa-stats-secondary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.pa-stats-secondary .pa-stat {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--pa-border);
+  background: var(--pa-surface);
+  text-align: center;
+  min-width: 0;
+}
+.pa-stats-secondary .pa-stat-label {
+  font-size: .68em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-stats-secondary .pa-stat-value {
+  font-size: 1em;
+  font-weight: 600;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.pa-stats-secondary .pa-stat.warn .pa-stat-value { color: var(--pa-color-orange); }
+.pa-stats-secondary .pa-stat.danger .pa-stat-value { color: var(--pa-color-red); }
+
+/* --- شبکه عمومی آمار --- */
 .pa-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -113,9 +227,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pa-stat.accent-rec { border-inline-start: 3px solid var(--color-green); }
-.pa-stat.accent-debt { border-inline-start: 3px solid var(--color-red); }
-.pa-stat.accent-net { border-inline-start: 3px solid var(--color-blue); }
+.pa-stat.accent-rec { border-inline-start: 3px solid var(--pa-color-green); }
+.pa-stat.accent-debt { border-inline-start: 3px solid var(--pa-color-red); }
+.pa-stat.accent-net { border-inline-start: 3px solid var(--pa-color-blue); }
+
 .pa-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -123,11 +238,13 @@
   margin-top: 10px;
 }
 
-/* ===== ۴) مبالغ و چیپ‌ها ===== */
+/* ==========================================================================
+   ۴) مبالغ و چیپ‌ها
+   ========================================================================== */
 
 .pa-money { font-variant-numeric: tabular-nums; }
-.pa-money.pos { color: var(--color-green); }
-.pa-money.neg { color: var(--color-red); }
+.pa-money.pos { color: var(--pa-color-green); }
+.pa-money.neg { color: var(--pa-color-red); }
 .pa-money.dim { color: var(--text-muted); font-weight: 400; }
 
 .pa-chip {
@@ -140,21 +257,23 @@
   white-space: nowrap;
 }
 .pa-chip.overdue {
-  color: var(--color-red);
+  color: var(--pa-color-red);
   background: var(--pa-hover);
-  box-shadow: inset 0 0 0 1px var(--color-red);
+  box-shadow: inset 0 0 0 1px var(--pa-color-red);
 }
 .pa-chip.today {
-  color: var(--color-orange);
-  box-shadow: inset 0 0 0 1px var(--color-orange);
+  color: var(--pa-color-orange);
+  box-shadow: inset 0 0 0 1px var(--pa-color-orange);
 }
 .pa-chip.soon {
-  color: var(--color-yellow);
-  box-shadow: inset 0 0 0 1px var(--color-yellow);
+  color: var(--pa-color-yellow);
+  box-shadow: inset 0 0 0 1px var(--pa-color-yellow);
 }
-.pa-chip.settled { color: var(--color-green); }
+.pa-chip.settled { color: var(--pa-color-green); }
 
-/* ===== ۵) ردیف‌ها ===== */
+/* ==========================================================================
+   ۵) ردیف‌ها
+   ========================================================================== */
 
 .pa-row {
   display: flex;
@@ -166,6 +285,7 @@
   border-radius: 6px;
   min-width: 0;
   transition: background .12s ease;
+  justify-content: space-between;
 }
 .pa-row:last-child { border-bottom: none; }
 .pa-row:hover { background: var(--pa-hover); }
@@ -203,6 +323,44 @@
   justify-content: space-between;
   gap: 8px;
 }
+.pa-person-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pa-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pa-info-row {
+  display: flex;
+  gap: 6px;
+  font-size: .92em;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pa-info-key {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.pa-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--background-secondary);
+  border: 1px solid var(--pa-border);
+  font-size: .8em;
+  color: var(--text-normal);
+}
+.pa-note {
+  white-space: pre-wrap;
+  padding: 8px 10px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  font-size: .9em;
+  line-height: 1.5;
+  color: var(--text-normal);
+}
+
 .pa-remaining {
   margin-top: 10px;
   font-weight: 600;
@@ -225,9 +383,11 @@
   padding: 16px 0;
   text-align: center;
 }
-.pa-error { border-color: var(--color-red); }
+.pa-error { border-color: var(--pa-color-red); }
 
-/* ===== ۶) نوار ابزار ===== */
+/* ==========================================================================
+   ۶) نوار ابزار
+   ========================================================================== */
 
 .pa-toolbar {
   display: flex;
@@ -236,7 +396,7 @@
   flex-wrap: wrap;
 }
 .pa-toolbar input[type="search"] {
-  flex: 1 1 160px;
+  flex: 1 1 200px;
   min-width: 0;
 }
 .pa-toolbar select {
@@ -245,7 +405,9 @@
   max-width: 100%;
 }
 
-/* ===== ۷) دکمه‌ها ===== */
+/* ==========================================================================
+   ۷) دکمه‌ها
+   ========================================================================== */
 
 button.pa-btn {
   border: 1px solid var(--pa-border);
@@ -269,13 +431,14 @@ button.pa-btn.primary:hover {
   border-color: var(--interactive-accent-hover);
 }
 button.pa-btn.primary svg { color: inherit; }
-button.pa-btn.danger { color: var(--color-red); }
+button.pa-btn.danger { color: var(--pa-color-red); }
 button.pa-btn.small { padding: 2px 8px; font-size: .78em; }
 button.pa-btn.icon {
   padding: 4px 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 button.pa-btn.icon svg { width: 16px; height: 16px; }
 
@@ -286,7 +449,86 @@ button.pa-btn.icon svg { width: 16px; height: 16px; }
   margin: 12px 0 4px;
 }
 
-/* ===== ۸) فرم‌ها ===== */
+/* --- دکمه‌های نوع تراکنش (Segmented) --- */
+.pa-seg {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pa-seg button.pa-btn {
+  flex: 1 1 auto;
+  min-width: 90px;
+  padding: 8px 12px;
+  font-size: .85em;
+  font-weight: 500;
+  border: 1.5px solid var(--pa-border);
+  background: var(--background-modifier-form-field, var(--pa-surface));
+  color: var(--text-muted);
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: all .15s ease;
+  padding-inline-start: 28px;
+}
+.pa-seg button.pa-btn::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--text-faint);
+  background: transparent;
+  transition: all .15s ease;
+}
+.pa-seg button.pa-btn:hover:not(.active) {
+  border-color: var(--interactive-accent);
+  color: var(--text-normal);
+  background: var(--pa-hover);
+}
+.pa-seg button.pa-btn:hover:not(.active)::before { border-color: var(--interactive-accent); }
+.pa-seg button.pa-btn.active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent, #fff);
+  border-color: var(--interactive-accent);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
+}
+.pa-seg button.pa-btn.active::before {
+  border-color: var(--text-on-accent, #fff);
+  background: var(--text-on-accent, #fff);
+  box-shadow: inset 0 0 0 2px var(--interactive-accent);
+}
+.pa-seg button.pa-btn[data-type="receivable"].active,
+.pa-seg button.pa-btn[data-type="payment_received"].active {
+  background: var(--pa-color-green);
+  border-color: var(--pa-color-green);
+  color: #fff;
+}
+.pa-seg button.pa-btn[data-type="receivable"].active::before,
+.pa-seg button.pa-btn[data-type="payment_received"].active::before {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--pa-color-green);
+}
+.pa-seg button.pa-btn[data-type="debt"].active,
+.pa-seg button.pa-btn[data-type="payment_made"].active {
+  background: var(--pa-color-red);
+  border-color: var(--pa-color-red);
+  color: #fff;
+}
+.pa-seg button.pa-btn[data-type="debt"].active::before,
+.pa-seg button.pa-btn[data-type="payment_made"].active::before {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--pa-color-red);
+}
+
+/* ==========================================================================
+   ۸) فرم‌ها
+   ========================================================================== */
 
 .pa-form { display: flex; flex-direction: column; }
 .pa-field {
@@ -303,170 +545,41 @@ button.pa-btn.icon svg { width: 16px; height: 16px; }
 .pa-field input,
 .pa-field select,
 .pa-field textarea { width: 100%; }
-.pa-locked { font-weight: 600; }
+.pa-locked {
+  padding: 6px 10px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  font-weight: 600;
+}
 .pa-form-error {
-  color: var(--color-red);
+  color: var(--pa-color-red);
   font-size: .85em;
   margin-bottom: 8px;
   display: none;
 }
 .pa-form-error.show { display: block; }
 
-/* ===== ۸.۵) دکمه‌های انتخابی نوع تراکنش ===== */
-
-.pa-seg {
+/* --- جزئیات تراکنش --- */
+.pa-detail-row {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 0;
 }
-
-.pa-seg button.pa-btn {
-  flex: 1 1 auto;
-  min-width: 90px;
-  padding: 8px 12px;
-  font-size: .85em;
-  font-weight: 500;
-  border: 1.5px solid var(--background-modifier-border);
-  background: var(--background-modifier-form-field, var(--pa-surface));
-  color: var(--text-muted);
-  border-radius: 8px;
-  position: relative;
-  cursor: pointer;
-  transition: all .15s ease;
-  padding-inline-start: 28px;
-}
-
-.pa-seg button.pa-btn::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: 9px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid var(--text-faint);
-  background: transparent;
-  transition: all .15s ease;
-}
-
-.pa-seg button.pa-btn:hover:not(.active) {
-  border-color: var(--interactive-accent);
-  color: var(--text-normal);
-  background: var(--pa-hover);
-}
-
-.pa-seg button.pa-btn:hover:not(.active)::before {
-  border-color: var(--interactive-accent);
-}
-
-.pa-seg button.pa-btn.active {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent, #fff);
-  border-color: var(--interactive-accent);
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
-}
-
-.pa-seg button.pa-btn.active::before {
-  border-color: var(--text-on-accent, #fff);
-  background: var(--text-on-accent, #fff);
-  box-shadow: inset 0 0 0 2px var(--interactive-accent);
-}
-
-/* طلب — سبز */
-.pa-seg button.pa-btn[data-type="receivable"].active {
-  background: var(--color-green);
-  border-color: var(--color-green);
-  color: #fff;
-}
-.pa-seg button.pa-btn[data-type="receivable"].active::before {
-  border-color: #fff;
-  background: #fff;
-  box-shadow: inset 0 0 0 2px var(--color-green);
-}
-
-/* بدهی — قرمز */
-.pa-seg button.pa-btn[data-type="debt"].active {
-  background: var(--color-red);
-  border-color: var(--color-red);
-  color: #fff;
-}
-.pa-seg button.pa-btn[data-type="debt"].active::before {
-  border-color: #fff;
-  background: #fff;
-  box-shadow: inset 0 0 0 2px var(--color-red);
-}
-
-/* دریافت شد — سبز */
-.pa-seg button.pa-btn[data-type="payment_received"].active {
-  background: var(--color-green);
-  border-color: var(--color-green);
-  color: #fff;
-}
-.pa-seg button.pa-btn[data-type="payment_received"].active::before {
-  border-color: #fff;
-  background: #fff;
-  box-shadow: inset 0 0 0 2px var(--color-green);
-}
-
-/* پرداخت شد — قرمز */
-.pa-seg button.pa-btn[data-type="payment_made"].active {
-  background: var(--color-red);
-  border-color: var(--color-red);
-  color: #fff;
-}
-.pa-seg button.pa-btn[data-type="payment_made"].active::before {
-  border-color: #fff;
-  background: #fff;
-  box-shadow: inset 0 0 0 2px var(--color-red);
-}
-
-@media (max-width: 600px) {
-  .pa-seg {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  .pa-seg button.pa-btn {
-    min-width: 0;
-    padding: 10px 10px;
-    padding-inline-start: 30px;
-    font-size: .82em;
-  }
-}
-
-/* ===== ۹) جزئیات تراکنش ===== */
-
-.pa-detail-row { display: flex; gap: 12px; padding: 4px 0; }
 .pa-detail-key {
-  width: 120px;
+  flex: 0 0 auto;
+  min-width: 100px;
+  max-width: 140px;
   color: var(--text-muted);
   font-size: .85em;
-  flex-shrink: 0;
 }
-.pa-detail-val { flex: 1; font-variant-numeric: tabular-nums; }
-
-/* ===== ۱۰) راست‌به‌چپ ===== */
-
-.pa-rtl-modal { direction: rtl; }
-
-/* ===== ۱۱) حالت فشرده ===== */
-
-.pa-compact .pa-stat { padding: 6px 9px; }
-.pa-compact .pa-stat-value { font-size: 1.05em; }
-.pa-compact .pa-row { padding: 4px; }
-.pa-compact .pa-card { padding: 9px 11px; }
-
-/* ===== ۱۲) خط امروز داشبورد ===== */
-
-.pa-todayline {
-  font-size: .8em;
-  color: var(--text-muted);
-  margin-bottom: 10px;
+.pa-detail-val {
+  flex: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-/* ===== ۱۳) فیلد تاریخ + تقویم پاپ‌آپ ===== */
+/* ==========================================================================
+   ۹) Date Picker
+   ========================================================================== */
 
 .pa-datefield { width: 100%; }
 
@@ -476,7 +589,7 @@ button.pa-date-btn {
   gap: 8px;
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--pa-border);
   border-radius: 6px;
   background: var(--background-modifier-form-field, var(--pa-surface));
   cursor: pointer;
@@ -487,47 +600,32 @@ button.pa-date-btn {
   transition: background .12s ease, border-color .12s ease;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, .04);
 }
-
 button.pa-date-btn:hover {
   background: var(--pa-hover);
   border-color: var(--interactive-accent);
 }
-
 button.pa-date-btn.pa-open {
   border-color: var(--interactive-accent);
   box-shadow: 0 0 0 2px var(--interactive-accent-hover);
 }
-
-button.pa-date-btn.pa-empty-date {
-  color: var(--text-faint);
-}
-
-button.pa-date-btn.pa-empty-date .pa-date-label {
-  font-style: italic;
-}
-
+button.pa-date-btn.pa-empty-date { color: var(--text-faint); }
+button.pa-date-btn.pa-empty-date .pa-date-label { font-style: italic; }
 button.pa-date-btn:not(.pa-empty-date) .pa-date-label {
   color: var(--text-normal);
   font-weight: 500;
 }
-
 button.pa-date-btn .pa-date-icon {
   display: inline-flex;
   color: var(--text-muted);
   flex-shrink: 0;
 }
-
-button.pa-date-btn:hover .pa-date-icon {
-  color: var(--interactive-accent);
-}
-
+button.pa-date-btn:hover .pa-date-icon { color: var(--interactive-accent); }
 button.pa-date-btn .pa-date-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
 }
-
 button.pa-date-btn::after {
   content: '';
   width: 0;
@@ -538,11 +636,7 @@ button.pa-date-btn::after {
   flex-shrink: 0;
   transition: transform .15s ease, border-top-color .15s ease;
 }
-
-button.pa-date-btn:hover::after {
-  border-top-color: var(--interactive-accent);
-}
-
+button.pa-date-btn:hover::after { border-top-color: var(--interactive-accent); }
 button.pa-date-btn.pa-open::after {
   transform: rotate(180deg);
   border-top-color: var(--interactive-accent);
@@ -585,10 +679,7 @@ button.pa-date-btn.pa-open::after {
   font-size: 1em;
   line-height: 1;
 }
-.pa-cal-nav:hover {
-  background: var(--pa-hover);
-  color: var(--text-normal);
-}
+.pa-cal-nav:hover { background: var(--pa-hover); color: var(--text-normal); }
 .pa-cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -621,7 +712,7 @@ button.pa-cal-day.selected {
   color: var(--text-on-accent);
 }
 button.pa-cal-day.selected:hover { background: var(--interactive-accent-hover); }
-button.pa-cal-day.holiday { color: var(--color-red); }
+button.pa-cal-day.holiday { color: var(--pa-color-red); }
 button.pa-cal-day.selected.holiday,
 button.pa-cal-day.selected.holiday:hover { color: var(--text-on-accent); }
 .pa-cal-dot {
@@ -632,113 +723,345 @@ button.pa-cal-day.selected.holiday:hover { color: var(--text-on-accent); }
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--color-yellow);
+  background: var(--pa-color-yellow);
 }
 button.pa-cal-day.selected .pa-cal-dot { background: var(--text-on-accent); }
 .pa-cal-foot { display: flex; gap: 6px; margin-top: 8px; }
 .pa-cal-foot button.pa-btn { flex: 1; }
 
-/* ===== ۱۴) ریسپانسیو موبایل ===== */
+/* ==========================================================================
+   ۱۰) Tooltip و Help
+   ========================================================================== */
 
-@media (max-width: 600px) {
-  .pa-view { padding: 8px 10px 32px; }
-
-  .pa-title { font-size: 1em; }
-  .pa-tab { padding: 3px 8px; font-size: .82em; }
-
-  .pa-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-  .pa-tiles {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  .pa-stat { padding: 8px 10px; }
-  .pa-stat-label { font-size: .68em; }
-  .pa-stat-value { font-size: 1.05em; }
-
-  .pa-card { padding: 10px 12px; margin-bottom: 10px; }
-
-  .pa-toolbar { gap: 6px; }
-  .pa-toolbar input[type="search"] { flex: 1 1 100%; }
-  .pa-toolbar select { flex: 1 1 calc(50% - 3px); }
-
-  .pa-row { padding: 6px 3px; gap: 8px; }
-  .pa-row-amt { max-width: 50%; font-size: .95em; }
-
-  .pa-actions { gap: 6px; }
-  button.pa-btn { padding: 5px 10px; }
-
-  .pa-detail-row { flex-direction: column; gap: 2px; }
-  .pa-detail-key { width: auto; }
-
-  .pa-cal-pop { width: 240px; }
-  button.pa-cal-day { padding: 6px 0 8px; font-size: .8em; }
+.pa-tooltip {
+  position: fixed;
+  z-index: 9999;
+  transform: translate(-50%, -100%);
+  background: var(--background-secondary-alt, var(--background-secondary));
+  border: 1px solid var(--pa-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: .82em;
+  line-height: 1.4;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .18);
+  pointer-events: none;
+  max-width: 280px;
+  opacity: 0;
+  transition: opacity .12s ease, transform .12s ease;
+}
+.pa-tooltip.pa-tooltip-visible {
+  opacity: 1;
+  transform: translate(-50%, calc(-100% - 4px));
+}
+.pa-tooltip[dir="rtl"] { text-align: right; }
+.pa-tooltip-title {
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-bottom: 2px;
+}
+.pa-tooltip-sub {
+  color: var(--text-muted);
+  font-size: .92em;
+  margin-top: 2px;
 }
 
-/* ===== ۱۵) تم تاریک ===== */
+button.pa-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color .15s ease, background .15s ease;
+  vertical-align: middle;
+  margin-inline-start: 6px;
+  flex-shrink: 0;
+}
+button.pa-help-btn:hover {
+  color: var(--interactive-accent);
+  background: var(--pa-hover);
+}
+button.pa-help-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.pa-help-body {
+  font-size: .95em;
+  line-height: 1.6;
+  color: var(--text-normal);
+  padding: 8px 0 4px;
+}
 
-.theme-dark .pa-card,
-.theme-dark .pa-stat {
-  border-color: var(--background-modifier-border);
+/* ==========================================================================
+   ۱۱) نمودارها و KPI
+   ========================================================================== */
+
+/* --- KPI Cards --- */
+.pa-kpi-card {
+  background: linear-gradient(135deg,
+    var(--background-primary) 0%,
+    var(--background-secondary) 100%);
+  border: 1px solid var(--pa-border);
+}
+.pa-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.pa-kpi {
+  padding: 14px 16px;
+  border-radius: 12px;
   background: var(--background-primary);
+  border: 1px solid var(--pa-border);
+  position: relative;
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
-.theme-dark button.pa-btn {
-  background: var(--background-secondary);
-  border-color: var(--background-modifier-border-hover);
+.pa-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .08);
+  border-color: var(--interactive-accent);
 }
-.theme-dark button.pa-btn:hover {
-  background: var(--background-modifier-hover);
+.pa-kpi::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--interactive-accent);
 }
-.theme-dark .pa-chip {
-  background: var(--background-modifier-hover);
+.pa-kpi.good::before { background: var(--pa-color-green); }
+.pa-kpi.warn::before { background: var(--pa-color-yellow); }
+.pa-kpi.bad::before  { background: var(--pa-color-red); }
+
+.pa-kpi-label {
+  font-size: .72em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 6px;
+}
+.pa-kpi-value {
+  font-size: 1.6em;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.pa-kpi.good .pa-kpi-value { color: var(--pa-color-green); }
+.pa-kpi.warn .pa-kpi-value { color: var(--pa-color-yellow); }
+.pa-kpi.bad  .pa-kpi-value { color: var(--pa-color-red); }
+.pa-kpi-sub {
+  font-size: .78em;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Chart Wrappers --- */
+.pa-chart-wrap {
+  width: 100%;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+.pa-chart {
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  display: block;
+}
+.pa-chart-legend {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: .82em;
   color: var(--text-muted);
 }
-.theme-dark .pa-cal-pop {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+.pa-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.pa-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
 }
-.theme-dark button.pa-cal-day.selected {
-  color: var(--text-on-accent);
+
+/* --- Grid دو ستونی --- */
+.pa-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
 }
-.theme-dark button.pa-btn.primary {
+
+/* --- Donut Chart --- */
+.pa-donut-container {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pa-donut {
+  width: 180px;
+  height: 180px;
+  max-width: 180px;
+  flex-shrink: 0;
+}
+.pa-donut-legend {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.pa-donut-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .88em;
+}
+.pa-donut-legend-label { flex: 1; color: var(--text-normal); }
+.pa-donut-legend-val {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* --- Horizontal Bars --- */
+.pa-hbar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+.pa-hbar-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 1.2fr) 3fr minmax(60px, auto);
+  align-items: center;
+  gap: 10px;
+  font-size: .88em;
+}
+.pa-hbar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-normal);
+}
+.pa-hbar-track {
+  height: 8px;
+  background: var(--background-modifier-hover);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.pa-hbar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .35s ease;
+  min-width: 3px;
+}
+.pa-hbar-value {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: .85em;
+  color: var(--text-muted);
+}
+
+/* --- Analytics Tabs --- */
+.pa-analytics-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--pa-border);
+  padding-bottom: 8px;
+}
+.pa-analytics-tabs button.pa-btn {
+  border: 1px solid transparent;
+  background: transparent;
+}
+.pa-analytics-tabs button.pa-btn.active {
   background: var(--interactive-accent);
   color: var(--text-on-accent, #fff);
   border-color: var(--interactive-accent);
 }
-.theme-dark button.pa-btn.primary:hover {
-  background: var(--interactive-accent-hover);
-  border-color: var(--interactive-accent-hover);
+
+/* --- Monthly Report --- */
+.pa-report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.pa-report-grid .pos { color: var(--pa-color-green); }
+.pa-report-grid .neg { color: var(--pa-color-red); }
+
+/* --- Cash Flow --- */
+.pa-cashflow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+.pa-cashflow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--background-secondary);
+  border-inline-start: 3px solid var(--pa-border);
+}
+.pa-cashflow-row.pos { border-inline-start-color: var(--pa-color-green); }
+.pa-cashflow-row.neg { border-inline-start-color: var(--pa-color-red); }
+.pa-cashflow-label { font-weight: 600; flex: 1; }
+.pa-cashflow-amt {
+  font-variant-numeric: tabular-nums;
+  font-size: .95em;
+  font-weight: 600;
 }
 
-/* ===== ۱۶) مودال موبایل — سازگار با کیبورد ===== */
+/* ==========================================================================
+   ۱۲) مودال موبایل — سازگار با کیبورد
+   ========================================================================== */
 
 .modal.pa-mobile-modal {
-  top: var(--pa-modal-top, 0);
-  max-height: var(--pa-modal-height, 90vh);
+  top: var(--pa-modal-top);
+  max-height: var(--pa-modal-height);
   height: auto;
-  transition: max-height .15s ease, top .15s ease;
+  transition: max-height .18s ease, top .18s ease;
 }
-
 .modal.pa-mobile-modal .modal-content {
-  max-height: calc(var(--pa-modal-height, 90vh) - 60px);
+  max-height: calc(var(--pa-modal-height) - 56px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 20px;
+  padding-bottom: 140px;
+  scroll-padding-bottom: 140px;
 }
-
 .modal.pa-mobile-modal.pa-keyboard-open .modal-content {
-  padding-bottom: 80px;
+  padding-bottom: 240px;
+  scroll-padding-bottom: 240px;
 }
-
 .modal.pa-mobile-modal .modal-content textarea,
 .modal.pa-mobile-modal .modal-content input,
 .modal.pa-mobile-modal .modal-content select {
-  scroll-margin-bottom: 90px;
-  scroll-margin-top: 20px;
+  scroll-margin-bottom: 160px;
+  scroll-margin-top: 24px;
 }
 
-/* ===== ۱۷) کارت‌های تبلیغات کانال ===== */
+/* ==========================================================================
+   ۱۳) تبلیغات کانال (uts-channel)
+   ========================================================================== */
 
 .uts-channel-promo-wrap {
   display: grid;
@@ -746,7 +1069,6 @@ button.pa-cal-day.selected .pa-cal-dot { background: var(--text-on-accent); }
   gap: 10px;
   margin-top: 8px;
 }
-
 a.uts-channel-card {
   --uts-channel-color: var(--interactive-accent);
   display: flex;
@@ -754,7 +1076,7 @@ a.uts-channel-card {
   gap: 12px;
   padding: 12px 14px;
   border-radius: 10px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--pa-border);
   background: var(--background-primary);
   text-decoration: none;
   color: var(--text-normal);
@@ -762,7 +1084,6 @@ a.uts-channel-card {
   position: relative;
   overflow: hidden;
 }
-
 a.uts-channel-card::before {
   content: '';
   position: absolute;
@@ -773,13 +1094,11 @@ a.uts-channel-card::before {
   background: var(--uts-channel-color);
   opacity: .85;
 }
-
 a.uts-channel-card:hover {
   background: var(--background-modifier-hover);
   border-color: var(--uts-channel-color);
   transform: translateY(-1px);
 }
-
 .uts-channel-icon {
   display: inline-flex;
   align-items: center;
@@ -791,12 +1110,7 @@ a.uts-channel-card:hover {
   color: var(--uts-channel-color);
   flex-shrink: 0;
 }
-
-.uts-channel-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
+.uts-channel-icon svg { width: 20px; height: 20px; }
 .uts-channel-meta {
   flex: 1 1 auto;
   min-width: 0;
@@ -804,7 +1118,6 @@ a.uts-channel-card:hover {
   flex-direction: column;
   gap: 2px;
 }
-
 .uts-channel-label {
   font-weight: 600;
   font-size: .92em;
@@ -812,7 +1125,6 @@ a.uts-channel-card:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .uts-channel-handle {
   font-size: .78em;
   color: var(--text-muted);
@@ -822,24 +1134,173 @@ a.uts-channel-card:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .uts-channel-arrow {
   display: inline-flex;
   color: var(--text-faint);
   flex-shrink: 0;
   transition: color .15s ease, transform .15s ease;
 }
-
 a.uts-channel-card:hover .uts-channel-arrow {
   color: var(--uts-channel-color);
   transform: translate(2px, -2px);
 }
 
+/* ==========================================================================
+   ۱۴) ریسپانسیو موبایل
+   ========================================================================== */
+
+@media (max-width: 700px) {
+  /* KPI */
+  .pa-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .pa-kpi { padding: 10px 12px; }
+  .pa-kpi-value { font-size: 1.2em; }
+  .pa-kpi-label { font-size: .65em; }
+  .pa-kpi-sub { font-size: .72em; }
+
+  /* Grid 2 */
+  .pa-grid-2 { grid-template-columns: 1fr; gap: 10px; }
+
+  /* Donut */
+  .pa-donut { width: 140px; height: 140px; }
+  .pa-donut-container { gap: 12px; }
+
+  /* H-Bars */
+  .pa-hbar-row {
+    grid-template-columns: minmax(60px, 1fr) 2fr minmax(50px, auto);
+    gap: 6px;
+    font-size: .82em;
+  }
+}
+
 @media (max-width: 600px) {
-  .uts-channel-promo-wrap {
-    grid-template-columns: 1fr;
+  .pa-view { padding: 8px 10px 32px; }
+  .pa-title { font-size: 1em; }
+  .pa-tab { padding: 3px 8px; font-size: .82em; }
+
+  /* سه کارت اصلی: فشرده اما همچنان ۳ ستون */
+  .pa-stats-primary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
   }
-  a.uts-channel-card {
+  .pa-stats-primary .pa-stat { padding: 9px 10px; border-radius: 10px; }
+  .pa-stats-primary .pa-stat-label { font-size: .62em; letter-spacing: .02em; }
+  .pa-stats-primary .pa-stat-value { font-size: 1em; }
+
+  /* آمار ثانویه: ۳ ستون */
+  .pa-stats-secondary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .pa-stats-secondary .pa-stat { padding: 6px 8px; }
+  .pa-stats-secondary .pa-stat-label { font-size: .6em; }
+  .pa-stats-secondary .pa-stat-value { font-size: .9em; }
+
+  /* شبکه آمار عمومی: ۲ ستون */
+  .pa-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .pa-tiles { grid-template-columns: 1fr; gap: 8px; }
+  .pa-stat { padding: 8px 10px; }
+  .pa-stat-label { font-size: .68em; }
+  .pa-stat-value { font-size: 1.05em; }
+
+  .pa-card { padding: 10px 12px; margin-bottom: 10px; }
+
+  /* Toolbar */
+  .pa-toolbar { gap: 6px; }
+  .pa-toolbar input[type="search"] { flex: 1 1 100%; }
+  .pa-toolbar select { flex: 1 1 calc(50% - 3px); }
+
+  /* Rows */
+  .pa-row { padding: 6px 3px; gap: 8px; }
+  .pa-row-amt { max-width: 50%; font-size: .95em; }
+
+  .pa-actions { gap: 6px; }
+  button.pa-btn { padding: 5px 10px; }
+
+  /* Detail */
+  .pa-detail-row { flex-direction: column; gap: 2px; }
+  .pa-detail-key { width: auto; min-width: 0; max-width: none; }
+
+  /* Segmented */
+  .pa-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .pa-seg button.pa-btn {
+    min-width: 0;
     padding: 10px 12px;
+    padding-inline-start: 32px;
+    font-size: .8em;
+    text-align: start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+  .pa-seg button.pa-btn::before {
+    inset-inline-start: 10px;
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Calendar */
+  .pa-cal-pop { width: 240px; }
+  button.pa-cal-day { padding: 6px 0 8px; font-size: .8em; }
+
+  /* Channel cards */
+  .uts-channel-promo-wrap { grid-template-columns: 1fr; }
+  a.uts-channel-card { padding: 10px 12px; }
+}
+
+@media (max-width: 480px) {
+  .pa-view { padding: 8px 8px 28px; }
+  .pa-title { font-size: .95em; }
+  .pa-tab { font-size: .78em; padding: 3px 7px; }
+  .pa-stat-value { font-size: 1em; }
+  .pa-kpi-value { font-size: 1.25em; }
+  .pa-chart { max-height: 220px; }
+  .pa-hbar-row { grid-template-columns: 70px 1fr auto; }
+  .pa-cal-pop { width: 220px; }
+}
+
+/* ==========================================================================
+   ۱۵) تم تاریک
+   ========================================================================== */
+
+.theme-dark .pa-card,
+.theme-dark .pa-stat {
+  border-color: var(--background-modifier-border);
+  background: var(--background-primary);
+}
+.theme-dark button.pa-btn {
+  background: var(--background-secondary);
+  border-color: var(--background-modifier-border-hover);
+}
+.theme-dark button.pa-btn:hover { background: var(--background-modifier-hover); }
+.theme-dark .pa-chip {
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+.theme-dark .pa-cal-pop { box-shadow: 0 8px 24px rgba(0, 0, 0, .5); }
+.theme-dark button.pa-cal-day.selected { color: var(--text-on-accent); }
+.theme-dark button.pa-btn.primary {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent, #fff);
+  border-color: var(--interactive-accent);
+}
+.theme-dark button.pa-btn.primary:hover {
+  background: var(--interactive-accent-hover);
+  border-color: var(--interactive-accent-hover);
+}
+.theme-dark .pa-kpi-card {
+  background: linear-gradient(135deg,
+    var(--background-primary) 0%,
+    var(--background-secondary) 100%);
+}
+.theme-dark .pa-kpi {
+  background: var(--background-secondary);
+}
+.theme-dark .pa-hbar-track {
+  background: var(--background-modifier-border);
+}
+.theme-dark .pa-tooltip {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
 }
