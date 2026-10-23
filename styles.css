@@ -1,9 +1,10 @@
 /* ==========================================================================
-   Personal Accounts — styles.css (v2.0.0)
+   Personal Accounts — styles.css (v2.0.3)
    ساختار: ۱) پایه  ۲) هدر  ۳) کارت‌ها و آمار  ۴) مبالغ و چیپ‌ها
            ۵) ردیف‌ها  ۶) نوار ابزار  ۷) دکمه‌ها  ۸) فرم‌ها
            ۹) Date Picker  ۱۰) Tooltip و Help  ۱۱) نمودارها
            ۱۲) مودال موبایل  ۱۳) تبلیغات  ۱۴) ریسپانسیو  ۱۵) تم تاریک
+           ۱۶) RTL مودال (جدید)  ۱۷) بهبود دکمه‌های موبایل (جدید)
    ========================================================================== */
 
 /* ==========================================================================
@@ -18,14 +19,12 @@
   --pa-surface-2: var(--background-secondary);
   --pa-hover: var(--background-modifier-hover);
 
-  /* رنگ‌های fallback (اگه Obsidian تعریف نکرده باشه) */
   --pa-color-orange: var(--color-orange, #ff8c00);
   --pa-color-blue: var(--color-blue, #4e79a7);
   --pa-color-green: var(--color-green, #4caf50);
   --pa-color-red: var(--color-red, #e15759);
   --pa-color-yellow: var(--color-yellow, #edc949);
 
-  /* مودال موبایل */
   --pa-modal-top: 5vh;
   --pa-modal-height: 90vh;
 }
@@ -40,7 +39,7 @@
   font-size: .9em;
   white-space: pre-wrap;
 }
-.pa-hidden { display: none !important; }
+.pa-hidden { display: none; }
 .pa-hint {
   font-size: .75em;
   color: var(--text-muted);
@@ -118,7 +117,6 @@
 }
 .pa-link:hover { color: var(--text-normal); }
 
-/* --- ردیف اصلی: ۳ کارت بزرگ --- */
 .pa-stats-primary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -165,7 +163,6 @@
 .pa-stats-primary .pa-stat.accent-debt .pa-stat-value { color: var(--pa-color-red); }
 .pa-stats-primary .pa-stat.accent-net .pa-stat-value { color: var(--pa-color-blue); }
 
-/* --- ردیف ثانویه: آمار کوچک --- */
 .pa-stats-secondary {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -198,7 +195,6 @@
 .pa-stats-secondary .pa-stat.warn .pa-stat-value { color: var(--pa-color-orange); }
 .pa-stats-secondary .pa-stat.danger .pa-stat-value { color: var(--pa-color-red); }
 
-/* --- شبکه عمومی آمار --- */
 .pa-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -449,7 +445,6 @@ button.pa-btn.icon svg { width: 16px; height: 16px; }
   margin: 12px 0 4px;
 }
 
-/* --- دکمه‌های نوع تراکنش (Segmented) --- */
 .pa-seg {
   display: flex;
   gap: 6px;
@@ -559,7 +554,6 @@ button.pa-btn.icon svg { width: 16px; height: 16px; }
 }
 .pa-form-error.show { display: block; }
 
-/* --- جزئیات تراکنش --- */
 .pa-detail-row {
   display: flex;
   gap: 12px;
@@ -801,7 +795,6 @@ button.pa-help-btn svg {
    ۱۱) نمودارها و KPI
    ========================================================================== */
 
-/* --- KPI Cards --- */
 .pa-kpi-card {
   background: linear-gradient(135deg,
     var(--background-primary) 0%,
@@ -863,7 +856,6 @@ button.pa-help-btn svg {
   font-variant-numeric: tabular-nums;
 }
 
-/* --- Chart Wrappers --- */
 .pa-chart-wrap {
   width: 100%;
   overflow-x: auto;
@@ -893,7 +885,6 @@ button.pa-help-btn svg {
   flex-shrink: 0;
 }
 
-/* --- Grid دو ستونی --- */
 .pa-grid-2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -901,7 +892,6 @@ button.pa-help-btn svg {
   margin-bottom: 14px;
 }
 
-/* --- Donut Chart --- */
 .pa-donut-container {
   display: flex;
   align-items: center;
@@ -935,7 +925,6 @@ button.pa-help-btn svg {
   font-weight: 600;
 }
 
-/* --- Horizontal Bars --- */
 .pa-hbar-list {
   display: flex;
   flex-direction: column;
@@ -976,7 +965,6 @@ button.pa-help-btn svg {
   color: var(--text-muted);
 }
 
-/* --- Analytics Tabs --- */
 .pa-analytics-tabs {
   display: flex;
   gap: 6px;
@@ -995,7 +983,6 @@ button.pa-help-btn svg {
   border-color: var(--interactive-accent);
 }
 
-/* --- Monthly Report --- */
 .pa-report-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1005,7 +992,6 @@ button.pa-help-btn svg {
 .pa-report-grid .pos { color: var(--pa-color-green); }
 .pa-report-grid .neg { color: var(--pa-color-red); }
 
-/* --- Cash Flow --- */
 .pa-cashflow {
   display: flex;
   flex-direction: column;
@@ -1032,7 +1018,7 @@ button.pa-help-btn svg {
 }
 
 /* ==========================================================================
-   ۱۲) مودال موبایل — سازگار با کیبورد
+   ۱۲) مودال موبایل
    ========================================================================== */
 
 .modal.pa-mobile-modal {
@@ -1060,7 +1046,7 @@ button.pa-help-btn svg {
 }
 
 /* ==========================================================================
-   ۱۳) تبلیغات کانال (uts-channel)
+   ۱۳) تبلیغات کانال
    ========================================================================== */
 
 .uts-channel-promo-wrap {
@@ -1150,7 +1136,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
    ========================================================================== */
 
 @media (max-width: 700px) {
-  /* KPI */
   .pa-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -1160,14 +1145,11 @@ a.uts-channel-card:hover .uts-channel-arrow {
   .pa-kpi-label { font-size: .65em; }
   .pa-kpi-sub { font-size: .72em; }
 
-  /* Grid 2 */
   .pa-grid-2 { grid-template-columns: 1fr; gap: 10px; }
 
-  /* Donut */
   .pa-donut { width: 140px; height: 140px; }
   .pa-donut-container { gap: 12px; }
 
-  /* H-Bars */
   .pa-hbar-row {
     grid-template-columns: minmax(60px, 1fr) 2fr minmax(50px, auto);
     gap: 6px;
@@ -1180,7 +1162,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   .pa-title { font-size: 1em; }
   .pa-tab { padding: 3px 8px; font-size: .82em; }
 
-  /* سه کارت اصلی: فشرده اما همچنان ۳ ستون */
   .pa-stats-primary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
@@ -1189,7 +1170,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   .pa-stats-primary .pa-stat-label { font-size: .62em; letter-spacing: .02em; }
   .pa-stats-primary .pa-stat-value { font-size: 1em; }
 
-  /* آمار ثانویه: ۳ ستون */
   .pa-stats-secondary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
@@ -1198,7 +1178,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   .pa-stats-secondary .pa-stat-label { font-size: .6em; }
   .pa-stats-secondary .pa-stat-value { font-size: .9em; }
 
-  /* شبکه آمار عمومی: ۲ ستون */
   .pa-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .pa-tiles { grid-template-columns: 1fr; gap: 8px; }
   .pa-stat { padding: 8px 10px; }
@@ -1207,23 +1186,19 @@ a.uts-channel-card:hover .uts-channel-arrow {
 
   .pa-card { padding: 10px 12px; margin-bottom: 10px; }
 
-  /* Toolbar */
   .pa-toolbar { gap: 6px; }
   .pa-toolbar input[type="search"] { flex: 1 1 100%; }
   .pa-toolbar select { flex: 1 1 calc(50% - 3px); }
 
-  /* Rows */
   .pa-row { padding: 6px 3px; gap: 8px; }
   .pa-row-amt { max-width: 50%; font-size: .95em; }
 
   .pa-actions { gap: 6px; }
   button.pa-btn { padding: 5px 10px; }
 
-  /* Detail */
   .pa-detail-row { flex-direction: column; gap: 2px; }
   .pa-detail-key { width: auto; min-width: 0; max-width: none; }
 
-  /* Segmented */
   .pa-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .pa-seg button.pa-btn {
     min-width: 0;
@@ -1241,11 +1216,9 @@ a.uts-channel-card:hover .uts-channel-arrow {
     height: 10px;
   }
 
-  /* Calendar */
   .pa-cal-pop { width: 240px; }
   button.pa-cal-day { padding: 6px 0 8px; font-size: .8em; }
 
-  /* Channel cards */
   .uts-channel-promo-wrap { grid-template-columns: 1fr; }
   a.uts-channel-card { padding: 10px 12px; }
 }
@@ -1323,9 +1296,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
 .theme-dark .pa-tooltip {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
 }
-/* ==========================================================================
-   اصلاح border کارت‌ها و آمار
-   ========================================================================== */
 
 .pa-card {
   border: 1px solid var(--background-modifier-border) !important;
@@ -1362,4 +1332,328 @@ a.uts-channel-card:hover .uts-channel-arrow {
 
 .pa-cashflow-row {
   border-inline-start: 3px solid var(--background-modifier-border) !important;
+}
+/* ==========================================================================
+   ۱۶) RTL مودال‌های پلاگین — فقط .modal.pa-plugin-modal
+   ========================================================================== */
+
+.modal.pa-plugin-modal.pa-rtl-modal {
+  direction: rtl;
+  text-align: right;
+}
+.modal.pa-plugin-modal.pa-rtl-modal .modal-title {
+  text-align: right;
+}
+.modal.pa-plugin-modal.pa-rtl-modal .modal-content {
+  direction: rtl;
+  text-align: right;
+}
+
+/* فرم و فیلدها */
+.modal.pa-plugin-modal.pa-rtl-modal .pa-form,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-actions,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-detail,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-help-body {
+  direction: rtl;
+  text-align: right;
+}
+.modal.pa-plugin-modal.pa-rtl-modal .pa-field > label {
+  text-align: right;
+}
+
+/* ورودی‌ها — راست‌چین */
+.modal.pa-plugin-modal.pa-rtl-modal input[type="text"],
+.modal.pa-plugin-modal.pa-rtl-modal input[type="email"],
+.modal.pa-plugin-modal.pa-rtl-modal input[type="tel"],
+.modal.pa-plugin-modal.pa-rtl-modal input[type="search"],
+.modal.pa-plugin-modal.pa-rtl-modal textarea,
+.modal.pa-plugin-modal.pa-rtl-modal select {
+  direction: rtl;
+  text-align: right;
+}
+
+/* ورودی مبلغ و مبالغ — چپ‌چین بمانند (چون عدد و کاما دارن) */
+.modal.pa-plugin-modal.pa-rtl-modal input[inputmode="decimal"],
+.modal.pa-plugin-modal.pa-rtl-modal .pa-money,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-detail-val,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-row-amt,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-stat-value,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-kpi-value,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-date-label {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: plaintext;
+}
+
+/* date picker button — راست‌چین */
+.modal.pa-plugin-modal.pa-rtl-modal button.pa-date-btn {
+  direction: rtl;
+  text-align: right;
+}
+/* ولی label داخلش چپ‌چین (چون تاریخ عددیه) */
+.modal.pa-plugin-modal.pa-rtl-modal button.pa-date-btn .pa-date-label {
+  direction: ltr;
+  text-align: left;
+}
+
+/* segmented و چیپ‌ها راست‌چین */
+.modal.pa-plugin-modal.pa-rtl-modal .pa-seg,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-row-sub,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-info-row {
+  direction: rtl;
+}
+
+/* ==========================================================================
+   ۱۷) خط دور دکمه‌ها و فیلدها در موبایل — فقط داخل مودال پلاگین
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  .modal.pa-plugin-modal button.pa-btn {
+    border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border));
+    background: var(--background-secondary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+  }
+  .modal.pa-plugin-modal button.pa-btn.primary {
+    border: 1.5px solid var(--interactive-accent);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .15);
+  }
+  .modal.pa-plugin-modal button.pa-btn.danger {
+    border: 1.5px solid var(--pa-color-red);
+  }
+  .modal.pa-plugin-modal button.pa-btn.icon {
+    border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border));
+    background: var(--background-secondary);
+  }
+
+  .modal.pa-plugin-modal .pa-field input,
+  .modal.pa-plugin-modal .pa-field select,
+  .modal.pa-plugin-modal .pa-field textarea,
+  .modal.pa-plugin-modal button.pa-date-btn {
+    border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border));
+    background: var(--background-primary);
+  }
+  .modal.pa-plugin-modal .pa-field input:focus,
+  .modal.pa-plugin-modal .pa-field select:focus,
+  .modal.pa-plugin-modal .pa-field textarea:focus,
+  .modal.pa-plugin-modal button.pa-date-btn:focus,
+  .modal.pa-plugin-modal button.pa-date-btn.pa-open {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+  }
+
+  .modal.pa-plugin-modal .pa-form-error.show {
+    border: 1.5px solid var(--pa-color-red);
+    background: rgba(225, 87, 89, .08);
+    padding: 8px 10px;
+    border-radius: 6px;
+  }
+
+  .modal.pa-plugin-modal .pa-seg button.pa-btn {
+    border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border));
+    background: var(--background-secondary);
+  }
+  .modal.pa-plugin-modal .pa-seg button.pa-btn.active {
+    border-width: 2px;
+  }
+}
+
+.theme-dark .modal.pa-plugin-modal button.pa-btn {
+  border-color: var(--background-modifier-border-hover, #3a3a3a);
+}
+.theme-dark .modal.pa-plugin-modal .pa-field input,
+.theme-dark .modal.pa-plugin-modal .pa-field select,
+.theme-dark .modal.pa-plugin-modal .pa-field textarea,
+.theme-dark .modal.pa-plugin-modal button.pa-date-btn {
+  border-color: var(--background-modifier-border-hover, #3a3a3a);
+}
+/* ==========================================================================
+   ۱۸) RTL تنظیمات Obsidian — جدا از مودال‌های پلاگین
+   نکته: :not(.modal) باعث می‌شود قوانین زیر به مودال‌ها دست نزنند.
+   ========================================================================== */
+.pa-rtl-modal:not(.modal) {
+  direction: rtl;
+  text-align: right;
+}
+
+.pa-rtl-modal:not(.modal) h1,
+.pa-rtl-modal:not(.modal) h2,
+.pa-rtl-modal:not(.modal) h3,
+.pa-rtl-modal:not(.modal) h4,
+.pa-rtl-modal:not(.modal) p {
+  text-align: right;
+}
+
+.pa-rtl-modal:not(.modal) .setting-item {
+  direction: rtl;
+  text-align: right;
+}
+
+.pa-rtl-modal:not(.modal) .setting-item-info,
+.pa-rtl-modal:not(.modal) .setting-item-name,
+.pa-rtl-modal:not(.modal) .setting-item-description {
+  direction: rtl;
+  text-align: right;
+}
+
+.pa-rtl-modal:not(.modal) .setting-item-control {
+  direction: rtl;
+}
+
+.pa-rtl-modal:not(.modal) input,
+.pa-rtl-modal:not(.modal) textarea,
+.pa-rtl-modal:not(.modal) select {
+  text-align: right;
+}
+
+/* مسیر فایل معمولاً لاتین است؛ آن ورودی را چپ‌به‌راست نگه می‌داریم. */
+.pa-rtl-modal:not(.modal) .setting-item-control input[type="text"] {
+  direction: ltr;
+  text-align: left;
+}
+
+/* FIX: Restore Persian RTL inside plugin modals only.
+   These rules are intentionally scoped to the modal and do not affect settings. */
+.modal.pa-plugin-modal.pa-rtl-modal {
+  direction: rtl !important;
+  text-align: right !important;
+}
+.modal.pa-plugin-modal.pa-rtl-modal .modal-title,
+.modal.pa-plugin-modal.pa-rtl-modal .modal-content,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-form,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-actions,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-detail,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-help-body {
+  direction: rtl !important;
+  text-align: right !important;
+}
+.modal.pa-plugin-modal.pa-rtl-modal input,
+.modal.pa-plugin-modal.pa-rtl-modal select,
+.modal.pa-plugin-modal.pa-rtl-modal textarea,
+.modal.pa-plugin-modal.pa-rtl-modal button.pa-date-btn {
+  direction: rtl !important;
+  text-align: right !important;
+}
+.modal.pa-plugin-modal.pa-rtl-modal .pa-money,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-detail-val,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-row-amt,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-stat-value,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-kpi-value,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-date-label {
+  direction: ltr !important;
+}
+.modal.pa-plugin-modal.pa-rtl-modal .pa-seg,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-row-sub,
+.modal.pa-plugin-modal.pa-rtl-modal .pa-info-row {
+  direction: rtl !important;
+}
+/* ==========================================================================
+   ۱۹) اصلاح نمایش اعداد و آمار در موبایل
+   ========================================================================== */
+
+/* --- اعداد بزرگ: جلوگیری از بریده شدن --- */
+.pa-stats-primary .pa-stat-value,
+.pa-stat-value,
+.pa-kpi-value,
+.pa-row-amt {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+/* آیکون‌ها در آمار ثانویه */
+.pa-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 4px;
+  flex-shrink: 0;
+}
+.pa-stat-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+.pa-stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ==========================================================================
+   موبایل: آمار اصلی هر کدوم یه ردیف
+   ========================================================================== */
+@media (max-width: 600px) {
+  .pa-stats-primary {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+  .pa-stats-primary .pa-stat {
+    padding: 10px 12px;
+  }
+  .pa-stats-primary .pa-stat-value {
+    font-size: 1.25em;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* ==========================================================================
+     موبایل: آمار ثانویه (۵ تا) → آیکون کوچیک تو یه ردیف
+     ========================================================================== */
+  .pa-stats-secondary {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px 0;
+    justify-content: space-between;
+  }
+  .pa-stats-secondary .pa-stat {
+    flex: 1 1 0;
+    min-width: 44px;
+    max-width: none;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 10px;
+  }
+  /* در موبایل فقط آیکون دیده بشه، متن لیبل مخفی */
+  .pa-stats-secondary .pa-stat-label-text {
+    display: none;
+  }
+  .pa-stats-secondary .pa-stat-icon {
+    margin: 0;
+    width: 22px;
+    height: 22px;
+  }
+  .pa-stats-secondary .pa-stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .pa-stats-secondary .pa-stat-value {
+    font-size: .8em;
+    font-weight: 700;
+    margin-top: 0;
+    white-space: normal;
+    word-break: break-word;
+  }
+  /* رنگ آیکون‌ها */
+  .pa-stats-secondary .pa-stat .pa-stat-icon {
+    color: var(--text-muted);
+  }
+  .pa-stats-secondary .pa-stat.warn .pa-stat-icon,
+  .pa-stats-secondary .pa-stat.warn .pa-stat-value {
+    color: var(--pa-color-orange);
+  }
+  .pa-stats-secondary .pa-stat.danger .pa-stat-icon,
+  .pa-stats-secondary .pa-stat.danger .pa-stat-value {
+    color: var(--pa-color-red);
+  }
 }
