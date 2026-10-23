@@ -1,10 +1,10 @@
 {
   "id": "personal-accounts",
   "name": "Personal Accounts",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "minAppVersion": "1.0.0",
-  "description": "Personal debts & receivables manager. One central data note, full UI — no per-person notes.",
+  "description": "Manage personal debts and receivables in one central note — with dashboard, people, transactions, analytics, Jalali/Gregorian calendar, and multi-currency support.",
   "author": "saeedghobadi",
-  "authorUrl": "https://github.com/singhaf9270",
+  "authorUrl": "https://github.com/saeedghobadi",
   "isDesktopOnly": false
 }
