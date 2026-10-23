@@ -804,6 +804,14 @@ function randomId(prefix) {
 	return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 }
 
+/* ✅ FIX #2: پایدارسازی createdAt بر اساس محتوا (برای پارسر) */
+function stableTime(str) {
+	let h = 0;
+	const s = String(str || "");
+	for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+	return Math.abs(h) || 1
+}
+
 function jDiv(a, b) {
 	return ~~(a / b)
 }
@@ -1342,7 +1350,6 @@ function computeLedger(data, today, dueSoonDays) {
 		attention
 	}
 }
-
 function emptyData() {
 	return {
 		version: DATA_VERSION,
@@ -1519,6 +1526,8 @@ function parsePeopleDetails(lines, startIdx, endIdx) {
 			const tagsRaw = get(iTags);
 			const tags = [...tagsRaw.matchAll(/`([^`]+)`/g)].map(m => m[1].trim()).filter(Boolean);
 			const noteRaw = get(iNote).replace(/<br\s*\/?>/gi, "\n");
+			/* ✅ FIX #2: استفاده از stableTime به‌جای Date.now() برای پایداری بین reloadها */
+			const st = stableTime(name);
 			const person = {
 				id: randomId("p"),
 				name,
@@ -1526,8 +1535,8 @@ function parsePeopleDetails(lines, startIdx, endIdx) {
 				email: get(iEmail) || undefined,
 				tags,
 				note: noteRaw || undefined,
-				createdAt: Date.now(),
-				updatedAt: Date.now()
+				createdAt: st,
+				updatedAt: st
 			};
 			people.push(person);
 			byName.set(name, person)
@@ -1551,6 +1560,7 @@ function parsePeopleDetailsLegacy(lines, startIdx, endIdx) {
 		if (h) {
 			const name = h[1].trim();
 			if (name) {
+				const st = stableTime(name);
 				current = {
 					id: randomId("p"),
 					name,
@@ -1558,8 +1568,8 @@ function parsePeopleDetailsLegacy(lines, startIdx, endIdx) {
 					email: undefined,
 					tags: [],
 					note: undefined,
-					createdAt: Date.now(),
-					updatedAt: Date.now()
+					createdAt: st,
+					updatedAt: st
 				};
 				people.push(current);
 				byName.set(name, current)
@@ -1647,12 +1657,13 @@ function parseMarkdownData(content, calendar) {
 		if (!person) {
 			person = data.people.find(p => p.name === personName);
 			if (!person) {
+				const st = stableTime(personName);
 				person = {
 					id: randomId("p"),
 					name: personName,
 					tags: [],
-					createdAt: Date.now(),
-					updatedAt: Date.now()
+					createdAt: st,
+					updatedAt: st
 				};
 				data.people.push(person)
 			}
@@ -1660,6 +1671,8 @@ function parseMarkdownData(content, calendar) {
 		}
 		const origin = type === "receivable" || type === "debt";
 		const dueIso = origin ? parseDateString(dueRaw, calendar) : null;
+		/* ✅ FIX #2: createdAt پایدار بر اساس اندیس تراکنش (نه Date.now()) */
+		const idx = data.transactions.length + 1;
 		data.transactions.push({
 			id: randomId("t"),
 			personId: person.id,
@@ -1669,8 +1682,8 @@ function parseMarkdownData(content, calendar) {
 			description: descRaw.trim() || undefined,
 			category: categoryRaw || undefined,
 			dueDate: dueIso || undefined,
-			createdAt: Date.now() + data.transactions.length,
-			updatedAt: Date.now()
+			createdAt: idx,
+			updatedAt: idx
 		})
 	}
 	return sanitizeData(data)
@@ -1746,6 +1759,7 @@ function renderMarkdownData(data, fmt) {
 	}
 	return lines.join("\n")
 }
+
 class PluginDataStore {
 	constructor(app, getSettings, fmt, plugin) {
 		this.app = app;
@@ -2150,29 +2164,38 @@ class AccountsStore {
 			linkedTo: tx.id
 		})
 	}
+	/* ✅ FIX #5: settlePerson اتمیک با rollback */
 	async settlePerson(personId) {
 		await this.ready();
 		const b = this.ledger ? this.ledger.balances.get(personId) : null;
 		if (!b) return;
-		if (b.remainingReceivable > EPS) {
-			addTransaction(this.data, {
-				personId,
-				type: "payment_received",
-				amount: b.remainingReceivable,
-				date: todayISO(),
-				description: t("accountSettlement")
-			})
+		const snapshot = JSON.parse(JSON.stringify(this.data));
+		try {
+			if (b.remainingReceivable > EPS) {
+				addTransaction(this.data, {
+					personId,
+					type: "payment_received",
+					amount: b.remainingReceivable,
+					date: todayISO(),
+					description: t("accountSettlement")
+				})
+			}
+			if (b.remainingDebt > EPS) {
+				addTransaction(this.data, {
+					personId,
+					type: "payment_made",
+					amount: b.remainingDebt,
+					date: todayISO(),
+					description: t("accountSettlement")
+				})
+			}
+			await this.persist()
+		} catch (e) {
+			this.data = snapshot;
+			this.recompute();
+			this.emit();
+			throw e
 		}
-		if (b.remainingDebt > EPS) {
-			addTransaction(this.data, {
-				personId,
-				type: "payment_made",
-				amount: b.remainingDebt,
-				date: todayISO(),
-				description: t("accountSettlement")
-			})
-		}
-		await this.persist()
 	}
 	async resetEmpty() {
 		this.data = emptyData();
@@ -2205,7 +2228,7 @@ class PASettingTab extends PluginSettingTab {
 			containerEl
 		} = this;
 		containerEl.empty();
-		containerEl.toggleClass("pa-rtl-modal", CURRENT.locale === "fa");
+		/* ✅ FIX: کلاس pa-rtl-modal روی تنظیمات حذف شد؛ تنظیمات دست‌نخورده می‌ماند */
 		const s = this.plugin.settings;
 		const save = async fn => {
 			fn();
@@ -2284,6 +2307,7 @@ class PASettingTab extends PluginSettingTab {
 				new Notice("⚠ " + (e instanceof Error ? e.message : String(e)))
 			}
 		}));
+		/* ✅ FIX #32: ایمپورت JSON با ConfirmModal */
 		new Setting(containerEl).setName(t("setImportJSON")).setDesc(t("setImportJSONDesc")).addButton(b => b.setButtonText(t("importBtn")).onClick(() => {
 			const input = document.createElement("input");
 			input.type = "file";
@@ -2291,16 +2315,32 @@ class PASettingTab extends PluginSettingTab {
 			input.onchange = async e => {
 				const file = e.target.files && e.target.files[0];
 				if (!file) return;
+				let parsed;
 				try {
 					const text = await file.text();
-					const parsed = JSON.parse(text);
-					const clean = sanitizeData(parsed);
-					this.plugin.accounts.data = clean;
-					await this.plugin.accounts.persist();
-					new Notice(t("importDone"))
+					parsed = JSON.parse(text)
 				} catch (err) {
-					new Notice("⚠ " + t("importError") + ": " + (err instanceof Error ? err.message : String(err)))
+					new Notice("⚠ " + t("importError") + ": " + (err instanceof Error ? err.message : String(err)));
+					return
 				}
+				const clean = sanitizeData(parsed);
+				const txCount = clean.transactions.length;
+				const peopleCount = clean.people.length;
+				new ConfirmModal(this.app, {
+					title: t("setImportJSON"),
+					lines: [peopleCount + " " + t("tabPeople") + " · " + txCount + " " + t("tabTransactions"), t("setImportJSONDesc")],
+					confirmLabel: t("importBtn"),
+					danger: true,
+					onConfirm: async () => {
+						try {
+							this.plugin.accounts.data = clean;
+							await this.plugin.accounts.persist();
+							new Notice(t("importDone"))
+						} catch (err) {
+							new Notice("⚠ " + t("importError") + ": " + (err instanceof Error ? err.message : String(err)))
+						}
+					}
+				}).open()
 			};
 			input.click()
 		}));
@@ -2407,7 +2447,9 @@ function dueChip(due, fallbackLabel) {
 	return c
 }
 
+/* ✅ FIX: modalRtl کلاس pa-plugin-modal را هم اضافه می‌کند تا CSS RTL مودال اعمال شود */
 function modalRtl(modal) {
+	modal.modalEl.addClass("pa-plugin-modal");
 	if (CURRENT.locale === "fa") modal.modalEl.addClass("pa-rtl-modal")
 }
 
@@ -2835,6 +2877,58 @@ function createDatePicker(calendar, fa) {
 	syncDisplay();
 	return api
 }
+
+/* ✅ FIX #22: TextPromptModal — جایگزین prompt() */
+class TextPromptModal extends Modal {
+	constructor(app, opts) {
+		super(app);
+		this.opts = opts
+	}
+	onOpen() {
+		modalRtl(this);
+		this.titleEl.setText(this.opts.title || "");
+		const form = this.contentEl.createDiv("pa-form");
+		if (this.opts.desc) form.createDiv("pa-muted").setText(this.opts.desc);
+		const input = inputText(this.opts.placeholder || "");
+		input.value = this.opts.value || "";
+		field(form, this.opts.label || "", input);
+		const err = form.createDiv("pa-form-error");
+		const fail = m => {
+			err.setText(m);
+			err.addClass("show")
+		};
+		const submit = async () => {
+			const v = input.value.trim();
+			if (!v) return fail(this.opts.requiredMsg || t("nameRequired"));
+			if (this.opts.validate) {
+				const msg = this.opts.validate(v);
+				if (msg) return fail(msg)
+			}
+			this.close();
+			await this.opts.onSubmit(v)
+		};
+		const actions = form.createDiv("pa-actions");
+		const cancel = el("button", "pa-btn", t("cancel"));
+		cancel.onclick = () => this.close();
+		const ok = el("button", "pa-btn primary", this.opts.confirmLabel || t("save"));
+		ok.onclick = submit;
+		actions.append(cancel, ok);
+		form.addEventListener("keydown", e => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				void submit()
+			}
+		});
+		this.modalEl.addClass("pa-mobile-modal");
+		this._cleanupKeyboard = attachMobileKeyboardHandler(this);
+		input.focus()
+	}
+	onClose() {
+		if (this._cleanupKeyboard) this._cleanupKeyboard();
+		this.contentEl.empty()
+	}
+}
+
 class HelpModal extends Modal {
 	constructor(app, title, body) {
 		super(app);
@@ -3224,9 +3318,9 @@ function svgEl(tag, attrs) {
 }
 
 function svgText(txt, attrs) {
-	const el = svgEl("text", attrs);
-	el.textContent = txt;
-	return el
+	const e = svgEl("text", attrs);
+	e.textContent = txt;
+	return e
 }
 
 function svgPath(d, attrs) {
@@ -4469,9 +4563,18 @@ class AccountsView extends ItemView {
 		row.onclick = () => this.openPerson(item.tx.personId);
 		return row
 	}
-	stat(parent, label, value, accent, tipKey, extraCls) {
+	/* ✅ FIX: stat با پشتیبانی از آیکون (برای آمار ثانویه در موبایل) */
+	stat(parent, label, value, accent, tipKey, extraCls, iconName) {
 		const d = parent.createDiv("pa-stat" + (accent ? " " + accent : "") + (extraCls ? " " + extraCls : ""));
-		d.createDiv("pa-stat-label").setText(label);
+		const labelRow = d.createDiv("pa-stat-label");
+		if (iconName) {
+			const iconWrap = labelRow.createSpan("pa-stat-icon");
+			setIcon(iconWrap, iconName);
+			const text = labelRow.createSpan("pa-stat-label-text");
+			text.setText(label)
+		} else {
+			labelRow.setText(label)
+		}
 		d.createDiv("pa-stat-value").setText(value);
 		if (tipKey) attachTooltip(d, t(tipKey), label, {
 			both: true
@@ -4501,11 +4604,12 @@ class AccountsView extends ItemView {
 		this.stat(primary, t("statTotalDebt"), fmt.amount(s.totalDebts), "accent-debt", "tipStatDebt");
 		this.stat(primary, t("statNet"), fmt.amount(s.net), "accent-net", "tipStatNet");
 		const secondary = body.createDiv("pa-stats-secondary");
-		this.stat(secondary, t("statPeople"), faNum(s.peopleCount), null, "tipStatPeople");
-		this.stat(secondary, t("statUnsettled"), faNum(s.unpaidCount), null, "tipStatUnsettled");
-		this.stat(secondary, t("statSettled"), faNum(s.settledCount), null, "tipStatSettled");
-		this.stat(secondary, t("statOverdue"), faNum(s.overdueCount), s.overdueCount > 0 ? "danger" : null, "tipStatOverdue");
-		this.stat(secondary, t("statDueSoon"), faNum(s.dueSoonCount), s.dueSoonCount > 0 ? "warn" : null, "tipStatDueSoon");
+		/* ✅ FIX: آیکون برای آمار ثانویه — در موبایل فقط آیکون دیده می‌شود */
+		this.stat(secondary, t("statPeople"), faNum(s.peopleCount), null, "tipStatPeople", null, "users");
+		this.stat(secondary, t("statUnsettled"), faNum(s.unpaidCount), null, "tipStatUnsettled", null, "circle-dot");
+		this.stat(secondary, t("statSettled"), faNum(s.settledCount), null, "tipStatSettled", null, "check-circle-2");
+		this.stat(secondary, t("statOverdue"), faNum(s.overdueCount), s.overdueCount > 0 ? "danger" : null, "tipStatOverdue", null, "alert-triangle");
+		this.stat(secondary, t("statDueSoon"), faNum(s.dueSoonCount), s.dueSoonCount > 0 ? "warn" : null, "tipStatDueSoon", null, "clock");
 		if (s.peopleCount === 0) {
 			const c = body.createDiv("pa-card");
 			c.createDiv("pa-empty").setText(t("getStarted"));
@@ -4802,19 +4906,32 @@ class AccountsView extends ItemView {
 			bar.appendChild(vSel)
 		}
 		const saveViewBtn = el("button", "pa-btn small", "💾 " + t("saveView"));
-		saveViewBtn.onclick = async () => {
-			const name = prompt(t("viewName"));
-			if (!name) return;
-			this.plugin.settings.savedViews.push({
-				id: randomId("v"),
-				name: name.trim(),
-				query: this.nav.search,
-				filter: this.nav.filter,
-				sort: this.nav.sort
-			});
-			await this.plugin.saveSettings();
-			new Notice(t("viewSaved"));
-			this.render()
+		/* ✅ FIX #22: جایگزینی prompt() با TextPromptModal */
+		saveViewBtn.onclick = () => {
+			new TextPromptModal(this.app, {
+				title: t("saveView"),
+				label: t("viewName"),
+				placeholder: t("viewName"),
+				requiredMsg: t("viewName"),
+				confirmLabel: t("save"),
+				onSubmit: async (name) => {
+					const trimmed = name.trim();
+					if (this.plugin.settings.savedViews.some(v => v.name === trimmed)) {
+						new Notice("⚠ " + trimmed);
+						return
+					}
+					this.plugin.settings.savedViews.push({
+						id: randomId("v"),
+						name: trimmed,
+						query: this.nav.search,
+						filter: this.nav.filter,
+						sort: this.nav.sort
+					});
+					await this.plugin.saveSettings();
+					new Notice(t("viewSaved"));
+					this.render()
+				}
+			}).open()
 		};
 		bar.appendChild(saveViewBtn);
 		attachTooltip(filterSel, t("tipFilter"), null, {
@@ -5044,6 +5161,7 @@ class AccountsView extends ItemView {
 		const [y, m] = ym.split("-").map(Number);
 		return GREG_MONTHS_EN[m - 1] + " " + y
 	}
+	/* ✅ FIX #27: استفاده از this.plugin.accounts به‌جای store تعریف‌نشده */
 	renderCashFlowContent(body, data, fmt) {
 		const wrap = body;
 		const periods = [{
@@ -5104,7 +5222,8 @@ class AccountsView extends ItemView {
 			const sub = main.createDiv("pa-row-sub");
 			sub.appendChild(el("span", "pa-chip", fmt.date(tx.dueDate)));
 			sub.appendChild(el("span", "pa-chip", typeLabel(tx.type)));
-			row.onclick = () => new TransactionDetailModal(this.app, store, tx, {}).open();
+			/* ✅ FIX: store → this.plugin.accounts */
+			row.onclick = () => new TransactionDetailModal(this.app, this.plugin.accounts, tx, {}).open();
 			detail.appendChild(row)
 		}
 	}
@@ -5204,16 +5323,28 @@ class PersonalAccountsPlugin extends Plugin {
 			if (raw && (Array.isArray(raw.people) || Array.isArray(raw.transactions))) {
 				const oldData = sanitizeData(raw);
 				if (oldData.people.length || oldData.transactions.length) {
-					const ok = confirm(CURRENT.locale === "fa" ? "داده‌های قدیمی در data.json پیدا شد. به فایل MD منتقل شود؟" : "Old data found in data.json. Migrate to MD file?");
-					if (ok) {
-						await this.repo.save(oldData);
-						await this.saveData({
-							settings: this.settings,
-							settingsVersion: this.settings.settingsVersion
-						});
-						new Notice(CURRENT.locale === "fa" ? "✅ داده‌ها به فایل MD منتقل شد" : "✅ Data migrated to MD file");
-						await this.accounts.reload()
-					}
+					/* ✅ FIX #4: جایگزینی confirm() با ConfirmModal */
+					new ConfirmModal(this.app, {
+						title: CURRENT.locale === "fa" ? "داده‌های قدیمی پیدا شد" : "Old data found",
+						lines: [
+							CURRENT.locale === "fa" ? "داده‌های قدیمی در data.json پیدا شد. به فایل MD منتقل شود؟" : "Old data found in data.json. Migrate to MD file?",
+							oldData.people.length + " " + t("tabPeople") + " · " + oldData.transactions.length + " " + t("tabTransactions")
+						],
+						confirmLabel: CURRENT.locale === "fa" ? "انتقال" : "Migrate",
+						onConfirm: async () => {
+							try {
+								await this.repo.save(oldData);
+								await this.saveData({
+									settings: this.settings,
+									settingsVersion: this.settings.settingsVersion
+								});
+								new Notice(CURRENT.locale === "fa" ? "✅ داده‌ها به فایل MD منتقل شد" : "✅ Data migrated to MD file");
+								await this.accounts.reload()
+							} catch (e) {
+								console.error("Migration error:", e)
+							}
+						}
+					}).open()
 				}
 			}
 			this.settings._migratedToMd = true;
