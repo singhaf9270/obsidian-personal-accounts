@@ -1677,3 +1677,19 @@ a.uts-channel-card:hover .uts-channel-arrow {
   .pa-settings .setting-item { flex-wrap: wrap; }
   .pa-settings .setting-item-control { max-width: 100%; }
 }
+
+/* Visible transaction and payment dates in reports, lists and details. */
+.pa-transaction-date {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  width: fit-content; max-width: 100%; margin-block: 6px;
+  padding: 5px 9px; border-radius: 8px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted); font-size: .78em; line-height: 1.6;
+}
+.pa-transaction-date-icon { display: inline-flex; color: var(--text-accent); flex-shrink: 0; }
+.pa-transaction-date-icon svg { width: 14px; height: 14px; }
+.pa-transaction-date-label { color: var(--text-muted); }
+.pa-transaction-date-value { color: var(--text-normal); font-weight: 600; font-variant-numeric: tabular-nums; unicode-bidi: isolate; }
+.pa-payment-date { border-inline-start: 3px solid var(--color-green, #4caf50); }
+.pa-payment-date .pa-transaction-date-icon { color: var(--color-green, #4caf50); }

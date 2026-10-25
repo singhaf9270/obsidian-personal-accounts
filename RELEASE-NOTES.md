@@ -1,8 +1,7 @@
-## 2.0.6
+## 2.0.7
 
-- Correct Persian settings direction, headings, labels, and control layout independently of Obsidian's interface language.
-- Add manual date entry alongside the calendar for transaction and due dates.
-- Accept Persian and English digits and YYYY/MM/DD or YYYY-MM-DD formats using the selected calendar.
-- Reject invalid dates before saving and synchronize typed dates with the calendar.
+- Show transaction dates directly in monthly reports, transaction lists, and person history.
+- Add a styled payment-date badge with calendar icon and green accent for payments and receipts.
+- Display the same date badge in transaction details, using the selected calendar and language.
 
-Validation: JavaScript syntax check and nine date-entry cases passed. In-app visual verification remains pending.
+Validation: JavaScript syntax, nine manual date entry cases and four date badge variants passed. In-app visual verification pending.

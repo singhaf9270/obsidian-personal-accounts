@@ -3206,6 +3206,22 @@ class TransactionFormModal extends Modal {
 		this.contentEl.empty()
 	}
 }
+
+function transactionDateBadge(tx, fmt) {
+	const payment = tx.type === "payment_received" || tx.type === "payment_made";
+	const fa = CURRENT.locale === "fa";
+	const label = payment ? (fa ? "تاریخ ثبت پرداخت" : "Payment date") : (fa ? "تاریخ تراکنش" : "Transaction date");
+	const badge = el("div", "pa-transaction-date" + (payment ? " pa-payment-date" : ""));
+	const icon = el("span", "pa-transaction-date-icon");
+	setIcon(icon, payment ? "calendar-check" : "calendar");
+	badge.appendChild(icon);
+	badge.appendChild(el("span", "pa-transaction-date-label", label));
+	const value = el("time", "pa-transaction-date-value", fmt.date(tx.date));
+	value.setAttribute("datetime", tx.date);
+	badge.appendChild(value);
+	return badge;
+}
+
 class TransactionDetailModal extends Modal {
 	constructor(app, store, tx, opts = {}) {
 		super(app);
@@ -3220,11 +3236,11 @@ class TransactionDetailModal extends Modal {
 		const st = this.store.ledger ? this.store.ledger.states.get(tx.id) : null;
 		const origin = tx.type === "receivable" || tx.type === "debt";
 		this.titleEl.setText(typeLabel(tx.type));
+		this.contentEl.appendChild(transactionDateBadge(tx, fmt));
 		const box = this.contentEl.createDiv("pa-detail");
 		const rows = [
 			[t("dPerson"), this.store.personName(tx.personId)],
-			[t("dAmount"), fmt.amount(tx.amount)],
-			[t("dDate"), fmt.date(tx.date)]
+			[t("dAmount"), fmt.amount(tx.amount)]
 		];
 		if (tx.category) rows.push([t("dCategory"), tx.category]);
 		if (origin && st) {
@@ -4497,6 +4513,7 @@ class AccountsView extends ItemView {
 		const main = row.createDiv("pa-row-main");
 		const title = tx.description || typeLabel(tx.type);
 		main.createDiv("pa-row-title").setText(showPerson ? store.personName(tx.personId) + " — " + title : title);
+		main.appendChild(transactionDateBadge(tx, fmt));
 		const sub = main.createDiv("pa-row-sub");
 		sub.appendChild(el("span", "pa-chip", typeLabel(tx.type)));
 		if (tx.category) sub.appendChild(el("span", "pa-chip", tx.category));
