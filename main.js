@@ -2228,6 +2228,15 @@ class PASettingTab extends PluginSettingTab {
 			containerEl
 		} = this;
 		containerEl.empty();
+    {
+      const support = containerEl.createEl("p");
+      support.createEl("a", {
+        text: this.plugin.settings.locale === "fa" ? "♡ حمایت مالی از توسعه‌دهنده" : "♡ Support development",
+        href: "https://reymit.ir/singhaf9270",
+        attr: { target: "_blank", rel: "noopener noreferrer" }
+      });
+    }
+
 		/* ✅ FIX: کلاس pa-rtl-modal روی تنظیمات حذف شد؛ تنظیمات دست‌نخورده می‌ماند */
 		const s = this.plugin.settings;
 		const save = async fn => {

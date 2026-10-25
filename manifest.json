@@ -6,5 +6,6 @@
   "description": "Manage personal debts and receivables in one central note — with dashboard, people, transactions, analytics, Jalali/Gregorian calendar, and multi-currency support.",
   "author": "saeedghobadi",
   "authorUrl": "https://github.com/saeedghobadi",
-  "isDesktopOnly": false
+  "isDesktopOnly": false,
+  "fundingUrl": "https://reymit.ir/singhaf9270"
 }
