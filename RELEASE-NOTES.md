@@ -1,6 +1,8 @@
-## Personal Accounts 2.0.5
+## 2.0.6
 
-- Restored the original channel logo artwork, including YouTube's white play symbol.
-- Placed Bale, Telegram and YouTube in three equal cards above the support section.
-- Redesigned donation support as a separate full-width panel below the channels.
-- Preserved light/dark theme colors, RTL labels and keyboard focus.
+- Correct Persian settings direction, headings, labels, and control layout independently of Obsidian's interface language.
+- Add manual date entry alongside the calendar for transaction and due dates.
+- Accept Persian and English digits and YYYY/MM/DD or YYYY-MM-DD formats using the selected calendar.
+- Reject invalid dates before saving and synchronize typed dates with the calendar.
+
+Validation: JavaScript syntax check and nine date-entry cases passed. In-app visual verification remains pending.

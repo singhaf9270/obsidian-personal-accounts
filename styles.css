@@ -1657,3 +1657,23 @@ a.uts-channel-card:hover .uts-channel-arrow {
     color: var(--pa-color-red);
   }
 }
+
+
+/* Settings follow the plugin language independently of Obsidian's language. */
+.pa-settings { text-align: start; }
+.pa-settings .setting-item { direction: inherit; gap: 16px; }
+.pa-settings .setting-item-info { margin-inline: 0 auto; min-width: 0; text-align: start; }
+.pa-settings .setting-item-control { margin-inline: auto 0; min-width: 0; gap: 8px; flex-wrap: wrap; }
+.pa-settings[dir="rtl"] .setting-item-info { margin-right: 0; margin-left: auto; }
+.pa-settings[dir="rtl"] .setting-item-control { margin-right: auto; margin-left: 0; }
+.pa-settings textarea { direction: inherit; text-align: start; max-width: 100%; }
+.pa-datefield { display: flex; flex-wrap: wrap; gap: 6px; }
+.pa-datefield input.pa-date-input { flex: 1 1 130px; width: 130px; min-width: 0; text-align: center; font-variant-numeric: tabular-nums; }
+.pa-datefield button.pa-date-btn { flex: 1 1 170px; width: auto; min-width: 0; }
+.pa-date-error { flex-basis: 100%; color: var(--text-error); font-size: .8em; }
+.pa-date-error:empty { display: none; }
+.pa-date-input[aria-invalid="true"] { border-color: var(--text-error); }
+@media (max-width: 600px) {
+  .pa-settings .setting-item { flex-wrap: wrap; }
+  .pa-settings .setting-item-control { max-width: 100%; }
+}

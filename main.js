@@ -2229,7 +2229,8 @@ class PASettingTab extends PluginSettingTab {
 		} = this;
 		containerEl.empty();
 
-		/* ✅ FIX: کلاس pa-rtl-modal روی تنظیمات حذف شد؛ تنظیمات دست‌نخورده می‌ماند */
+		containerEl.addClass("pa-settings");
+		containerEl.setAttribute("dir", this.plugin.settings.locale === "fa" ? "rtl" : "ltr");
 		const s = this.plugin.settings;
 		const save = async fn => {
 			fn();
@@ -2580,7 +2581,43 @@ function createDatePicker(calendar, fa) {
 	setIcon(icon, "calendar");
 	const label = el("span", "pa-date-label");
 	btn.append(icon, label);
-	root.appendChild(btn);
+	const input = el("input", "pa-date-input");
+	input.type = "text";
+	input.dir = "ltr";
+	input.placeholder = calendar === "jalali" ? "1405/08/03" : "2026/10/25";
+	input.setAttribute("aria-label", fa ? "تاریخ (سال/ماه/روز)" : "Date (YYYY/MM/DD)");
+	input.autocomplete = "off";
+	root.append(input, btn);
+	const error = el("div", "pa-date-error");
+	error.setAttribute("role", "status");
+	root.appendChild(error);
+	function validateInput() {
+		const raw = normalizeDigits(input.value.trim());
+		let valid = !raw;
+		let next = "";
+		const match = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(raw);
+		if (match) {
+			const [y, m, d] = match.slice(1).map(Number);
+			try {
+				if (y >= 1 && m >= 1 && m <= 12 && d >= 1 && d <= A.monthLen(y, m)) {
+					next = A.toISO({y, m, d});
+					const back = A.fromISO(next);
+					valid = !!back && back.y === y && back.m === m && back.d === d;
+				}
+			} catch (_) { valid = false; }
+		}
+		input.setAttribute("aria-invalid", String(!valid));
+		error.textContent = valid ? "" : (fa ? "تاریخ معتبر به صورت سال/ماه/روز وارد کنید." : "Enter a valid date as YYYY/MM/DD.");
+		if (valid) {
+			iso = next;
+			label.textContent = displayText();
+			view = viewFromISO(iso);
+			if (isOpen) renderCal();
+		}
+		return valid;
+	}
+	input.addEventListener("input", validateInput);
+	input.addEventListener("blur", () => { if (validateInput()) syncDisplay(); });
 	let iso = "";
 	let view = null;
 	let pop = null;
@@ -2617,6 +2654,10 @@ function createDatePicker(calendar, fa) {
 
 	function syncDisplay() {
 		label.textContent = displayText();
+		const p = iso ? A.fromISO(iso) : null;
+		input.value = p ? localizeDigits(p.y + "/" + pad2(p.m) + "/" + pad2(p.d), fa) : "";
+		input.setAttribute("aria-invalid", "false");
+		error.textContent = "";
 		btn.toggleClass("pa-empty-date", !iso)
 	}
 
@@ -2815,6 +2856,7 @@ function createDatePicker(calendar, fa) {
 	const api = {
 		el: root,
 		get: () => iso,
+		validate: validateInput,
 		set: v => {
 			iso = v || "";
 			view = viewFromISO(iso);
@@ -3105,6 +3147,8 @@ class TransactionFormModal extends Modal {
 		desc.value = this.existing && this.existing.description || "";
 		field(form, t("fDesc"), desc);
 		const submit = async () => {
+			if (!dateCtl.validate()) return;
+			if ((this.type === "receivable" || this.type === "debt") && !dueCtl.validate()) return;
 			let amountVal = parseAmount(amount.value);
 			if (amountVal === null) amountVal = evalAmountExpr(amount.value);
 			if (amountVal === null || amountVal <= 0) return fail(t("amountInvalid"));
@@ -5458,3 +5502,4 @@ function renderCreatorSupport(container, language) {
   const button = link(donate, 'ot-donation-button', 'https://reymit.ir/singhaf9270', fa ? 'حمایت مالی از سازنده در ریمیت' : 'Support the creator on Reymit');
   button.textContent = fa ? 'حمایت مالی ↗' : 'Donate ↗';
 }
+
