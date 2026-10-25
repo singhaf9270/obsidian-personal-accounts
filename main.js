@@ -1149,7 +1149,9 @@ class Fmt {
 		return localizeDigits(out, this.fa)
 	}
 	dateForNote(iso) {
-		return this.date(iso)
+		if (!iso) return "";
+		const p = this.s.calendar === "jalali" ? jalaliAdapter.fromISO(iso) : gregorianAdapter.fromISO(iso);
+		return p ? localizeDigits(p.y + "/" + pad2(p.m) + "/" + pad2(p.d), this.fa) : iso;
 	}
 }
 const isOrigin = tx => tx.type === "receivable" || tx.type === "debt";
@@ -1424,12 +1426,12 @@ function parseTable(lines, startIdx) {
 		rows: [],
 		endIdx: startIdx
 	};
-	const headers = lines[i].trim().split("|").slice(1, -1).map(h => h.trim());
+	const headers = lines[i].trim().split(/(?<!\\)\|/).slice(1, -1).map(h => h.trim());
 	i++;
 	if (i < lines.length && /^\|[\s\-:|]+\|$/.test(lines[i].trim())) i++;
 	const rows = [];
 	while (i < lines.length && lines[i].trim().startsWith("|")) {
-		const cells = lines[i].trim().split("|").slice(1, -1).map(c => c.replace(/\\\|/g, "|").trim());
+		const cells = lines[i].trim().split(/(?<!\\)\|/).slice(1, -1).map(c => c.replace(/\\\|/g, "|").trim());
 		const obj = {};
 		headers.forEach((h, idx) => {
 			obj[h] = cells[idx] || ""
@@ -1464,18 +1466,33 @@ function labelToType(label) {
 
 function parseDateString(s, calendar) {
 	if (!s || s === "—") return null;
-	const cleaned = normalizeDigits(String(s).trim());
-	const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(cleaned);
-	if (m) {
-		if (calendar === "jalali") return Cal.jToISO(Number(m[1]), Number(m[2]), Number(m[3]));
-		return m[1] + "-" + pad2(Number(m[2])) + "-" + pad2(Number(m[3]))
+	const cleaned = normalizeDigits(String(s).trim()).replace(/[\u200e\u200f\u061c]/g, "");
+	let y, m, d, kind = calendar;
+	const numeric = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(cleaned);
+	if (numeric) {
+		[y, m, d] = numeric.slice(1).map(Number);
+		// The year identifies stored Gregorian vs Jalali numeric dates after calendar changes.
+		kind = y >= 1700 ? "gregorian" : "jalali";
+	} else {
+		const named = /^(\d{1,2})\s+(.+?)\s+(\d{4})$/.exec(cleaned);
+		if (!named) return null;
+		d = Number(named[1]); y = Number(named[3]);
+		const name = named[2].toLowerCase();
+		const groups = [[JALALI_MONTHS_FA, "jalali"], [JALALI_MONTHS_EN, "jalali"],
+			[GREG_MONTHS_FA, "gregorian"], [GREG_MONTHS_EN, "gregorian"]];
+		for (const [names, type] of groups) {
+			const index = names.findIndex(n => n.toLowerCase() === name || (type === "gregorian" && n.slice(0, 3).toLowerCase() === name));
+			if (index >= 0) { m = index + 1; kind = type; break; }
+		}
+		if (!m) return null;
 	}
-	const m2 = /^(\d{4})[\/](\d{1,2})[\/](\d{1,2})$/.exec(cleaned);
-	if (m2) {
-		if (calendar === "jalali") return Cal.jToISO(Number(m2[1]), Number(m2[2]), Number(m2[3]));
-		return m2[1] + "-" + pad2(Number(m2[2])) + "-" + pad2(Number(m2[3]))
-	}
-	return null
+	try {
+		const A = kind === "jalali" ? jalaliAdapter : gregorianAdapter;
+		if (y < 1 || m < 1 || m > 12 || d < 1 || d > A.monthLen(y, m)) return null;
+		const iso = A.toISO({y, m, d});
+		const back = A.fromISO(iso);
+		return back && back.y === y && back.m === m && back.d === d ? iso : null;
+	} catch (_) { return null; }
 }
 
 function parsePeopleDetails(lines, startIdx, endIdx) {
@@ -1493,7 +1510,7 @@ function parsePeopleDetails(lines, startIdx, endIdx) {
 		people,
 		byName
 	};
-	const headerCells = lines[i].trim().split("|").slice(1, -1).map(h => h.trim());
+	const headerCells = lines[i].trim().split(/(?<!\\)\|/).slice(1, -1).map(h => h.trim());
 	i++;
 	if (i < endIdx && /^\|[\s\-:|]+\|$/.test(lines[i].trim())) i++;
 	const idxOf = candidates => {
@@ -1652,7 +1669,8 @@ function parseMarkdownData(content, calendar) {
 		if (!type) continue;
 		const amount = cleanNumber(amountRaw);
 		if (!amount || amount <= 0) continue;
-		const dateIso = parseDateString(dateRaw, calendar) || todayISO();
+		const dateIso = parseDateString(dateRaw, calendar);
+		if (!dateIso) throw new Error((CURRENT.locale === "fa" ? "تاریخ تراکنش نامعتبر است؛ فایل تغییر نکرد: " : "Invalid transaction date; file unchanged: ") + String(dateRaw || ""));
 		let person = personByName.get(personName);
 		if (!person) {
 			person = data.people.find(p => p.name === personName);
@@ -1671,6 +1689,7 @@ function parseMarkdownData(content, calendar) {
 		}
 		const origin = type === "receivable" || type === "debt";
 		const dueIso = origin ? parseDateString(dueRaw, calendar) : null;
+		if (origin && dueRaw.trim() && dueRaw.trim() !== "—" && !dueIso) throw new Error("Invalid due date: " + dueRaw);
 		/* ✅ FIX #2: createdAt پایدار بر اساس اندیس تراکنش (نه Date.now()) */
 		const idx = data.transactions.length + 1;
 		data.transactions.push({
@@ -1785,7 +1804,7 @@ class PluginDataStore {
 			return parseMarkdownData(content, this.calendar)
 		} catch (e) {
 			console.error("PA parse error:", e);
-			return emptyData()
+			throw e
 		}
 	}
 	async save(data) {
@@ -1891,6 +1910,83 @@ function deleteTransaction(data, id) {
 
 function exportToJSON(data) {
 	return JSON.stringify(data, null, 2)
+}
+
+function parseCSVRows(text) {
+ const s = String(text).replace(/^\uFEFF/, '');
+ const first = s.split(/\r?\n/, 1)[0];
+ const delimiter = [',', ';', '\t'].sort((a,b) => first.split(b).length-first.split(a).length)[0];
+ const rows=[]; let row=[], cell='', quoted=false, ended=false;
+ for(let i=0;i<s.length;i++) {
+  const ch=s[i];
+  if(quoted) { if(ch==='"') { if(s[i+1]==='"'){cell+='"';i++;} else {quoted=false;ended=true;} } else cell+=ch; continue; }
+  if(ch==='"') { if(cell || ended) throw new Error('Invalid CSV quote'); quoted=true; }
+  else if(ch===delimiter) {row.push(cell);cell='';ended=false;}
+  else if(ch==='\r'||ch==='\n') {if(ch==='\r'&&s[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell='';ended=false;}
+  else {if(ended && ch.trim()) throw new Error('Invalid CSV cell');cell+=ch;}
+ }
+ if(quoted) throw new Error('Unclosed CSV quote');
+ row.push(cell);if(row.some(x=>x.trim()))rows.push(row);
+ return rows;
+}
+function parseCSVTransactions(text, calendar) {
+ const rows=parseCSVRows(text); if(rows.length<2) throw new Error(CURRENT.locale==='fa'?'فایل باید شامل عنوان ستون‌ها و حداقل یک تراکنش باشد.':'Headers and at least one transaction are required.');
+ const aliases={date:['date','تاریخ','تاریخ تراکنش'],person:['person','name','شخص','نام','نام شخص'],type:['type','نوع'],amount:['amount','مبلغ'],category:['category','دسته','دسته‌بندی'],description:['description','شرح','توضیحات'],due:['due','due date','duedate','سررسید']};
+ const heads=rows[0].map(x=>x.trim().toLowerCase());const columns={};
+ for(const [key,names] of Object.entries(aliases)){columns[key]=heads.findIndex(h=>names.includes(h));}
+ for(const key of ['date','person','type','amount']) if(columns[key]<0)throw new Error((CURRENT.locale==='fa'?'ستون ضروری پیدا نشد: ':'Missing column: ')+aliases[key].join(' / '));
+ const result=[];
+ for(let i=1;i<rows.length;i++) {
+  const row=rows[i],get=k=>columns[k]<0?'':(row[columns[k]]||'').trim();
+  const date=parseDateString(get('date'),calendar), type=labelToType(get('type')), amount=cleanNumber(get('amount')), person=get('person');
+  const dueRaw=get('due'),due=dueRaw&&dueRaw!=='—'?parseDateString(dueRaw,calendar):null;
+  if(row.length!==heads.length || !date || !type || !person || amount<=0 || (dueRaw&&dueRaw!=='—'&&!due))throw new Error((CURRENT.locale==='fa'?'اطلاعات نامعتبر در ردیف ':'Invalid data on row ')+(i+1));
+  result.push({date,type,amount,person,category:get('category')||undefined,description:get('description')||undefined,dueDate:isOrigin({type})?due||undefined:undefined});
+ }
+ return result;
+}
+function mergeCSVTransactions(existing, incoming) {
+ const data=JSON.parse(JSON.stringify(existing));const names=new Map(data.people.map(p=>[p.id,p.name]));
+ const key=(tx,name)=>JSON.stringify([name,tx.date,tx.type,tx.amount,tx.category||'',tx.description||'',tx.dueDate||'']);
+ const seen=new Set(data.transactions.map(tx=>key(tx,names.get(tx.personId))));let added=0,skipped=0;
+ for(const item of incoming) {
+  const fingerprint=key(item,item.person);if(seen.has(fingerprint)){skipped++;continue;}
+  let person=data.people.find(p=>p.name===item.person);
+  if(!person){person={id:randomId('p'),name:item.person,tags:[],createdAt:Date.now(),updatedAt:Date.now()};data.people.push(person);}
+  const {person:_,...fields}=item;
+  data.transactions.push({...fields,id:randomId('t'),personId:person.id,createdAt:Date.now(),updatedAt:Date.now()});seen.add(fingerprint);added++;
+ }
+ return {data,added,skipped};
+}
+class CSVImportModal extends Modal {
+ constructor(app, plugin, incoming, onDone){super(app);this.plugin=plugin;this.incoming=incoming;this.onDone=onDone;}
+ onOpen(){
+  modalRtl(this);const fa=CURRENT.locale==='fa';this.titleEl.setText(fa?'پیش‌نمایش ورود CSV':'CSV import preview');
+  const preview=mergeCSVTransactions(this.plugin.accounts.data,this.incoming);
+  this.contentEl.createDiv('pa-muted').setText(fa?`${preview.added} تراکنش جدید · ${preview.skipped} مورد تکراری کنار گذاشته شد`:`${preview.added} new transactions · ${preview.skipped} duplicates skipped`);
+  this.contentEl.createDiv('pa-hint').setText(fa?'اطلاعات به داده‌های فعلی اضافه می‌شود. پیش از ثبت، نسخهٔ پشتیبان خودکار ساخته می‌شود.':'Appends to current data. An automatic backup is saved before importing.');
+  const scroll=this.contentEl.createDiv('pa-csv-preview');
+  const table=scroll.createEl('table');const header=table.createEl('tr');
+  for(const title of [t('thDate'),t('thPerson'),t('thType'),t('thAmount')])header.createEl('th',{text:title});
+  for(const tx of this.incoming.slice(0,30)){const row=table.createEl('tr');for(const value of [this.plugin.fmt.date(tx.date),tx.person,typeLabel(tx.type),this.plugin.fmt.amount(tx.amount)])row.createEl('td',{text:value});}
+  if(this.incoming.length>30)this.contentEl.createDiv('pa-hint').setText(fa?'نمایش ۳۰ ردیف اول؛ همهٔ ردیف‌ها وارد می‌شوند.':'First 30 rows shown; all rows will be imported.');
+  const actions=this.contentEl.createDiv('pa-actions');const cancel=actions.createEl('button',{text:t('cancel')});cancel.onclick=()=>this.close();
+  const button=actions.createEl('button',{cls:'mod-cta',text:fa?'تأیید و افزودن':'Confirm and append'});button.disabled=!preview.added;
+  button.onclick=async()=>{
+   button.disabled=true;
+   try {
+    await this.plugin.accounts.reload();if(this.plugin.accounts.error)throw new Error(this.plugin.accounts.error);
+    const next=mergeCSVTransactions(this.plugin.accounts.data,this.incoming);
+    if(!next.added){new Notice(fa?'همهٔ موارد قبلاً ثبت شده‌اند.':'All records already exist.');this.close();return;}
+    const backup=normalizePath(this.plugin.repo.filePath()+'.csv-backup-'+Date.now()+'.json');
+    await this.app.vault.create(backup,JSON.stringify(this.plugin.accounts.data,null,2));
+    await this.plugin.repo.save(next.data);
+    this.plugin.accounts.data=next.data;this.plugin.accounts.recompute();this.plugin.accounts.emit();
+    new Notice((fa?'تراکنش‌های افزوده‌شده: ':'Transactions added: ')+next.added);this.close();if(this.onDone)this.onDone();
+   }catch(e){new Notice(String(e.message||e));button.disabled=false;}
+  };
+ }
+ onClose(){this.contentEl.empty();}
 }
 
 function exportToCSV(data, fmt) {
@@ -2099,6 +2195,7 @@ class AccountsStore {
 		if (!this.loaded) await this.reload()
 	}
 	async persist() {
+		if (this.error) throw new Error(this.error);
 		try {
 			await this.plugin.repo.save(this.data);
 			this.error = null
@@ -2309,6 +2406,23 @@ class PASettingTab extends PluginSettingTab {
 				new Notice("⚠ " + (e instanceof Error ? e.message : String(e)))
 			}
 		}));
+
+		const csvFa = s.locale === "fa";
+		new Setting(containerEl).setName(csvFa ? "ورود اطلاعات از CSV" : "Import CSV")
+		.setDesc(csvFa ? "افزودن تراکنش‌ها با پیش‌نمایش، تشخیص موارد تکراری و پشتیبان خودکار. ستون‌های ضروری: تاریخ، شخص، نوع، مبلغ. فایل UTF-8 خروجی همین افزونه نیز پذیرفته می‌شود." : "Append transactions with preview, duplicate detection and automatic backup. Required columns: Date, Person, Type, Amount. Accepts this plugin’s UTF-8 CSV exports.")
+		.addButton(b => b.setButtonText(t("importBtn")).onClick(() => {
+			const input = document.createElement("input");input.type = "file"; input.accept = ".csv,text/csv";
+			input.onchange = async () => {
+				const file = input.files && input.files[0];if (!file) return;
+				try {
+					await this.plugin.accounts.reload();
+					if (this.plugin.accounts.error) throw new Error(this.plugin.accounts.error);
+					const rows = parseCSVTransactions(await file.text(), s.calendar);
+					new CSVImportModal(this.app, this.plugin, rows).open();
+				} catch(e) { new Notice(t("importError") + ": " + String(e.message || e)); }
+			};input.click();
+		}));
+
 		/* ✅ FIX #32: ایمپورت JSON با ConfirmModal */
 		new Setting(containerEl).setName(t("setImportJSON")).setDesc(t("setImportJSONDesc")).addButton(b => b.setButtonText(t("importBtn")).onClick(() => {
 			const input = document.createElement("input");
@@ -3210,12 +3324,13 @@ class TransactionFormModal extends Modal {
 function transactionDateBadge(tx, fmt) {
 	const payment = tx.type === "payment_received" || tx.type === "payment_made";
 	const fa = CURRENT.locale === "fa";
-	const label = payment ? (fa ? "تاریخ ثبت پرداخت" : "Payment date") : (fa ? "تاریخ تراکنش" : "Transaction date");
+	const label = fa ? "تاریخ تراکنش" : "Transaction date";
 	const badge = el("div", "pa-transaction-date" + (payment ? " pa-payment-date" : ""));
 	const icon = el("span", "pa-transaction-date-icon");
 	setIcon(icon, payment ? "calendar-check" : "calendar");
 	badge.appendChild(icon);
-	badge.appendChild(el("span", "pa-transaction-date-label", label));
+	badge.setAttribute("aria-label", label + ": " + fmt.date(tx.date));
+	badge.setAttribute("title", label);
 	const value = el("time", "pa-transaction-date-value", fmt.date(tx.date));
 	value.setAttribute("datetime", tx.date);
 	badge.appendChild(value);
@@ -5519,4 +5634,5 @@ function renderCreatorSupport(container, language) {
   const button = link(donate, 'ot-donation-button', 'https://reymit.ir/singhaf9270', fa ? 'حمایت مالی از سازنده در ریمیت' : 'Support the creator on Reymit');
   button.textContent = fa ? 'حمایت مالی ↗' : 'Donate ↗';
 }
+
 

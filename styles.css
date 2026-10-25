@@ -1693,3 +1693,22 @@ a.uts-channel-card:hover .uts-channel-arrow {
 .pa-transaction-date-value { color: var(--text-normal); font-weight: 600; font-variant-numeric: tabular-nums; unicode-bidi: isolate; }
 .pa-payment-date { border-inline-start: 3px solid var(--color-green, #4caf50); }
 .pa-payment-date .pa-transaction-date-icon { color: var(--color-green, #4caf50); }
+
+/* Preview: understated date metadata, with no repeated title or payment label. */
+.pa-row-main .pa-transaction-date,
+.modal-content > .pa-transaction-date {
+ display: inline-flex; align-items: center; gap: 6px;
+ border: 0; border-inline-start: 0; border-radius: 0;
+ background: transparent; padding: 0; margin-block: 5px 7px;
+ font-size: .8em; line-height: 1.7; color: var(--text-muted);
+}
+.pa-row-main .pa-transaction-date .pa-transaction-date-value,
+.modal-content > .pa-transaction-date .pa-transaction-date-value {
+ color: var(--text-muted); font-weight: 500;
+}
+.pa-row-main .pa-transaction-date .pa-transaction-date-icon,
+.modal-content > .pa-transaction-date .pa-transaction-date-icon { color: var(--text-faint); }
+.pa-csv-preview { max-height: 340px; overflow: auto; margin-block: 16px; border: 1px solid var(--background-modifier-border); border-radius: 10px; }
+.pa-csv-preview table { width: 100%; border-collapse: collapse; font-size: .85em; }
+.pa-csv-preview th, .pa-csv-preview td { text-align: start; padding: 9px 12px; border-bottom: 1px solid var(--background-modifier-border); white-space: nowrap; }
+.pa-csv-preview th { background: var(--background-secondary); font-weight: 600; }

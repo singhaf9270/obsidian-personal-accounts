@@ -1,7 +1,7 @@
 {
   "id": "personal-accounts",
   "name": "Personal Accounts",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "minAppVersion": "1.0.0",
   "description": "Manage personal debts and receivables in one central note — with dashboard, people, transactions, analytics, Jalali/Gregorian calendar, and multi-currency support.",
   "author": "saeedghobadi",
