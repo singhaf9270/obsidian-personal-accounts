@@ -2228,14 +2228,6 @@ class PASettingTab extends PluginSettingTab {
 			containerEl
 		} = this;
 		containerEl.empty();
-    {
-      const support = containerEl.createEl("p");
-      support.createEl("a", {
-        text: this.plugin.settings.locale === "fa" ? "♡ حمایت مالی از توسعه‌دهنده" : "♡ Support development",
-        href: "https://reymit.ir/singhaf9270",
-        attr: { target: "_blank", rel: "noopener noreferrer" }
-      });
-    }
 
 		/* ✅ FIX: کلاس pa-rtl-modal روی تنظیمات حذف شد؛ تنظیمات دست‌نخورده می‌ماند */
 		const s = this.plugin.settings;
@@ -2379,60 +2371,7 @@ class PASettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName(t("setOpenAfterAdd")).addToggle(tg => tg.setValue(s.openAfterAdd).onChange(v => save(() => {
 			s.openAfterAdd = v
 		})));
-		const lang = CURRENT.locale;
-		containerEl.createEl("h3", {
-			text: lang === "fa" ? "درباره" : "About"
-		});
-		const wrap = containerEl.createDiv({
-			cls: "uts-channel-promo-wrap"
-		});
-		const channels = [{
-			label: lang === "fa" ? "کانال بله" : "Bale Channel",
-			handle: "@obsidiantut",
-			url: "https://ble.ir/obsidiantut",
-			color: "#22A06B",
-			svg: `<svg viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#22A06B"/><path d="M20 33 L28 41 L46 23" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-		}, {
-			label: lang === "fa" ? "کانال تلگرام" : "Telegram Channel",
-			handle: "@obsidiantut",
-			url: "https://t.me/obsidiantut",
-			color: "#229ED9",
-			svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>`
-		}, {
-			label: lang === "fa" ? "کانال یوتیوب" : "YouTube Channel",
-			handle: "@obsidiantut",
-			url: "https://youtube.com/@obsidiantut",
-			color: "#FF0000",
-			svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"/></svg>`
-		}];
-		for (const ch of channels) {
-			const a = wrap.createEl("a", {
-				cls: "uts-channel-card",
-				href: ch.url
-			});
-			a.setAttr("target", "_blank");
-			a.setAttr("rel", "noopener noreferrer");
-			a.style.setProperty("--uts-channel-color", ch.color);
-			const iconWrap = a.createDiv({
-				cls: "uts-channel-icon"
-			});
-			iconWrap.innerHTML = ch.svg;
-			const meta = a.createDiv({
-				cls: "uts-channel-meta"
-			});
-			meta.createDiv({
-				cls: "uts-channel-label",
-				text: ch.label
-			});
-			meta.createDiv({
-				cls: "uts-channel-handle",
-				text: ch.handle
-			});
-			const arrow = a.createDiv({
-				cls: "uts-channel-arrow"
-			});
-			setIcon(arrow, "arrow-up-right")
-		}
+		renderCreatorSupport(containerEl, this.plugin.settings.locale || 'fa');
 	}
 }
 
@@ -5426,3 +5365,57 @@ class PersonalAccountsPlugin extends Plugin {
 }
 module.exports = PersonalAccountsPlugin;
 module.exports.default = PersonalAccountsPlugin;
+
+
+
+// Shared settings footer: local styling, no requests until a link is opened.
+function renderCreatorSupport(container, language) {
+  function element(parent, tag, options = {}) {
+    const node = parent.ownerDocument.createElement(tag);
+    if (options.cls) node.className = options.cls;
+    if (options.text !== undefined) node.textContent = options.text;
+    if (options.href) node.setAttribute('href', options.href);
+    for (const [key, value] of Object.entries(options.attr || {})) node.setAttribute(key, value);
+    parent.appendChild(node);
+    return node;
+  }
+  const fa = language === 'fa';
+  const root = element(container, 'section', { cls: 'ot-support', attr: { dir: fa ? 'rtl' : 'ltr', 'aria-label': fa ? 'ارتباط با ما و حمایت' : 'Connect and support' } });
+  element(root, 'style', { text: `
+    .ot-support{margin-block:28px 12px;padding:20px;border:1px solid var(--background-modifier-border);border-radius:18px;background:var(--background-secondary);color:var(--text-normal)}
+    .ot-support h3{margin:0 0 8px;font-size:1.1em;color:var(--text-normal)}
+    .ot-support p{margin:0 0 18px;color:var(--text-muted);line-height:1.8}
+    .ot-support .ot-support-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+    .ot-support a.ot-support-card{display:flex;align-items:center;gap:12px;min-width:0;min-height:80px;padding:14px;border:1px solid var(--background-modifier-border);border-inline-start:4px solid var(--ot-brand);border-radius:12px;background:var(--background-primary);color:var(--text-normal);text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.035)}
+    .ot-support .ot-support-icon{display:flex;align-items:center;justify-content:center;flex:0 0 40px;height:40px;border-radius:12px;background:var(--background-secondary);color:var(--ot-brand)}
+    .ot-support .ot-support-icon svg{width:23px;height:23px}
+    .ot-support .ot-support-info{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+    .ot-support .ot-support-label{font-weight:600;line-height:1.5}
+    .ot-support .ot-support-detail{font-size:.8em;color:var(--text-muted);overflow-wrap:anywhere}
+    .ot-support .ot-support-action{font-size:.8em;color:var(--text-muted);flex-shrink:0}
+    .ot-support a.ot-support-donate{background:linear-gradient(125deg,var(--background-primary),var(--background-secondary));border-color:var(--background-modifier-border);border-inline-start-color:var(--ot-brand)}
+    .ot-support .ot-support-donate .ot-support-action{padding:7px 10px;border-radius:8px;background:var(--interactive-accent);color:var(--text-on-accent)}
+    .ot-support a.ot-support-card:focus-visible{outline:2px solid var(--interactive-accent);outline-offset:3px}
+  ` });
+  element(root, 'h3', { text: fa ? 'ارتباط با ما' : 'Connect with us' });
+  element(root, 'p', { text: fa ? 'آموزش‌ها، تازه‌ها و پشتیبانی؛ همراه شما در دنیای ابسیدین.' : 'Tutorials, updates and support for your Obsidian journey.' });
+  const grid = element(root, 'div', { cls: 'ot-support-grid' });
+  const links = [
+    ['bale', 'message-circle', '#22a06b', fa ? 'کانال بله' : 'Bale Channel', 'https://ble.ir/obsidiantut'],
+    ['telegram', 'send', '#229ed9', fa ? 'کانال تلگرام' : 'Telegram Channel', 'https://t.me/obsidiantut'],
+    ['youtube', 'youtube', '#e5484d', fa ? 'کانال یوتیوب' : 'YouTube Channel', 'https://youtube.com/@obsidiantut'],
+    ['donate', 'heart', '#b879cd', fa ? 'حمایت از توسعهٔ افزونه‌ها' : 'Support plugin development', 'https://reymit.ir/singhaf9270']
+  ];
+  for (const [id, icon, color, label, url] of links) {
+    const donate = id === 'donate';
+    const card = element(grid, 'a', { cls: 'ot-support-card' + (donate ? ' ot-support-donate' : ''), href: url, attr: { target: '_blank', rel: 'noopener noreferrer', 'aria-label': label } });
+    card.style.setProperty('--ot-brand', color);
+    const iconEl = element(card, 'span', { cls: 'ot-support-icon', attr: { 'aria-hidden': 'true' } });
+    require('obsidian').setIcon(iconEl, icon);
+    const info = element(card, 'span', { cls: 'ot-support-info' });
+    element(info, 'span', { cls: 'ot-support-label', text: label });
+    const detail = element(info, 'span', { cls: 'ot-support-detail', text: donate ? (fa ? 'با همراهی شما، بهتر می‌سازیم.' : 'Your support keeps us building.') : '@obsidiantut' });
+    if (!donate) detail.setAttribute('dir', 'ltr');
+    element(card, 'span', { cls: 'ot-support-action', text: donate ? (fa ? 'حمایت مالی' : 'Donate') : (fa ? 'عضویت ↗' : 'Join ↗') });
+  }
+}
