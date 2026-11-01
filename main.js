@@ -1469,7 +1469,7 @@ function parseDateString(s, calendar) {
 	const raw = normalizeDigits(String(s).trim()).replace(/[\u200e\u200f\u061c]/g, "");
 	// Prefer the canonical Gregorian date embedded in notes created by this plugin.
 	// This keeps the exact day stable when the display calendar is changed.
-	const canonical = /<!--\\s*PA-ISO:(\\d{4}-\\d{2}-\\d{2})\\s*-->/.exec(raw);
+	const canonical = /<!--\s*PA-ISO:(\d{4}-\d{2}-\d{2})\s*-->/.exec(raw);
 	if (canonical) {
 		const iso = canonical[1];
 		const p = gregParts(iso);
