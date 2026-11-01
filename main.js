@@ -3172,173 +3172,54 @@ class PersonModal extends Modal {
 }
 class TransactionFormModal extends Modal {
 	constructor(app, store, existing, opts = {}) {
-		super(app);
-		this.store = store;
-		this.existing = existing;
-		this.opts = opts;
-		this.type = existing ? existing.type : opts.preset && opts.preset.type || "receivable";
-		this._calCloses = []
+		super(app);this.store=store;this.existing=existing;this.opts=opts;this.type=existing?existing.type:(opts.preset&&opts.preset.type)||"receivable";this._calCloses=[];this.isMoney=!!(existing&&["income","expense","transfer"].includes(existing.type))||["income","expense","transfer"].includes(this.type);
 	}
 	onOpen() {
-		modalRtl(this);
-		const preset = this.opts.preset || {};
-		const editing = !!this.existing;
-		const fa = CURRENT.locale === "fa";
-		const calendar = this.store.plugin.settings.calendar;
-		Cal.ensure(this.store.plugin.app);
-		this.titleEl.setText(editing ? t("editTxTitle") : t("addTxTitle"));
-		const form = this.contentEl.createDiv("pa-form");
-		const err = form.createDiv("pa-form-error");
-		const fail = m => {
-			err.setText(m);
-			err.addClass("show")
+		modalRtl(this);const preset=this.opts.preset||{},editing=!!this.existing,fa=CURRENT.locale==="fa",calendar=this.store.plugin.settings.calendar;Cal.ensure(this.store.plugin.app);
+		this.titleEl.setText(editing?t("editTxTitle"):t("addTxTitle"));
+		const form=this.contentEl.createDiv("pa-form pa-unified-transaction-form"),err=form.createDiv("pa-form-error"),fail=m=>{err.setText(m);err.addClass("show");};
+		const fieldEl=(label,input)=>field(form,label,input);
+		const amount=inputText(t("phAmount"));amount.inputMode="decimal";amount.value=editing?String(this.existing.amount):preset.amount!=null?String(preset.amount):"";attachAmountInput(amount,()=>CURRENT.locale==="fa").refresh();fieldEl(t("fAmount"),amount);
+		const typeWrap=form.createDiv("pa-field");typeWrap.createEl("label").setText(t("fType"));const seg=typeWrap.createDiv("pa-seg");
+		const typeOptions=preset.paymentOnly?["payment_received","payment_made"]:["receivable","debt","payment_received","payment_made","income","expense","transfer"],segBtns=new Map();
+		for(const ty of typeOptions){const b=el("button","pa-btn"+(ty===this.type?" active":""),typeLabel(ty));b.type="button";b.onclick=()=>{this.type=ty;segBtns.forEach((bb,tt)=>bb.toggleClass("active",tt===ty));syncVisibility();};segBtns.set(ty,b);seg.appendChild(b);}
+		const isMoney=()=>["income","expense","transfer"].includes(this.type),isOrigin=()=>["receivable","debt"].includes(this.type);
+		const lockedPersonId=preset.lockPerson?(this.existing?this.existing.personId:preset.personId||""):"";
+		const personWrap=form.createDiv("pa-field");personWrap.createEl("label").setText(t("fPerson"));let personInput=null;
+		if(lockedPersonId)personWrap.appendChild(el("span","pa-locked",this.store.personName(lockedPersonId)));
+		else{personInput=inputText(t("phPerson"));personInput.setAttribute("list","pa-person-options");personInput.value=this.existing&&!this.isMoney?this.store.personName(this.existing.personId):preset.personName||"";personWrap.appendChild(personInput);const dl=document.createElement("datalist");dl.id="pa-person-options";for(const p of this.store.data.people)dl.appendChild(new Option(p.name,p.name));personWrap.appendChild(dl);}
+		const dateCtl=createDatePicker(calendar,fa);this._calCloses.push(dateCtl.close);fieldEl(t("fDate"),dateCtl.el);dateCtl.set(editing?this.existing.date:todayISO());
+		const dueCtl=createDatePicker(calendar,fa);this._calCloses.push(dueCtl.close);const dueField=fieldEl(t("fDue"),dueCtl.el);dueCtl.set(editing&&this.existing.dueDate?this.existing.dueDate:"");
+		const cats=Array.isArray(this.store.plugin.settings.categories)?this.store.plugin.settings.categories:[],catSel=document.createElement("select");catSel.appendChild(new Option(t("noCategory"),""));for(const cat of cats)catSel.appendChild(new Option(cat,cat));catSel.value=this.existing&&this.existing.category||"";const catField=fieldEl(t("fCategory"),catSel);
+		const desc=inputText(t("phDesc"));desc.value=this.existing?(this.existing.description||this.existing.title||""):preset.description||"";const descField=fieldEl(t("fDesc"),desc);
+		const moneyStore=this.store.plugin.money;const accountField=form.createDiv("pa-field");accountField.createEl("label",{text:"حساب (اختیاری)"});const accountSel=accountField.createEl("select");accountSel.createEl("option",{value:"",text:"بدون انتخاب حساب"});for(const a of moneyStore.accounts.filter(x=>x.active))accountSel.createEl("option",{value:a.id,text:a.name+" · "+a.currency});accountSel.value=this.existing&&this.existing.account||"";
+		const destField=form.createDiv("pa-field");destField.createEl("label",{text:"حساب مقصد"});const destSel=destField.createEl("select");destSel.createEl("option",{value:"",text:"انتخاب حساب مقصد"});for(const a of moneyStore.accounts.filter(x=>x.active))destSel.createEl("option",{value:a.id,text:a.name+" · "+a.currency});destSel.value=this.existing&&this.existing.destination||"";
+		let linkWrap=null,linkSel=null;
+		if(!editing){linkWrap=form.createDiv("pa-field");linkWrap.createEl("label",{text:"اتصال اختیاری به بدهی یا طلب"});linkSel=linkWrap.createEl("select");linkSel.createEl("option",{value:"",text:"بدون اتصال"});void this.store.ready().then(()=>refreshLinks());}
+		const refreshLinks=()=>{if(!linkSel)return;linkSel.empty();linkSel.createEl("option",{value:"",text:"بدون اتصال"});const expected=this.type==="income"?"receivable":this.type==="expense"?"debt":"";if(!expected||!accountSel.value)return;for(const tx of this.store.data.transactions){const state=this.store.ledger&&this.store.ledger.states.get(tx.id);if(state&&state.remaining>EPS&&tx.type===expected)linkSel.createEl("option",{value:tx.id,text:this.store.personName(tx.personId)+" — "+(tx.description||tx.type)+" ("+this.store.fmt.amount(state.remaining)+")"});}};
+		const syncVisibility=()=>{personWrap.toggleClass("pa-hidden",isMoney());dueField.toggleClass("pa-hidden",!isOrigin());accountField.toggleClass("pa-hidden",!isMoney());destField.toggleClass("pa-hidden",this.type!=="transfer");if(linkWrap)linkWrap.toggleClass("pa-hidden",!isMoney()||!accountSel.value||this.type==="transfer");catField.toggleClass("pa-hidden",this.type==="transfer");descField.toggleClass("pa-hidden",this.type==="transfer");refreshLinks();};
+		accountSel.onchange=syncVisibility;syncVisibility();
+		const submit=async()=>{
+			try{
+				if(!dateCtl.validate())return;if(isOrigin()&&!dueCtl.validate())return;
+				const amountVal=parseAmount(amount.value)??evalAmountExpr(amount.value);if(amountVal===null||amountVal<=0)return fail(t("amountInvalid"));
+				if(isMoney()){
+					const d={type:this.type,title:desc.value.trim(),amount:amountVal,date:dateCtl.get()||todayISO(),account:accountSel.value||"",destination:destSel.value||"",category:catSel.value||"",note:"",linkedTx:linkSel?linkSel.value:""};
+					if(this.type==="transfer"&&(!d.account||!d.destination))return fail("برای انتقال وجه، حساب مبدأ و مقصد را انتخاب کنید.");
+					if(editing)await moneyStore.updateTx(this.existing.id,d);else await moneyStore.addTx(d);
+				}else{
+					let personId=lockedPersonId;if(!personId){const nameVal=personInput.value.trim();if(!nameVal)return fail(t("personRequired"));personId=(await this.store.ensurePerson(nameVal)).id;}
+					const common={type:this.type,amount:amountVal,date:dateCtl.get()||todayISO(),category:catSel.value||undefined,description:desc.value.trim()||undefined,dueDate:isOrigin()&&dueCtl.get()?dueCtl.get():undefined};
+					if(editing)await this.store.updateTransaction(this.existing.id,Object.assign({},common,{personId}));else await this.store.addTransaction(Object.assign({},common,{personId,linkedTo:preset.linkedTo}));
+				}
+				new Notice(editing?t("txUpdated"):t("txAdded"));if(this.opts.onSaved)this.opts.onSaved();this.close();
+			}catch(e){fail(String(e&&e.message||e));}
 		};
-		const amount = inputText(t("phAmount"));
-		amount.inputMode = "decimal";
-		amount.value = editing ? String(this.existing.amount) : preset.amount != null ? String(preset.amount) : "";
-		const amtFmt = attachAmountInput(amount, () => CURRENT.locale === "fa");
-		amtFmt.refresh();
-		field(form, t("fAmount"), amount);
-		attachTooltip(amount, t("tipAmount"), null, {
-			both: true,
-			delay: 700
-		});
-		let dueField = null;
-		const updateDueVisibility = () => {
-			if (!dueField) return;
-			const origin = this.type === "receivable" || this.type === "debt";
-			dueField.toggleClass("pa-hidden", !origin)
-		};
-		const typeWrap = form.createDiv("pa-field");
-		typeWrap.createEl("label").setText(t("fType"));
-		const seg = el("div", "pa-seg");
-		typeWrap.appendChild(seg);
-		const typeOptions = preset.paymentOnly ? ["payment_received", "payment_made"] : ["receivable", "debt", "payment_received", "payment_made"];
-		const segBtns = new Map;
-		for (const ty of typeOptions) {
-			const b = el("button", "pa-btn" + (ty === this.type ? " active" : ""), typeLabel(ty));
-			b.setAttribute("data-type", ty);
-			b.onclick = () => {
-				this.type = ty;
-				segBtns.forEach((bb, tt) => bb.toggleClass("active", tt === ty));
-				updateDueVisibility()
-			};
-			segBtns.set(ty, b);
-			seg.appendChild(b)
-		}
-		const lockedPersonId = preset.lockPerson ? this.existing ? this.existing.personId : preset.personId || "" : "";
-		const personWrap = form.createDiv("pa-field");
-		personWrap.createEl("label").setText(t("fPerson"));
-		let personInput = null;
-		if (lockedPersonId) {
-			personWrap.appendChild(el("span", "pa-locked", this.store.personName(lockedPersonId)))
-		} else {
-			personInput = inputText(t("phPerson"));
-			personInput.setAttribute("list", "pa-person-options");
-			personInput.value = this.existing ? this.store.personName(this.existing.personId) : preset.personName || "";
-			personWrap.appendChild(personInput);
-			const dl = document.createElement("datalist");
-			dl.id = "pa-person-options";
-			for (const p of this.store.data.people) dl.appendChild(new Option(p.name, p.name));
-			personWrap.appendChild(dl)
-		}
-		const dateCtl = createDatePicker(calendar, fa);
-		this._calCloses.push(dateCtl.close);
-		field(form, t("fDate"), dateCtl.el);
-		dateCtl.set(editing ? this.existing.date : todayISO());
-		attachTooltip(dateCtl.el, t("tipDatePicker"), null, {
-			delay: 700
-		});
-		const dueCtl = createDatePicker(calendar, fa);
-		this._calCloses.push(dueCtl.close);
-		dueField = field(form, t("fDue"), dueCtl.el);
-		dueCtl.set(editing && this.existing.dueDate ? this.existing.dueDate : "");
-		updateDueVisibility();
-		const catSel = document.createElement("select");
-		catSel.appendChild(new Option(t("noCategory"), ""));
-		for (const c of this.store.plugin.settings.categories) {
-			catSel.appendChild(new Option(c, c))
-		}
-		catSel.value = this.existing && this.existing.category || "";
-		field(form, t("fCategory"), catSel);
-		const desc = inputText(t("phDesc"));
-		desc.value = this.existing && this.existing.description || "";
-		field(form, t("fDesc"), desc);
-		const submit = async () => {
-			if (!dateCtl.validate()) return;
-			if ((this.type === "receivable" || this.type === "debt") && !dueCtl.validate()) return;
-			let amountVal = parseAmount(amount.value);
-			if (amountVal === null) amountVal = evalAmountExpr(amount.value);
-			if (amountVal === null || amountVal <= 0) return fail(t("amountInvalid"));
-			let personId = lockedPersonId;
-			if (!personId) {
-				const nameVal = personInput.value.trim();
-				if (!nameVal) return fail(t("personRequired"));
-				personId = (await this.store.ensurePerson(nameVal)).id
-			}
-			const origin = this.type === "receivable" || this.type === "debt";
-			const common = {
-				type: this.type,
-				amount: amountVal,
-				date: dateCtl.get() || todayISO(),
-				category: catSel.value || undefined,
-				description: desc.value.trim() || undefined,
-				dueDate: origin && dueCtl.get() ? dueCtl.get() : undefined
-			};
-			if (editing) await this.store.updateTransaction(this.existing.id, Object.assign({}, common, {
-				personId
-			}));
-			else await this.store.addTransaction(Object.assign({}, common, {
-				personId,
-				linkedTo: preset.linkedTo
-			}));
-			new Notice(editing ? t("txUpdated") : t("txAdded"));
-			if (this.opts.onSaved) this.opts.onSaved();
-			this.close()
-		};
-		const actions = form.createDiv("pa-actions");
-		const cancel = el("button", "pa-btn", t("cancel"));
-		cancel.onclick = () => this.close();
-		const saveBtn = el("button", "pa-btn primary", editing ? t("save") : t("addTxTitle"));
-		saveBtn.onclick = submit;
-		actions.append(cancel, saveBtn);
-		form.addEventListener("keydown", e => {
-			if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
-				e.preventDefault();
-				void submit()
-			}
-		});
-		this.modalEl.addClass("pa-mobile-modal");
-		this._cleanupKeyboard = attachMobileKeyboardHandler(this);
-		amount.focus()
+		const actions=form.createDiv("pa-actions"),cancel=el("button","pa-btn",t("cancel"));cancel.type="button";cancel.onclick=()=>this.close();const saveBtn=el("button","pa-btn primary",editing?t("save"):t("addTxTitle"));saveBtn.type="button";saveBtn.onclick=()=>void submit();actions.append(cancel,saveBtn);
+		form.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.tagName!=="TEXTAREA"&&e.target.tagName!=="BUTTON"){e.preventDefault();void submit();}});
+		this.modalEl.addClass("pa-mobile-modal");this._cleanupKeyboard=attachMobileKeyboardHandler(this);
 	}
-	onClose() {
-		if (this._cleanupKeyboard) this._cleanupKeyboard();
-		closeActivePicker();
-		for (const c of this._calCloses) {
-			try {
-				c()
-			} catch (e) {}
-		}
-		this._calCloses = [];
-		this.contentEl.empty()
-	}
-}
-
-function transactionDateBadge(tx, fmt) {
-	const payment = tx.type === "payment_received" || tx.type === "payment_made";
-	const fa = CURRENT.locale === "fa";
-	const label = fa ? "تاریخ تراکنش" : "Transaction date";
-	const badge = el("div", "pa-transaction-date" + (payment ? " pa-payment-date" : ""));
-	const icon = el("span", "pa-transaction-date-icon");
-	setIcon(icon, payment ? "calendar-check" : "calendar");
-	badge.appendChild(icon);
-	badge.setAttribute("aria-label", label + ": " + fmt.date(tx.date));
-	badge.setAttribute("title", label);
-	const value = el("time", "pa-transaction-date-value", fmt.date(tx.date));
-	value.setAttribute("datetime", tx.date);
-	badge.appendChild(value);
-	return badge;
+	onClose(){for(const close of this._calCloses)close();if(this._cleanupKeyboard)this._cleanupKeyboard();this.contentEl.empty();}
 }
 
 class TransactionDetailModal extends Modal {
