@@ -5303,6 +5303,18 @@ class MoneyAccountModal extends Modal {
  onOpen(){const c=this.contentEl;c.empty();c.addClass("pa-money-modal");c.createEl("h2",{text:this.account?"ویرایش حساب":"افزودن حساب"});const a=this.account||{name:"",bank:"",last4:"",initial:0,type:"bank",currency:this.store.plugin.settings.currency||"toman",active:true};const field=(l,t="text",v="")=>{const w=c.createDiv("pa-money-field");w.createEl("label",{text:l});return w.createEl("input",{type:t,value:v});};const name=field("نام حساب *","text",a.name),bank=field("بانک","text",a.bank),last4=field("چهار رقم آخر کارت","text",a.last4),initial=field("موجودی اولیه","number",String(a.initial));const select=(l,opts)=>{const w=c.createDiv("pa-money-field");w.createEl("label",{text:l});const s=w.createEl("select");opts.forEach(o=>s.createEl("option",{value:o[0],text:o[1]}));return s;};const type=select("نوع حساب",[["bank","کارت بانکی"],["cash","پول نقد"],["wallet","کیف پول"]]);type.value=a.type;const currency=select("واحد پول",CURRENCIES.map(x=>[x.code,x.labelFa]));currency.value=a.currency;const row=c.createDiv("pa-money-actions"),cancel=row.createEl("button",{text:"انصراف",cls:"pa-btn"});cancel.onclick=()=>this.close();const save=row.createEl("button",{text:"ذخیره حساب",cls:"pa-btn mod-cta"});save.onclick=async()=>{if(!name.value.trim()){new Notice("نام حساب را وارد کنید.");return;}save.disabled=true;try{const d={name:name.value,bank:bank.value,last4:last4.value,initial:initial.value,type:type.value,currency:currency.value,active:a.active};if(this.account)await this.store.updateAccount(a.id,d);else await this.store.addAccount(d);this.close();this.done();new Notice("حساب ذخیره شد.");}catch(e){save.disabled=false;new Notice(e.message);}};}
 }
 
+function createMoneyMonthPicker(parent,calendar,fa,initialISO,onChange){
+ const jalali=calendar==="jalali",initial=jalali?Cal.isoToJ(initialISO):gregParts(initialISO);
+ let year=jalali?initial.jy:initial.y,month=jalali?initial.jm:initial.m;
+ const root=parent.createDiv("pa-money-month-picker"),prev=root.createEl("button",{text:"‹",cls:"pa-btn"}),label=root.createEl("button",{cls:"pa-btn pa-month-label"}),next=root.createEl("button",{text:"›",cls:"pa-btn"});
+ prev.type=next.type=label.type="button";
+ const key=()=>String(year)+"-"+pad2(month),name=()=>jalali?jalaliAdapter.monthName(month):gregorianAdapter.monthName(month);
+ const render=()=>{label.setText(localizeDigits(name()+" "+year,fa));label.setAttribute("aria-label",key());};
+ const shift=n=>{month+=n;while(month<1){month+=12;year--;}while(month>12){month-=12;year++;}render();onChange(key());};
+ prev.onclick=()=>shift(-1);next.onclick=()=>shift(1);render();
+ return {el:root,get:key,set(k){const m=/^(\d{4})-(\d{2})$/.exec(k||"");if(m){year=+m[1];month=+m[2];render();}},get label(){return label.textContent;}};
+}
+
 class MoneyReportModal extends Modal {
  constructor(app,store,month,report,calendar="gregorian"){super(app);this.store=store;this.month=month;this.report=report;this.calendar=calendar;}
  onOpen(){const c=this.contentEl;c.empty();c.addClass("pa-money-modal");const p=/^(\d{4})-(\d{2})$/.exec(this.month),label=p?(this.calendar==="jalali"?jalaliAdapter.monthName(+p[2]):gregorianAdapter.monthName(+p[2]))+" "+p[1]:this.month;c.createEl("h2",{text:"گزارش مالی · "+localizeDigits(label,CURRENT.locale==="fa")});if(!this.report.currencies.length)c.createEl("p",{text:"برای این ماه تراکنشی ثبت نشده است."});
