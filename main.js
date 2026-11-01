@@ -3181,7 +3181,7 @@ class TransactionFormModal extends Modal {
 		const fieldEl=(label,input)=>field(form,label,input);
 		const amount=inputText(t("phAmount"));amount.inputMode="decimal";amount.value=editing?String(this.existing.amount):preset.amount!=null?String(preset.amount):"";attachAmountInput(amount,()=>CURRENT.locale==="fa").refresh();fieldEl(t("fAmount"),amount);
 		const typeWrap=form.createDiv("pa-field");typeWrap.createEl("label").setText(t("fType"));const seg=typeWrap.createDiv("pa-seg");
-		const typeOptions=preset.paymentOnly?["payment_received","payment_made"]:["receivable","debt","payment_received","payment_made","income","expense","transfer"],segBtns=new Map();
+		const typeOptions=preset.paymentOnly?["payment_received","payment_made"]:editing?(this.isMoney?["income","expense","transfer"]:["receivable","debt","payment_received","payment_made"]):["receivable","debt","payment_received","payment_made","income","expense","transfer"],segBtns=new Map();
 		for(const ty of typeOptions){const b=el("button","pa-btn"+(ty===this.type?" active":""),typeLabel(ty));b.type="button";b.onclick=()=>{this.type=ty;segBtns.forEach((bb,tt)=>bb.toggleClass("active",tt===ty));syncVisibility();};segBtns.set(ty,b);seg.appendChild(b);}
 		const isMoney=()=>["income","expense","transfer"].includes(this.type),isOrigin=()=>["receivable","debt"].includes(this.type);
 		const lockedPersonId=preset.lockPerson?(this.existing?this.existing.personId:preset.personId||""):"";
