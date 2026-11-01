@@ -1769,3 +1769,46 @@ a.uts-channel-card:hover .uts-channel-arrow {
  .pa-money-report-kpi strong { font-size:.85em; }
  .pa-features-grid { grid-template-columns:1fr 1fr; }
 }
+
+
+/* Unified transaction entry: aligned with the existing Personal Accounts UI */
+.pa-unified-transaction-form { gap:2px; }
+.pa-unified-transaction-form .pa-field { margin-bottom:13px; }
+.pa-unified-transaction-form .pa-field > label { font-size:.82em; }
+.pa-unified-transaction-form .pa-seg { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+.pa-unified-transaction-form .pa-seg button.pa-btn { min-width:0; min-height:42px; padding:9px 10px; }
+.pa-unified-transaction-form .pa-actions { position:sticky; bottom:0; z-index:2; padding:12px 0 max(8px,env(safe-area-inset-bottom)); margin:12px 0 0; background:var(--modal-background); }
+.pa-unified-transaction-form .pa-actions button { min-height:44px; flex:1 1 120px; }
+.pa-money-month-picker { display:flex; align-items:center; justify-content:flex-start; gap:8px; }
+.pa-money-month-picker .pa-month-label { min-width:150px; font-weight:650; }
+.pa-money-month-picker button { min-height:40px; }
+.pa-money-report-currency { display:flex; flex-wrap:wrap; align-items:center; gap:9px 16px; padding:8px 0; border-bottom:1px solid var(--background-modifier-border); }
+.pa-money-report-currency > b { color:var(--text-accent); }
+.pa-money-report-currency strong { color:var(--text-accent); }
+.pa-money-report-insights { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:12px 0 18px; }
+.pa-money-insight { display:flex; flex-direction:column; gap:5px; min-width:0; padding:10px 12px; border-radius:10px; border:1px solid var(--background-modifier-border); background:var(--background-secondary); }
+.pa-money-insight small { color:var(--text-muted); }
+.pa-money-insight strong { overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.pa-money-category-track { height:6px; margin-top:7px; overflow:hidden; border-radius:99px; background:var(--background-modifier-border); }
+.pa-money-category-fill { height:100%; border-radius:99px; background:var(--interactive-accent); }
+.pa-money-report-category > div { flex:1; min-width:0; }
+.pa-money-report-category > strong { flex:0 0 auto; }
+.pa-money-empty { padding:16px; border:1px dashed var(--background-modifier-border); }
+.pa-money-empty h3 { margin-top:0; }
+.pa-money-empty p { color:var(--text-muted); margin-bottom:0; }
+.modal.pa-mobile-modal .pa-unified-transaction-form { padding-bottom:env(safe-area-inset-bottom); }
+@media(max-width:600px) {
+ .modal.pa-mobile-modal { width:calc(100vw - 20px); max-width:calc(100vw - 20px); margin:10px; border-radius:16px; }
+ .modal.pa-mobile-modal .modal-content { padding:14px 14px max(24px,env(safe-area-inset-bottom)); }
+ .pa-unified-transaction-form .pa-seg { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .pa-unified-transaction-form .pa-seg button.pa-btn { min-height:46px; font-size:.9em; }
+ .pa-unified-transaction-form .pa-field input,.pa-unified-transaction-form .pa-field select { min-height:44px; font-size:16px; }
+ .pa-unified-transaction-form .pa-actions { gap:8px; }
+ .pa-money-report-insights { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .pa-money-month-picker .pa-month-label { flex:1; min-width:0; }
+ .pa-money-report-category { align-items:center; }
+}
+@media(max-width:380px) {
+ .pa-unified-transaction-form .pa-seg { grid-template-columns:1fr 1fr; }
+ .pa-money-report-insights { grid-template-columns:1fr 1fr; }
+}
