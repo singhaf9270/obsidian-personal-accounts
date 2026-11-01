@@ -3171,52 +3171,62 @@ class PersonModal extends Modal {
 	}
 }
 class TransactionFormModal extends Modal {
-	constructor(app, store, existing, opts = {}) {
-		super(app);this.store=store;this.existing=existing;this.opts=opts;this.type=existing?existing.type:(opts.preset&&opts.preset.type)||"receivable";this._calCloses=[];this.isMoney=!!(existing&&["income","expense","transfer"].includes(existing.type))||["income","expense","transfer"].includes(this.type);
-	}
-	onOpen() {
+	constructor(app,store,existing,opts={}){super(app);this.store=store;this.existing=existing;this.opts=opts;this.type=existing?existing.type:(opts.preset&&opts.preset.type)||"receivable";this.mode=["income","expense","transfer"].includes(this.type)?"money":"ledger";this._calCloses=[];}
+	onOpen(){
 		modalRtl(this);const preset=this.opts.preset||{},editing=!!this.existing,fa=CURRENT.locale==="fa",calendar=this.store.plugin.settings.calendar;Cal.ensure(this.store.plugin.app);
-		this.titleEl.setText(editing?t("editTxTitle"):t("addTxTitle"));
-		const form=this.contentEl.createDiv("pa-form pa-unified-transaction-form"),err=form.createDiv("pa-form-error"),fail=m=>{err.setText(m);err.addClass("show");};
-		const fieldEl=(label,input)=>field(form,label,input);
-		const amount=inputText(t("phAmount"));amount.inputMode="decimal";amount.value=editing?String(this.existing.amount):preset.amount!=null?String(preset.amount):"";attachAmountInput(amount,()=>CURRENT.locale==="fa").refresh();fieldEl(t("fAmount"),amount);
-		const typeWrap=form.createDiv("pa-field");typeWrap.createEl("label").setText(t("fType"));const seg=typeWrap.createDiv("pa-seg");
-		const typeOptions=preset.paymentOnly?["payment_received","payment_made"]:editing?(this.isMoney?["income","expense","transfer"]:["receivable","debt","payment_received","payment_made"]):["receivable","debt","payment_received","payment_made","income","expense","transfer"],segBtns=new Map();
-		for(const ty of typeOptions){const b=el("button","pa-btn"+(ty===this.type?" active":""),typeLabel(ty));b.type="button";b.onclick=()=>{this.type=ty;segBtns.forEach((bb,tt)=>bb.toggleClass("active",tt===ty));syncVisibility();};segBtns.set(ty,b);seg.appendChild(b);}
-		const isMoney=()=>["income","expense","transfer"].includes(this.type),isOrigin=()=>["receivable","debt"].includes(this.type);
-		const lockedPersonId=preset.lockPerson?(this.existing?this.existing.personId:preset.personId||""):"";
-		const personWrap=form.createDiv("pa-field");personWrap.createEl("label").setText(t("fPerson"));let personInput=null;
-		if(lockedPersonId)personWrap.appendChild(el("span","pa-locked",this.store.personName(lockedPersonId)));
-		else{personInput=inputText(t("phPerson"));personInput.setAttribute("list","pa-person-options");personInput.value=this.existing&&!this.isMoney?this.store.personName(this.existing.personId):preset.personName||"";personWrap.appendChild(personInput);const dl=document.createElement("datalist");dl.id="pa-person-options";for(const p of this.store.data.people)dl.appendChild(new Option(p.name,p.name));personWrap.appendChild(dl);}
-		const dateCtl=createDatePicker(calendar,fa);this._calCloses.push(dateCtl.close);fieldEl(t("fDate"),dateCtl.el);dateCtl.set(editing?this.existing.date:todayISO());
-		const dueCtl=createDatePicker(calendar,fa);this._calCloses.push(dueCtl.close);const dueField=fieldEl(t("fDue"),dueCtl.el);dueCtl.set(editing&&this.existing.dueDate?this.existing.dueDate:"");
-		const cats=Array.isArray(this.store.plugin.settings.categories)?this.store.plugin.settings.categories:[],catSel=document.createElement("select");catSel.appendChild(new Option(t("noCategory"),""));for(const cat of cats)catSel.appendChild(new Option(cat,cat));catSel.value=this.existing&&this.existing.category||"";const catField=fieldEl(t("fCategory"),catSel);
-		const desc=inputText(t("phDesc"));desc.value=this.existing?(this.existing.description||this.existing.title||""):preset.description||"";const descField=fieldEl(t("fDesc"),desc);
-		const moneyStore=this.store.plugin.money;const accountField=form.createDiv("pa-field");accountField.createEl("label",{text:"حساب (اختیاری)"});const accountSel=accountField.createEl("select");accountSel.createEl("option",{value:"",text:"بدون انتخاب حساب"});for(const a of moneyStore.accounts.filter(x=>x.active))accountSel.createEl("option",{value:a.id,text:a.name+" · "+a.currency});accountSel.value=this.existing&&this.existing.account||"";
-		const destField=form.createDiv("pa-field");destField.createEl("label",{text:"حساب مقصد"});const destSel=destField.createEl("select");destSel.createEl("option",{value:"",text:"انتخاب حساب مقصد"});for(const a of moneyStore.accounts.filter(x=>x.active))destSel.createEl("option",{value:a.id,text:a.name+" · "+a.currency});destSel.value=this.existing&&this.existing.destination||"";
-		let linkWrap=null,linkSel=null;
-		if(!editing){linkWrap=form.createDiv("pa-field");linkWrap.createEl("label",{text:"اتصال اختیاری به بدهی یا طلب"});linkSel=linkWrap.createEl("select");linkSel.createEl("option",{value:"",text:"بدون اتصال"});void this.store.ready().then(()=>refreshLinks());}
-		const refreshLinks=()=>{if(!linkSel)return;linkSel.empty();linkSel.createEl("option",{value:"",text:"بدون اتصال"});const expected=this.type==="income"?"receivable":this.type==="expense"?"debt":"";if(!expected||!accountSel.value)return;for(const tx of this.store.data.transactions){const state=this.store.ledger&&this.store.ledger.states.get(tx.id);if(state&&state.remaining>EPS&&tx.type===expected)linkSel.createEl("option",{value:tx.id,text:this.store.personName(tx.personId)+" — "+(tx.description||tx.type)+" ("+this.store.fmt.amount(state.remaining)+")"});}};
-		const syncVisibility=()=>{personWrap.toggleClass("pa-hidden",isMoney());dueField.toggleClass("pa-hidden",!isOrigin());accountField.toggleClass("pa-hidden",!isMoney());destField.toggleClass("pa-hidden",this.type!=="transfer");if(linkWrap)linkWrap.toggleClass("pa-hidden",!isMoney()||!accountSel.value||this.type==="transfer");catField.toggleClass("pa-hidden",this.type==="transfer");descField.toggleClass("pa-hidden",this.type==="transfer");refreshLinks();};
-		accountSel.onchange=syncVisibility;syncVisibility();
-		const submit=async()=>{
-			try{
-				if(!dateCtl.validate())return;if(isOrigin()&&!dueCtl.validate())return;
-				const amountVal=parseAmount(amount.value)??evalAmountExpr(amount.value);if(amountVal===null||amountVal<=0)return fail(t("amountInvalid"));
-				if(isMoney()){
-					const d={type:this.type,title:desc.value.trim(),amount:amountVal,date:dateCtl.get()||todayISO(),account:accountSel.value||"",destination:destSel.value||"",currency:accountSel.value?"":(this.existing&&this.existing.currency||this.store.plugin.settings.currency||"toman"),category:catSel.value||"",note:"",linkedTx:linkSel?linkSel.value:""};
-					if(this.type==="transfer"&&(!d.account||!d.destination))return fail("برای انتقال وجه، حساب مبدأ و مقصد را انتخاب کنید.");
-					if(editing)await moneyStore.updateTx(this.existing.id,d);else await moneyStore.addTx(d);
-				}else{
-					let personId=lockedPersonId;if(!personId){const nameVal=personInput.value.trim();if(!nameVal)return fail(t("personRequired"));personId=(await this.store.ensurePerson(nameVal)).id;}
-					const common={type:this.type,amount:amountVal,date:dateCtl.get()||todayISO(),category:catSel.value||undefined,description:desc.value.trim()||undefined,dueDate:isOrigin()&&dueCtl.get()?dueCtl.get():undefined};
-					if(editing)await this.store.updateTransaction(this.existing.id,Object.assign({},common,{personId}));else await this.store.addTransaction(Object.assign({},common,{personId,linkedTo:preset.linkedTo}));
-				}
-				new Notice(editing?t("txUpdated"):t("txAdded"));if(this.opts.onSaved)this.opts.onSaved();this.close();
-			}catch(e){fail(String(e&&e.message||e));}
-		};
-		const actions=form.createDiv("pa-actions"),cancel=el("button","pa-btn",t("cancel"));cancel.type="button";cancel.onclick=()=>this.close();const saveBtn=el("button","pa-btn primary",editing?t("save"):t("addTxTitle"));saveBtn.type="button";saveBtn.onclick=()=>void submit();actions.append(cancel,saveBtn);
-		form.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.tagName!=="TEXTAREA"&&e.target.tagName!=="BUTTON"){e.preventDefault();void submit();}});
+		this.titleEl.setText(editing?t("editTxTitle"):"ثبت تراکنش");
+		const form=this.contentEl.createDiv("pa-form pa-unified-transaction-form pa-compact-transaction-form"),err=form.createDiv("pa-form-error"),fail=m=>{err.setText(m);err.addClass("show");};
+		const tabs=form.createDiv("pa-transaction-tabs"),ledgerTab=el("button","pa-transaction-tab"+(this.mode==="ledger"?" active":""),"طلب و بدهی"),moneyTab=el("button","pa-transaction-tab"+(this.mode==="money"?" active":""),"درآمد و هزینه");ledgerTab.type=moneyTab.type="button";tabs.append(ledgerTab,moneyTab);
+		const ledgerPanel=form.createDiv("pa-transaction-panel"),moneyPanel=form.createDiv("pa-transaction-panel");
+		const fieldEl=(parent,label,input)=>field(parent,label,input);
+		const amount=inputText(t("phAmount"));amount.inputMode="decimal";amount.value=editing?String(this.existing.amount):preset.amount!=null?String(preset.amount):"";attachAmountInput(amount,()=>CURRENT.locale==="fa").refresh();
+		const dateCtl=createDatePicker(calendar,fa);this._calCloses.push(dateCtl.close);dateCtl.set(editing?this.existing.date:todayISO());
+		const cats=Array.isArray(this.store.plugin.settings.categories)?this.store.plugin.settings.categories:[];
+		const catSel=document.createElement("select");catSel.appendChild(new Option(t("noCategory"),""));for(const cat of cats)catSel.appendChild(new Option(cat,cat));catSel.value=editing?this.existing.category||"":"";
+		const desc=inputText(t("phDesc"));desc.value=editing?(this.existing.description||this.existing.title||""):preset.description||"";
+		const ledgerTypes=editing?(["receivable","debt"].includes(this.existing.type)?["receivable","debt"]:["payment_received","payment_made"]):["receivable","debt","payment_received","payment_made"];
+		const ledgerTypeWrap=ledgerPanel.createDiv("pa-field");ledgerTypeWrap.createEl("label",{text:"نوع ثبت"});const ledgerSeg=ledgerTypeWrap.createDiv("pa-seg");
+		const ledgerTypeNames={receivable:"طلب",debt:"بدهی",payment_received:"دریافت طلب",payment_made:"پرداخت بدهی"};const ledgerBtns=new Map();
+		for(const ty of ledgerTypes){const b=el("button","pa-btn"+(ty===this.type?" active":""),ledgerTypeNames[ty]);b.type="button";b.onclick=()=>{this.type=ty;ledgerBtns.forEach((x,k)=>x.toggleClass("active",k===ty));sync();};ledgerBtns.set(ty,b);ledgerSeg.append(b);}
+		const personWrap=ledgerPanel.createDiv("pa-field");personWrap.createEl("label").setText(t("fPerson"));let personInput=null;const lockedPersonId=preset.lockPerson?(this.existing?this.existing.personId:preset.personId||""):"";
+		if(lockedPersonId)personWrap.appendChild(el("span","pa-locked",this.store.personName(lockedPersonId)));else{personInput=inputText(t("phPerson"));personInput.setAttribute("list","pa-person-options");personInput.value=editing?this.store.personName(this.existing.personId):preset.personName||"";personWrap.appendChild(personInput);const dl=document.createElement("datalist");dl.id="pa-person-options";for(const p of this.store.data.people)dl.appendChild(new Option(p.name,p.name));personWrap.appendChild(dl);}
+		const dueCtl=createDatePicker(calendar,fa);this._calCloses.push(dueCtl.close);dueCtl.set(editing&&this.existing.dueDate?this.existing.dueDate:"");const dueField=fieldEl(ledgerPanel,t("fDue"),dueCtl.el);
+		const ledgerDateField=fieldEl(ledgerPanel,t("fDate"),dateCtl.el);const ledgerAmountField=fieldEl(ledgerPanel,t("fAmount"),amount);const ledgerDescField=fieldEl(ledgerPanel,t("fDesc"),desc);const ledgerCatField=fieldEl(ledgerPanel,t("fCategory"),catSel);
+		const recognition=form.createEl("details",{cls:"pa-optional-section"});recognition.createEl("summary",{text:"ثبت اختیاری در گزارش درآمد و هزینه"});const recognitionBody=recognition.createDiv("pa-optional-body");recognitionBody.createEl("p",{text:"اگر این طلب یا بدهی را می‌خواهی در گزارش مالی هم منظور کنی، نوع آن را انتخاب کن."});
+		const recognitionType=recognitionBody.createEl("select");recognitionType.createEl("option",{value:"",text:"در گزارش مالی ثبت نشود"});recognitionType.createEl("option",{value:"income",text:"به‌عنوان درآمد"});recognitionType.createEl("option",{value:"expense",text:"به‌عنوان هزینه"});
+		const recognitionAccount=recognitionBody.createEl("select");recognitionAccount.createEl("option",{value:"",text:"بدون اتصال به حساب"});for(const a of this.store.plugin.money.accounts.filter(x=>x.active))recognitionAccount.createEl("option",{value:a.id,text:a.name+" · "+a.currency});
+		const recognitionCategory=recognitionBody.createEl("select");recognitionCategory.createEl("option",{value:"",text:"بدون دسته‌بندی"});for(const cat of cats)recognitionCategory.createEl("option",{value:cat,text:cat});
+		fieldEl(recognitionBody,"حساب (اختیاری)",recognitionAccount);fieldEl(recognitionBody,"دسته‌بندی گزارش",recognitionCategory);
+		const moneyTypeWrap=moneyPanel.createDiv("pa-field");moneyTypeWrap.createEl("label",{text:"نوع تراکنش"});const moneySeg=moneyTypeWrap.createDiv("pa-seg");const moneyTypes=editing?["income","expense","transfer"]:["income","expense","transfer"];const moneyNames={income:"درآمد",expense:"هزینه",transfer:"انتقال وجه"};const moneyBtns=new Map();
+		for(const ty of moneyTypes){const b=el("button","pa-btn"+(ty===this.type?" active":""),moneyNames[ty]);b.type="button";b.onclick=()=>{this.type=ty;moneyBtns.forEach((x,k)=>x.toggleClass("active",k===ty));sync();};moneyBtns.set(ty,b);moneySeg.append(b);}
+		const moneyDateField=fieldEl(moneyPanel,t("fDate"),dateCtl.el.cloneNode(true)); // replaced below with shared date control
+		moneyDateField.empty();moneyDateField.appendChild(dateCtl.el);
+		const moneyAmountField=fieldEl(moneyPanel,t("fAmount"),amount.cloneNode(true));
+		moneyAmountField.empty();moneyAmountField.appendChild(amount);
+		const moneyDescField=fieldEl(moneyPanel,t("fDesc"),desc.cloneNode(true));moneyDescField.empty();moneyDescField.appendChild(desc);
+		const moneyCatField=fieldEl(moneyPanel,t("fCategory"),catSel.cloneNode(true));moneyCatField.empty();moneyCatField.appendChild(catSel);
+		const moneyStore=this.store.plugin.money,accountWrap=moneyPanel.createDiv("pa-field");accountWrap.createEl("label",{text:"حساب بانکی (اختیاری)"});const accountSel=accountWrap.createEl("select");accountSel.createEl("option",{value:"",text:"بدون انتخاب حساب"});for(const a of moneyStore.accounts.filter(x=>x.active))accountSel.createEl("option",{value:a.id,text:a.name+" · "+a.currency});accountSel.value=editing&&this.existing.account||"";
+		const destWrap=moneyPanel.createDiv("pa-field");destWrap.createEl("label",{text:"حساب مقصد"});const destSel=destWrap.createEl("select");destSel.createEl("option",{value:"",text:"انتخاب حساب مقصد"});for(const a of moneyStore.accounts.filter(x=>x.active))destSel.createEl("option",{value:a.id,text:a.name+" · "+a.currency});destSel.value=editing&&this.existing.destination||"";
+		const linkDetails=moneyPanel.createEl("details",{cls:"pa-optional-section"});linkDetails.createEl("summary",{text:"اتصال به طلب یا بدهی (اختیاری)"});const linkBody=linkDetails.createDiv("pa-optional-body");linkBody.createEl("p",{text:"با انتخاب یک مورد، مبلغ این درآمد یا هزینه به‌عنوان دریافت طلب یا پرداخت بدهی ثبت می‌شود."});const linkSel=linkBody.createEl("select");linkSel.createEl("option",{value:"",text:"بدون اتصال"});const refreshLinks=()=>{linkSel.empty();linkSel.createEl("option",{value:"",text:"بدون اتصال"});const expected=this.type==="income"?"receivable":this.type==="expense"?"debt":"";if(!expected)return;for(const tx of this.store.data.transactions){const state=this.store.ledger&&this.store.ledger.states.get(tx.id);if(state&&state.remaining>EPS&&tx.type===expected)linkSel.createEl("option",{value:tx.id,text:this.store.personName(tx.personId)+" — "+(tx.description||tx.type)+" ("+this.store.fmt.amount(state.remaining)+")"});}};
+		const isLedger=()=>this.mode==="ledger",isOrigin=()=>["receivable","debt"].includes(this.type);
+		const sync=()=>{const ledger=isLedger();ledgerPanel.toggleClass("pa-hidden",!ledger);moneyPanel.toggleClass("pa-hidden",ledger);ledgerTab.toggleClass("active",ledger);moneyTab.toggleClass("active",!ledger);if(ledger){dueField.toggleClass("pa-hidden",!isOrigin());recognition.toggleClass("pa-hidden",!isOrigin());}else{destWrap.toggleClass("pa-hidden",this.type!=="transfer");linkDetails.toggleClass("pa-hidden",this.type==="transfer");refreshLinks();}};
+		ledgerTab.onclick=()=>{if(editing)return;this.mode="ledger";this.type="receivable";ledgerBtns.forEach((x,k)=>x.toggleClass("active",k==="receivable"));sync();};
+		moneyTab.onclick=()=>{if(editing)return;this.mode="money";this.type="income";moneyBtns.forEach((x,k)=>x.toggleClass("active",k==="income"));sync();};
+		sync();
+		const submit=async()=>{try{if(!dateCtl.validate())return;const amountVal=parseAmount(amount.value)??evalAmountExpr(amount.value);if(amountVal===null||amountVal<=0)return fail(t("amountInvalid"));
+			if(isLedger()){
+				if(isOrigin()&&!dueCtl.validate())return;let personId=lockedPersonId;if(!personId){const name=personInput&&personInput.value.trim();if(!name)return fail(t("personRequired"));personId=(await this.store.ensurePerson(name)).id;}
+				const common={type:this.type,amount:amountVal,date:dateCtl.get()||todayISO(),category:catSel.value||undefined,description:desc.value.trim()||undefined,dueDate:isOrigin()&&dueCtl.get()?dueCtl.get():undefined};
+				if(editing)await this.store.updateTransaction(this.existing.id,Object.assign({},common,{personId}));else{const tx=await this.store.addTransaction(Object.assign({},common,{personId,linkedTo:preset.linkedTo}));if(isOrigin()&&recognitionType.value){await moneyStore.addTx({type:recognitionType.value,title:desc.value.trim()||ledgerTypeNames[this.type],amount:amountVal,date:dateCtl.get()||todayISO(),account:recognitionAccount.value||"",currency:this.store.plugin.settings.currency,category:recognitionCategory.value||catSel.value||"",sourceTx:tx.id});}}
+			}else{
+				const d={type:this.type,title:desc.value.trim(),amount:amountVal,date:dateCtl.get()||todayISO(),account:accountSel.value||"",destination:destSel.value||"",currency:accountSel.value?"":(this.existing&&this.existing.currency||this.store.plugin.settings.currency),category:catSel.value||"",note:"",linkedTx:linkSel.value||""};
+				if(this.type==="transfer"&&(!d.account||!d.destination))return fail("برای انتقال وجه، حساب مبدأ و مقصد را انتخاب کنید.");
+				if(editing)await moneyStore.updateTx(this.existing.id,d);else await moneyStore.addTx(d);
+			}
+			new Notice(editing?t("txUpdated"):t("txAdded"));if(this.opts.onSaved)this.opts.onSaved();this.close();
+		}catch(e){fail(String(e&&e.message||e));}};
+		const actions=form.createDiv("pa-actions"),cancel=el("button","pa-btn",t("cancel"));cancel.type="button";cancel.onclick=()=>this.close();const saveBtn=el("button","pa-btn primary","افزودن تراکنش");saveBtn.type="button";saveBtn.onclick=()=>{saveBtn.disabled=true;saveBtn.setText("در حال ثبت…");void submit().finally(()=>{if(saveBtn.isConnected){saveBtn.disabled=false;saveBtn.setText("افزودن تراکنش");}});};actions.append(cancel,saveBtn);
+		form.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.tagName!=="TEXTAREA"&&e.target.tagName!=="BUTTON"){e.preventDefault();saveBtn.click();}});
 		this.modalEl.addClass("pa-mobile-modal");this._cleanupKeyboard=attachMobileKeyboardHandler(this);
 	}
 	onClose(){for(const close of this._calCloses)close();if(this._cleanupKeyboard)this._cleanupKeyboard();this.contentEl.empty();}
