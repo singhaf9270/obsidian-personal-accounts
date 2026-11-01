@@ -1466,7 +1466,17 @@ function labelToType(label) {
 
 function parseDateString(s, calendar) {
 	if (!s || s === "—") return null;
-	const cleaned = normalizeDigits(String(s).trim()).replace(/[\u200e\u200f\u061c]/g, "");
+	const raw = normalizeDigits(String(s).trim()).replace(/[\u200e\u200f\u061c]/g, "");
+	// Prefer the canonical Gregorian date embedded in notes created by this plugin.
+	// This keeps the exact day stable when the display calendar is changed.
+	const canonical = /<!--\\s*PA-ISO:(\\d{4}-\\d{2}-\\d{2})\\s*-->/.exec(raw);
+	if (canonical) {
+		const iso = canonical[1];
+		const p = gregParts(iso);
+		if (p && gregorianAdapter.monthLen(p.y, p.m) >= p.d) return iso;
+		return null;
+	}
+	const cleaned = raw.replace(/<!--.*?-->/g, "").trim();
 	let y, m, d, kind = calendar;
 	const numeric = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(cleaned);
 	if (numeric) {
@@ -1746,8 +1756,8 @@ function renderMarkdownData(data, fmt) {
 	const txs = [...data.transactions].sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
 	const nameOf = new Map(data.people.map(p => [p.id, p.name]));
 	for (const tx of txs) {
-		const dateStr = fmt.dateForNote(tx.date);
-		const dueStr = tx.dueDate ? fmt.dateForNote(tx.dueDate) : "";
+		const dateStr = fmt.dateForNote(tx.date) + "<!--PA-ISO:" + tx.date + "-->";
+		const dueStr = tx.dueDate ? fmt.dateForNote(tx.dueDate) + "<!--PA-ISO:" + tx.dueDate + "-->" : "";
 		const desc = (tx.description || "").replace(/\|/g, "\\|").replace(/\n/g, " ");
 		const cat = (tx.category || "").replace(/\|/g, "\\|").replace(/\n/g, " ");
 		lines.push("| " + [dateStr, nameOf.get(tx.personId) || "?", typeLabel(tx.type), fmt.num(tx.amount), cat, desc, dueStr].join(" | ") + " |")
