@@ -2486,6 +2486,7 @@ class PASettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName(t("setOpenAfterAdd")).addToggle(tg => tg.setValue(s.openAfterAdd).onChange(v => save(() => {
 			s.openAfterAdd = v
 		})));
+		new Setting(containerEl).setName("معرفی امکانات جدید").setDesc("نمایش دوباره معرفی مدیریت حساب‌ها").addButton(b=>b.setButtonText("نمایش معرفی").onClick(()=>new MoneyFeaturesModal(this.app).open()));
 		renderCreatorSupport(containerEl, this.plugin.settings.locale || 'fa');
 	}
 }
@@ -4552,6 +4553,7 @@ class AccountsView extends ItemView {
 		mkTab(t("tabPeople"), "people", "tipPeople");
 		mkTab(t("tabTransactions"), "transactions", "tipTransactions");
 		mkTab(t("tabAnalytics"), "analytics", "tipAnalytics");
+		mkTab(CURRENT.locale === "fa" ? "حساب‌ها" : "Accounts", "money");
 		const addBtn = el("button", "pa-btn primary", t("addTx"));
 		addBtn.onclick = () => new TransactionFormModal(this.app, store, null, {}).open();
 		attachTooltip(addBtn, t("tipAddTx"), null, {
@@ -4595,8 +4597,24 @@ class AccountsView extends ItemView {
 			case "analytics":
 				this.renderAnalytics(body);
 				break
+			case "money":
+				this.renderMoney(body);
+				break
 		}
 	}
+
+	renderMoney(body) {
+		const store=this.plugin.money,wrap=body.createDiv("pa-money-screen"),head=wrap.createDiv("pa-money-heading");
+		head.createEl("h2",{text:"مدیریت حساب‌ها"});
+		const actions=head.createDiv("pa-money-actions"),add=actions.createEl("button",{text:"+ حساب جدید",cls:"pa-btn"});
+		add.onclick=()=>new MoneyAccountModal(this.app,store,()=>this.render()).open();
+		const tx=actions.createEl("button",{text:"+ ثبت تراکنش",cls:"pa-btn mod-cta"});tx.disabled=!store.accounts.some(a=>a.active);tx.onclick=()=>new MoneyTransactionModal(this.app,store,()=>this.render()).open();
+		if(!store.accounts.length){const e=wrap.createDiv("pa-card pa-money-empty");e.createEl("h3",{text:"هنوز حسابی تعریف نکرده‌اید"});e.createEl("p",{text:"برای شروع یک کارت بانکی، پول نقد یا کیف پول اضافه کنید. اطلاعات در فایل‌های Markdown ذخیره می‌شوند."});return;}
+		const grid=wrap.createDiv("pa-money-grid");for(const a of store.accounts.filter(x=>x.active)){const card=grid.createDiv("pa-card pa-money-account"),top=card.createDiv("pa-money-account-top"),ic=top.createDiv();setIcon(ic,a.type==="bank"?"credit-card":a.type==="cash"?"banknote":"wallet");top.createEl("strong",{text:a.name});card.createEl("small",{text:a.bank+(a.last4?" •••• "+a.last4:"")});card.createDiv("pa-money-balance").setText(this.plugin.fmt.amount(store.balance(a))+" "+a.currency);}
+		const recent=wrap.createDiv("pa-card pa-money-recent");recent.createEl("h3",{text:"آخرین تراکنش‌ها"});if(!store.transactions.length)recent.createEl("p",{text:"تراکنشی ثبت نشده است."});for(const t of store.transactions.slice(0,10)){const row=recent.createDiv("pa-money-tx");row.createDiv().setText((t.title||"تراکنش")+" · "+t.date);row.createDiv().setText((t.type==="income"?"+":t.type==="expense"?"−":"↔")+this.plugin.fmt.amount(t.amount));}
+		wrap.createEl("small",{text:"فایل‌های Markdown در Vault · "+MONEY_ROOT,cls:"pa-muted"});
+	}
+
 	renderError(body) {
 		const store = this.plugin.accounts;
 		const card = body.createDiv("pa-card pa-error");
@@ -5352,12 +5370,45 @@ class AccountsView extends ItemView {
 		}
 	}
 }
+
+const MONEY_ROOT = "Personal Accounts/مدیریت حساب‌ها";
+const MONEY_ACCOUNTS_FILE = MONEY_ROOT + "/حساب‌ها.md";
+const moneyId = () => "acc_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,7);
+const moneySafe = v => String(v == null ? "" : v).replace(/[\r\n|]/g," ").trim();
+const moneyFields = s => { const o={}; for(const l of s.split("\n")){const m=l.match(/^\s*-\s*([^:：]+)\s*[:：]\s*(.*)$/);if(m)o[m[1].trim()]=m[2].trim();}return o; };
+class MarkdownMoneyStore {
+ constructor(plugin){this.plugin=plugin;this.accounts=[];this.transactions=[];this.loaded=false;}
+ async read(path){const f=this.plugin.app.vault.getAbstractFileByPath(path);return f instanceof TFile?this.plugin.app.vault.read(f):"";}
+ async folder(path){let p="";for(const part of path.split("/")){p=p?p+"/"+part:part;if(!this.plugin.app.vault.getAbstractFileByPath(p)){try{await this.plugin.app.vault.createFolder(p);}catch(e){if(!this.plugin.app.vault.getAbstractFileByPath(p))throw e;}}}}
+ async append(path,title,block){await this.folder(path.split("/").slice(0,-1).join("/"));const old=await this.read(path),next=(old.trim()?old.trimEnd()+"\n\n":title+"\n\n")+block+"\n";const f=this.plugin.app.vault.getAbstractFileByPath(path);if(f instanceof TFile)await this.plugin.app.vault.modify(f,next);else await this.plugin.app.vault.create(path,next);}
+ async reload(){const text=await this.read(MONEY_ACCOUNTS_FILE),accounts=[];const re=/<!-- PA-ACCOUNT:([\w-]+) -->([\s\S]*?)<!-- \/PA-ACCOUNT -->/g;let m;while((m=re.exec(text))){const f=moneyFields(m[2]),h=m[2].match(/^##\s+(.+)$/m);accounts.push({id:m[1],name:h?h[1].trim():f["نام"]||"حساب",type:f["نوع"]||"bank",bank:f["بانک"]||"",last4:f["چهار رقم آخر"]||"",currency:f["ارز"]||"toman",initial:Number(f["موجودی اولیه"]||0)||0,active:f["وضعیت"]!=="غیرفعال"});}
+ const txs=[];for(const file of this.plugin.app.vault.getMarkdownFiles().filter(x=>x.path.startsWith(MONEY_ROOT+"/تراکنش‌ها/"))){const t=await this.plugin.app.vault.read(file),rx=/<!-- PA-TX:([\w-]+) -->([\s\S]*?)<!-- \/PA-TX -->/g;let q;while((q=rx.exec(t))){const f=moneyFields(q[2]);txs.push({id:q[1],date:f["تاریخ"]||"",type:f["نوع"]||"expense",amount:Number(f["مبلغ"]||0)||0,account:f["حساب"]||"",destination:f["مقصد"]||"",title:f["عنوان"]||"",currency:f["ارز"]||"toman"});}}
+ this.accounts=accounts;this.transactions=txs.sort((a,b)=>b.date.localeCompare(a.date));this.loaded=true;}
+ async ready(){if(!this.loaded)await this.reload();}
+ balance(a){let n=a.initial;for(const t of this.transactions){if(t.account===a.id)n+=t.type==="income"?t.amount:-t.amount;if(t.type==="transfer"&&t.destination===a.id)n+=t.amount;}return n;}
+ async addAccount(d){await this.ready();const id=moneyId(),block=["<!-- PA-ACCOUNT:"+id+" -->","## "+moneySafe(d.name),"- نوع: "+d.type,"- بانک: "+moneySafe(d.bank),"- چهار رقم آخر: "+moneySafe(d.last4),"- ارز: "+d.currency,"- موجودی اولیه: "+(Number(d.initial)||0),"- وضعیت: فعال","<!-- /PA-ACCOUNT -->"].join("\n");await this.append(MONEY_ACCOUNTS_FILE,"# حساب‌های من",block);await this.reload();}
+ async addTx(d){await this.ready();const a=this.accounts.find(x=>x.id===d.account&&x.active);if(!a)throw new Error("حساب معتبر نیست.");if(d.type==="transfer"){const b=this.accounts.find(x=>x.id===d.destination&&x.active);if(!b||b.id===a.id)throw new Error("حساب مقصد معتبر نیست.");if(b.currency!==a.currency)throw new Error("انتقال بین ارزهای متفاوت پشتیبانی نمی‌شود.");}
+ const id=moneyId(),date=d.date||todayISO(),block=["<!-- PA-TX:"+id+" -->","## "+moneySafe(d.title||"تراکنش"),"- تاریخ: "+date,"- نوع: "+d.type,"- مبلغ: "+Number(d.amount),"- حساب: "+a.id,"- مقصد: "+(d.type==="transfer"?d.destination:""),"- ارز: "+a.currency,"- عنوان: "+moneySafe(d.title),"<!-- /PA-TX -->"].join("\n");const month=date.slice(0,7);await this.append(MONEY_ROOT+"/تراکنش‌ها/"+month+".md","# تراکنش‌های "+month,block);await this.reload();}
+}
+class MoneyAccountModal extends Modal {
+ constructor(app,store,done){super(app);this.store=store;this.done=done;}
+ onOpen(){const c=this.contentEl;c.empty();c.addClass("pa-money-modal");c.createEl("h2",{text:"افزودن حساب"});const field=(l,t="text",v="")=>{const w=c.createDiv("pa-money-field");w.createEl("label",{text:l});return w.createEl("input",{type:t,value:v});};const name=field("نام حساب *"),bank=field("بانک"),last4=field("چهار رقم آخر کارت"),initial=field("موجودی اولیه","number","0");const select=(l,opts)=>{const w=c.createDiv("pa-money-field");w.createEl("label",{text:l});const s=w.createEl("select");opts.forEach(o=>s.createEl("option",{value:o[0],text:o[1]}));return s;};const type=select("نوع حساب",[["bank","کارت بانکی"],["cash","پول نقد"],["wallet","کیف پول"]]);const currency=select("واحد پول",CURRENCIES.map(x=>[x.code,x.labelFa]));currency.value=this.store.plugin.settings.currency||"toman";const row=c.createDiv("pa-money-actions"),cancel=row.createEl("button",{text:"انصراف",cls:"pa-btn"});cancel.onclick=()=>this.close();const save=row.createEl("button",{text:"ذخیره حساب",cls:"pa-btn mod-cta"});save.onclick=async()=>{if(!name.value.trim()){new Notice("نام حساب را وارد کنید.");return;}save.disabled=true;try{await this.store.addAccount({name:name.value,bank:bank.value,last4:last4.value,initial:initial.value,type:type.value,currency:currency.value});this.close();this.done();new Notice("حساب ذخیره شد.");}catch(e){save.disabled=false;new Notice(e.message);}};}
+}
+class MoneyTransactionModal extends Modal {
+ constructor(app,store,done){super(app);this.store=store;this.done=done;}
+ onOpen(){const c=this.contentEl;c.empty();c.addClass("pa-money-modal");c.createEl("h2",{text:"ثبت تراکنش"});const field=(l,t="text",v="")=>{const w=c.createDiv("pa-money-field");w.createEl("label",{text:l});return w.createEl("input",{type:t,value:v});};const select=(l,opts)=>{const w=c.createDiv("pa-money-field");w.createEl("label",{text:l});const s=w.createEl("select");opts.forEach(o=>s.createEl("option",{value:o.value,text:o.label}));return s;};const type=select("نوع",[{value:"expense",label:"هزینه"},{value:"income",label:"درآمد"},{value:"transfer",label:"انتقال وجه"}]);const title=field("عنوان"),amount=field("مبلغ","number"),date=field("تاریخ","date",todayISO()),accounts=this.store.accounts.filter(a=>a.active);const account=select("حساب",accounts.map(a=>({value:a.id,label:a.name}))),dest=select("حساب مقصد",accounts.filter(a=>a.id!==account.value).map(a=>({value:a.id,label:a.name})));const row=c.createDiv("pa-money-actions"),cancel=row.createEl("button",{text:"انصراف",cls:"pa-btn"});cancel.onclick=()=>this.close();const save=row.createEl("button",{text:"ثبت تراکنش",cls:"pa-btn mod-cta"});const refresh=()=>{dest.empty();accounts.filter(a=>a.id!==account.value).forEach(a=>dest.createEl("option",{value:a.id,text:a.name}));dest.parentElement.style.display=type.value==="transfer"?"":"none";};type.onchange=refresh;account.onchange=refresh;refresh();save.onclick=async()=>{const n=Number(amount.value);if(!accounts.length||!n||n<0){new Notice("حساب و مبلغ معتبر انتخاب کنید.");return;}save.disabled=true;try{await this.store.addTx({type:type.value,title:title.value,amount:n,date:date.value,account:account.value,destination:dest.value});this.close();this.done();new Notice("تراکنش ثبت شد.");}catch(e){save.disabled=false;new Notice(e.message);}};}
+}
+class MoneyFeaturesModal extends Modal {
+ onOpen(){const c=this.contentEl;c.empty();c.addClass("pa-features-modal");c.createEl("h2",{text:"Personal Accounts"});c.createEl("h3",{text:"مدیریت مالی شخصی، حالا کامل‌تر از قبل!"});c.createEl("p",{text:"در کنار بدهی‌ها و طلب‌ها، حساب‌ها و هزینه‌های روزمره خود را نیز مدیریت کنید."});const grid=c.createDiv("pa-features-grid");["مدیریت کارت‌های بانکی","مدیریت پول نقد","کیف پول","ثبت درآمد و هزینه","انتقال وجه","گزارش‌های مالی"].forEach(x=>grid.createEl("div",{text:x,cls:"pa-feature-card"}));const note=c.createDiv("pa-features-notice");note.createEl("strong",{text:"اطلاعات قبلی شما محفوظ است"});note.createEl("p",{text:"بخش بدهی و طلب بدون تغییر باقی می‌ماند. اطلاعات جدید در فایل‌های Markdown داخل Vault ذخیره می‌شوند."});const b=c.createEl("button",{text:"متوجه شدم",cls:"pa-btn mod-cta"});b.onclick=()=>this.close();}
+}
+
 class PersonalAccountsPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		this.fmt = new Fmt(() => this.settings);
 		this.repo = new PluginDataStore(this.app, () => this.settings, this.fmt, this);
 		this.accounts = new AccountsStore(this);
+		this.money = new MarkdownMoneyStore(this);
 		Cal.appRef = this.app;
 		Cal.refresh(this.app);
 		this.app.workspace.onLayoutReady(() => {
@@ -5371,6 +5422,8 @@ class PersonalAccountsPlugin extends Plugin {
 			void this.quickAddTransaction()
 		});
 		this.addSettingTab(new PASettingTab(this.app, this));
+		this.money.ready().catch(e => console.error("Personal Accounts money module",e));
+		this.app.workspace.onLayoutReady(() => setTimeout(() => { if(this.settings._seenMoneyIntro!==true){new MoneyFeaturesModal(this.app).open();this.settings._seenMoneyIntro=true;void this.saveSettings();}},1500));
 		this.addCommand({
 			id: "open-dashboard",
 			name: t("cmdOpen"),
