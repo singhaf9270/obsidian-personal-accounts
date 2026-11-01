@@ -2244,6 +2244,8 @@ class AccountsStore {
 	}
 	async deleteTransaction(id) {
 		await this.ready();
+		const linkedMoney=this.plugin.money;
+		if(linkedMoney){await linkedMoney.ready();for(const item of linkedMoney.transactions.filter(x=>x.sourceTx===id))await linkedMoney.deleteTx(item.id);}
 		deleteTransaction(this.data, id);
 		await this.persist()
 	}
