@@ -1712,3 +1712,60 @@ a.uts-channel-card:hover .uts-channel-arrow {
 .pa-csv-preview table { width: 100%; border-collapse: collapse; font-size: .85em; }
 .pa-csv-preview th, .pa-csv-preview td { text-align: start; padding: 9px 12px; border-bottom: 1px solid var(--background-modifier-border); white-space: nowrap; }
 .pa-csv-preview th { background: var(--background-secondary); font-weight: 600; }
+
+
+/* ==========================================================================
+   Personal Accounts 2.1 — Markdown account management
+   ========================================================================== */
+.pa-money-screen { display:flex; flex-direction:column; gap:14px; direction:rtl; text-align:right; }
+.pa-money-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+.pa-money-heading h2 { margin:0; }
+.pa-money-actions { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+.pa-money-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+.pa-money-account { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.pa-money-account-top { display:flex; align-items:center; gap:9px; }
+.pa-money-account-top > div { display:flex; color:var(--text-accent); }
+.pa-money-account-top strong { overflow-wrap:anywhere; }
+.pa-money-account small,.pa-money-screen .pa-muted { color:var(--text-muted); }
+.pa-money-balance { font-size:1.35em; font-weight:750; color:var(--text-normal); direction:ltr; text-align:right; unicode-bidi:plaintext; }
+.pa-money-tx { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--background-modifier-border); }
+.pa-money-tx:last-child { border-bottom:0; }
+.pa-money-tx > div:first-child { min-width:0; overflow-wrap:anywhere; }
+.pa-money-tx small { display:block; color:var(--text-muted); margin-top:3px; }
+.pa-money-modal { direction:rtl; text-align:right; }
+.pa-money-modal h2,.pa-money-modal h3 { text-align:right; }
+.pa-money-field { display:flex; flex-direction:column; gap:5px; margin:12px 0; }
+.pa-money-field label,.pa-money-month-picker label { color:var(--text-muted); font-size:.88em; }
+.pa-money-field input,.pa-money-field select,.pa-money-month-picker input { width:100%; }
+.pa-money-modal .pa-money-actions { justify-content:flex-start; margin-top:16px; }
+.pa-money-month-picker { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.pa-money-month-picker input { width:auto; min-width:160px; }
+.pa-money-report-summary { display:flex; align-items:center; flex-wrap:wrap; gap:12px 20px; }
+.pa-money-report-summary strong { width:100%; }
+.pa-money-report-summary span,.pa-money-report-summary b { font-variant-numeric:tabular-nums; }
+.pa-money-report-summary b { color:var(--text-accent); }
+.pa-money-report-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-block:12px 20px; }
+.pa-money-report-kpi { display:flex; flex-direction:column; gap:6px; padding:12px; border:1px solid var(--background-modifier-border); border-radius:12px; background:var(--background-secondary); min-width:0; }
+.pa-money-report-kpi small { color:var(--text-muted); }
+.pa-money-report-kpi strong { font-size:1.05em; overflow-wrap:anywhere; direction:ltr; text-align:right; }
+.pa-money-report-kpi.income strong { color:var(--color-green); }
+.pa-money-report-kpi.expense strong { color:var(--color-red); }
+.pa-money-report-category { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--background-modifier-border); }
+.pa-money-report-category strong { direction:ltr; unicode-bidi:plaintext; }
+.pa-features-modal { direction:rtl; text-align:right; }
+.pa-features-modal h2,.pa-features-modal h3,.pa-features-modal p { text-align:right; }
+.pa-features-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:16px 0; }
+.pa-feature-card { padding:11px 12px; border:1px solid var(--background-modifier-border); border-radius:10px; background:var(--background-secondary); }
+.pa-features-notice { padding:12px; border-radius:10px; border:1px solid var(--background-modifier-border); background:var(--background-secondary); margin-block:12px; }
+.pa-features-notice p { margin-bottom:0; color:var(--text-muted); }
+@media(max-width:600px) {
+ .pa-money-heading { align-items:stretch; }
+ .pa-money-heading .pa-money-actions { width:100%; }
+ .pa-money-heading .pa-money-actions .pa-btn { flex:1 1 auto; }
+ .pa-money-tx { grid-template-columns:minmax(0,1fr) auto; }
+ .pa-money-tx .pa-money-actions { grid-column:1/-1; }
+ .pa-money-report-stats { gap:6px; }
+ .pa-money-report-kpi { padding:9px 7px; }
+ .pa-money-report-kpi strong { font-size:.85em; }
+ .pa-features-grid { grid-template-columns:1fr 1fr; }
+}
