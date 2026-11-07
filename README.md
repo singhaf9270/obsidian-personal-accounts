@@ -40,9 +40,19 @@ Whether someone owes you money or you owe someone else, you can keep track of th
 * 💵 Support for تومان (Toman)
 * 📝 Store records as editable Markdown notes
 * 📱 Desktop and mobile support
+* 🗂️ Two-tab transaction form: main information and additional details
 * 🌐 Persian and English interface
 
 ---
+
+## 🗂️ Compact Transaction Form (2.0.10)
+
+The transaction form is now organized into two tabs to make it more compact, especially on mobile:
+
+* **Main:** transaction type, person, amount, and transaction date.
+* **Details:** due date, category, and description.
+
+Switching tabs keeps entered values intact. If a required due date is invalid, the form automatically opens the Details tab.
 
 ## 💳 Partial Payments
 
@@ -234,9 +244,19 @@ See the repository's license for details.
 * 💵 پشتیبانی از تومان
 * 📝 ذخیره اطلاعات به‌صورت یادداشت‌های Markdown قابل ویرایش
 * 📱 پشتیبانی از Obsidian Desktop و Mobile
+* 🗂️ فرم ثبت تراکنش دو‌تبّه برای کاهش ارتفاع پنجره در موبایل
 * 🌐 رابط کاربری فارسی و انگلیسی
 
 ---
+
+## 🗂️ فرم دو‌تبّه ثبت تراکنش (نسخه 2.0.10)
+
+برای جمع‌وجورتر شدن پنجره ثبت تراکنش، به‌ویژه در موبایل، فرم به دو تب تقسیم شده است:
+
+* **اطلاعات اصلی:** نوع تراکنش، شخص، مبلغ و تاریخ ثبت.
+* **جزئیات:** سررسید، دسته‌بندی و شرح تراکنش.
+
+با جابه‌جایی بین تب‌ها اطلاعات واردشده حفظ می‌شوند. اگر سررسید واردشده معتبر نباشد، تب جزئیات به‌صورت خودکار باز می‌شود.
 
 ## 💳 پرداخت‌های جزئی
 
