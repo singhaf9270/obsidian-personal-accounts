@@ -2310,6 +2310,7 @@ class AccountsStore {
 	}
 }
 const DEFAULT_SETTINGS = {
+	lastSeenChangelogVersion: "",
 	filePath: DEFAULT_FILE_PATH,
 	currency: "usd",
 	locale: "en",
@@ -5606,6 +5607,63 @@ class AccountsView extends ItemView {
 		}
 	}
 }
+
+class WhatsNewModal extends Modal {
+	constructor(app, plugin) {
+		super(app);
+		this.plugin = plugin
+	}
+	onOpen() {
+		const fa = CURRENT.locale === "fa";
+		const version = this.plugin.manifest.version;
+		const features = fa ? [
+			{ icon: "languages", title: "نمایش مبلغ به حروف", description: "معادل حروفی مبلغ هنگام واردکردن آن به‌صورت خودکار نمایش داده می‌شود." },
+			{ icon: "layout", title: "فرم بازطراحی‌شده", description: "اطلاعات تراکنش در دو بخش اطلاعات اصلی و جزئیات تکمیلی مرتب شده‌اند." },
+			{ icon: "zap", title: "دکمه‌های مبلغ سریع", description: "با مبالغ پیشنهادی، مبلغ تراکنش را سریع‌تر وارد یا افزایش دهید." },
+			{ icon: "users", title: "پیشنهاد اشخاص", description: "اشخاص دارای مانده تسویه‌نشده برای انتخاب سریع‌تر پیشنهاد می‌شوند." },
+			{ icon: "wallet", title: "انتخاب دیداری نوع تراکنش", description: "طلب، بدهی، دریافت و پرداخت با کارت‌های جداگانه نمایش داده می‌شوند." },
+			{ icon: "tags", title: "دسترسی سریع به دسته‌ها", description: "دسته‌های پرکاربرد برای انتخاب آسان‌تر در دسترس هستند." },
+			{ icon: "shield-check", title: "اعتبارسنجی بهتر فرم", description: "در صورت ناقص‌بودن اطلاعات، فرم به فیلد موردنیاز بازمی‌گردد." }
+		] : [
+			{ icon: "languages", title: "Amount in Persian words", description: "The amount is automatically displayed in Persian words as you type." },
+			{ icon: "layout", title: "Redesigned transaction form", description: "Transaction fields are organized into Main Information and Additional Details tabs." },
+			{ icon: "zap", title: "Quick amount buttons", description: "Enter or increase transaction amounts faster with preset values." },
+			{ icon: "users", title: "Contact suggestions", description: "Contacts with outstanding balances are suggested for quicker selection." },
+			{ icon: "wallet", title: "Visual transaction types", description: "Receivables, debts, received payments, and made payments use distinct cards." },
+			{ icon: "tags", title: "Quick category access", description: "Frequently used categories are easier to select." },
+			{ icon: "shield-check", title: "Better form validation", description: "When required information is missing, the form returns to the relevant field." }
+		];
+		this.modalEl.addClass("pa-plugin-modal", "pa-whats-new-modal");
+		this.titleEl.setText(fa ? "تازه‌های نسخه " + version : "What's new in " + version);
+		this.contentEl.empty();
+		this.contentEl.addClass("pa-whats-new");
+		this.contentEl.setAttr("dir", fa ? "rtl" : "ltr");
+		this.contentEl.createEl("p", {
+			text: fa ? "در این نسخه، ثبت و ویرایش تراکنش‌ها سریع‌تر و ساده‌تر شده است." : "This update makes recording and editing transactions faster and easier.",
+			cls: "pa-whats-new-intro"
+		});
+		const list = this.contentEl.createDiv({ cls: "pa-whats-new-list" });
+		for (const feature of features) {
+			const item = list.createDiv({ cls: "pa-whats-new-item" });
+			const icon = item.createDiv({ cls: "pa-whats-new-icon" });
+			setIcon(icon, feature.icon);
+			const copy = item.createDiv({ cls: "pa-whats-new-copy" });
+			copy.createEl("strong", { text: feature.title });
+			copy.createEl("p", { text: feature.description });
+		}
+		const footer = this.contentEl.createDiv({ cls: "pa-whats-new-footer" });
+		const done = footer.createEl("button", {
+			text: fa ? "متوجه شدم" : "Got it",
+			cls: "mod-cta pa-whats-new-done"
+		});
+		done.addEventListener("click", () => this.close());
+	}
+	onClose() {
+		this.contentEl.empty();
+		void this.plugin.markWhatsNewSeen();
+	}
+}
+
 class PersonalAccountsPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
@@ -5625,6 +5683,11 @@ class PersonalAccountsPlugin extends Plugin {
 			void this.quickAddTransaction()
 		});
 		this.addSettingTab(new PASettingTab(this.app, this));
+		this.addCommand({
+			id: "show-whats-new",
+			name: CURRENT.locale === "fa" ? "نمایش تازه‌های نسخه" : "Show latest changes",
+			callback: () => this.openWhatsNew()
+		});
 		this.addCommand({
 			id: "open-dashboard",
 			name: t("cmdOpen"),
@@ -5650,6 +5713,13 @@ class PersonalAccountsPlugin extends Plugin {
 			callback: () => {
 				void this.openView("transactions")
 			}
+		});
+		this.app.workspace.onLayoutReady(() => {
+			setTimeout(() => {
+				if (this.settings.lastSeenChangelogVersion !== this.manifest.version) {
+					this.openWhatsNew()
+				}
+			}, 6500)
 		});
 		if (!this.settings._migratedToMd) {
 			setTimeout(() => this._migrateToMd(), 2e3)
