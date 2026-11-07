@@ -1811,8 +1811,9 @@ a.uts-channel-card:hover .uts-channel-arrow {
 }
 .modal.pa-plugin-modal .pa-form-pane.active { display: grid; }
 .modal.pa-plugin-modal .pa-form-pane .pa-field { min-width: 0; margin-bottom: 12px; }
-.modal.pa-plugin-modal .pa-form-pane.active > .pa-field:nth-child(1),
-.modal.pa-plugin-modal .pa-form-pane.active > .pa-field:nth-child(2) {
+.modal.pa-plugin-modal .pa-form-main.active > .pa-field:nth-child(1),
+.modal.pa-plugin-modal .pa-form-main.active > .pa-field:nth-child(2),
+.modal.pa-plugin-modal .pa-form-details.active > .pa-field-description {
   grid-column: 1 / -1;
 }
 .modal.pa-plugin-modal .pa-form-pane.active > .pa-field textarea {
