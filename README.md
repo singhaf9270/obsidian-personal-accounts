@@ -449,3 +449,20 @@ npm run dev
 
 </p>
 
+
+
+## 🧩 Transaction Form Layout & Mobile Keyboard Fix (2.0.11)
+
+- Improve desktop transaction form layout, button borders, and spacing.
+- Fix light-theme contrast for the selected transaction type and primary transaction action button, including mobile.
+- Reorder transaction fields for a clearer workflow.
+- Improve mobile keyboard-aware scrolling so the person name, description, and reason fields remain accessible while typing.
+- Refine the responsive two-tab form layout for desktop and narrow screens.
+
+## 🧩 اصلاح فرم ثبت تراکنش و کیبورد موبایل (نسخه 2.0.11)
+
+- واضح‌تر شدن حاشیهٔ دکمه‌ها و مرتب‌تر شدن فاصله‌ها و چینش فرم در نسخهٔ دسکتاپ.
+- اصلاح رنگ متن نوع انتخاب‌شده و دکمهٔ افزودن تراکنش در تم روشن، از جمله موبایل.
+- مرتب‌سازی فرم برای دسترسی بهتر به اطلاعات اصلی و جزئیات.
+- بهبود اسکرول هوشمند هنگام باز بودن کیبورد تا فیلد نام و شرح/دلیل هنگام تایپ پنهان نشوند.
+- تنظیم چینش فرم دو‌تبّه متناسب با دسکتاپ و صفحه‌نمایش کوچک.
