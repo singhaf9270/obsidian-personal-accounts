@@ -1801,25 +1801,9 @@ a.uts-channel-card:hover .uts-channel-arrow {
   border-color: var(--pa-color-red) !important;
 }
 
-/* Desktop form hierarchy: type/person full width, amount/date paired. */
-.modal.pa-plugin-modal .pa-form-pane {
-  display: none;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 14px;
-  row-gap: 2px;
-  align-items: start;
-}
-.modal.pa-plugin-modal .pa-form-pane.active { display: grid; }
-.modal.pa-plugin-modal .pa-form-pane .pa-field { min-width: 0; margin-bottom: 12px; }
-.modal.pa-plugin-modal .pa-form-main.active > .pa-field:nth-child(1),
-.modal.pa-plugin-modal .pa-form-main.active > .pa-field:nth-child(2),
-.modal.pa-plugin-modal .pa-form-details.active > .pa-field-description {
-  grid-column: 1 / -1;
-}
-.modal.pa-plugin-modal .pa-form-pane.active > .pa-field textarea {
-  min-height: 72px;
-  resize: vertical;
-}
+/* Keep the original single-column transaction form layout. */
+.modal.pa-plugin-modal .pa-form-pane { display: none; }
+.modal.pa-plugin-modal .pa-form-pane.active { display: block; }
 .modal.pa-plugin-modal .pa-form-tabs {
   border-color: var(--background-modifier-border-hover, var(--pa-border));
 }
@@ -1832,26 +1816,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
 }
 
 @media (max-width: 600px) {
-  .modal.pa-plugin-modal .pa-form-pane {
-    grid-template-columns: minmax(0, 1fr);
-    column-gap: 0;
-  }
-  .modal.pa-plugin-modal .pa-form-pane.active > .pa-field:nth-child(n) {
-    grid-column: 1;
-  }
-  .modal.pa-plugin-modal .pa-seg {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-  .modal.pa-plugin-modal .pa-seg button.pa-btn {
-    min-width: 0;
-    min-height: 42px;
-    padding: 9px 10px 9px 30px;
-    border-width: 1.5px;
-    white-space: normal;
-    line-height: 1.35;
-  }
   .modal.pa-plugin-modal button.pa-btn.primary,
   .theme-light .modal.pa-plugin-modal button.pa-btn.primary {
     color: #fff !important;
@@ -1874,4 +1838,17 @@ a.uts-channel-card:hover .uts-channel-arrow {
   .modal.pa-mobile-modal .modal-content select {
     scroll-margin-block: 28px 120px;
   }
+}
+
+
+/* Make date picker controls visibly interactive without changing their placement. */
+.modal.pa-plugin-modal button.pa-date-btn {
+  border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border)) !important;
+  background: var(--background-primary);
+}
+.modal.pa-plugin-modal button.pa-date-btn:hover,
+.modal.pa-plugin-modal button.pa-date-btn:focus-visible,
+.modal.pa-plugin-modal button.pa-date-btn.pa-open {
+  border-color: var(--interactive-accent) !important;
+  box-shadow: 0 0 0 1px var(--interactive-accent);
 }
