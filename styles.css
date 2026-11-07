@@ -1852,3 +1852,383 @@ a.uts-channel-card:hover .uts-channel-arrow {
   border-color: var(--interactive-accent) !important;
   box-shadow: 0 0 0 1px var(--interactive-accent);
 }
+
+
+/* ==========================================================================
+   ۲۱) Modern Fintech visual system — inspired by the supplied reference
+   Visual-only layer: preserves component order, placement and workflows.
+   ========================================================================== */
+:root {
+  --pa-indigo-50: #eef2ff;
+  --pa-indigo-100: #e0e7ff;
+  --pa-indigo-500: #6366f1;
+  --pa-indigo-600: #4f46e5;
+  --pa-indigo-700: #4338ca;
+  --pa-indigo-line: rgba(99, 102, 241, .24);
+  --pa-indigo-glow: rgba(99, 102, 241, .10);
+  --pa-radius: 14px;
+}
+.theme-light {
+  --pa-surface: #ffffff;
+  --pa-surface-2: #f8fafc;
+  --pa-border: #e2e8f0;
+  --pa-hover: #f1f5f9;
+}
+.theme-dark {
+  --pa-surface: #0f172a;
+  --pa-surface-2: #172033;
+  --pa-border: #293548;
+  --pa-hover: #202c40;
+}
+
+/* Main dashboard surfaces */
+.pa-view {
+  color: var(--text-normal);
+}
+.pa-view .pa-card,
+.pa-view .pa-stat,
+.pa-view .pa-kpi,
+.pa-view .pa-chart-wrap,
+.pa-view .pa-csv-preview {
+  border: 1px solid var(--pa-border);
+  border-radius: 16px;
+  background: var(--pa-surface);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .035);
+}
+.pa-view .pa-card {
+  padding: 15px 16px;
+  margin-bottom: 14px;
+}
+.pa-view .pa-card-title {
+  color: var(--text-muted);
+  font-size: .78em;
+  font-weight: 800;
+  letter-spacing: .015em;
+  text-transform: none;
+}
+.pa-view .pa-title {
+  font-weight: 850;
+  letter-spacing: -.02em;
+}
+.pa-view .pa-header {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.pa-view .pa-tabs {
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid var(--pa-border);
+  border-radius: 13px;
+  background: var(--pa-surface-2);
+}
+.pa-view .pa-tab {
+  padding: 7px 13px;
+  border-radius: 10px;
+  font-weight: 650;
+}
+.pa-view .pa-tab.active {
+  color: var(--pa-indigo-600);
+  background: var(--pa-surface);
+  border: 1px solid var(--pa-indigo-line);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .07);
+}
+.theme-dark .pa-view .pa-tab.active {
+  color: #a5b4fc;
+  background: #1b2740;
+  border-color: rgba(129, 140, 248, .32);
+}
+
+/* Stat cards and numeric hierarchy */
+.pa-view .pa-stats-primary .pa-stat,
+.pa-view .pa-stats-secondary .pa-stat,
+.pa-view .pa-stats .pa-stat {
+  border-radius: 15px;
+  border: 1px solid var(--pa-border);
+  background: linear-gradient(145deg, var(--pa-surface), var(--pa-surface-2));
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .035);
+}
+.pa-view .pa-stats-primary .pa-stat {
+  padding: 15px 16px;
+}
+.pa-view .pa-stat-label,
+.pa-view .pa-stats-primary .pa-stat-label {
+  color: var(--text-muted);
+  font-size: .76em;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.pa-view .pa-stat-value,
+.pa-view .pa-stats-primary .pa-stat-value {
+  font-weight: 850;
+  letter-spacing: -.025em;
+}
+.pa-view .pa-stats-primary .pa-stat::before {
+  width: 3px;
+  border-radius: 999px;
+  inset-block: 12px;
+}
+
+/* Buttons: rounded, bordered, consistent hover/focus */
+.pa-view button,
+.modal.pa-plugin-modal button,
+.pa-settings button {
+  transition: background-color .16s ease, border-color .16s ease,
+              color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.pa-view button.pa-btn,
+.modal.pa-plugin-modal button.pa-btn,
+.pa-settings button {
+  border-radius: 10px;
+}
+.pa-view button.pa-btn.primary,
+.modal.pa-plugin-modal button.pa-btn.primary,
+.pa-settings button.mod-cta {
+  background: var(--pa-indigo-600);
+  border-color: var(--pa-indigo-600);
+  color: #fff;
+  font-weight: 750;
+  box-shadow: 0 3px 9px rgba(79, 70, 229, .18);
+}
+.pa-view button.pa-btn.primary:hover,
+.modal.pa-plugin-modal button.pa-btn.primary:hover,
+.pa-settings button.mod-cta:hover {
+  background: var(--pa-indigo-700);
+  border-color: var(--pa-indigo-700);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, .24);
+}
+.pa-view button:focus-visible,
+.modal.pa-plugin-modal button:focus-visible,
+.pa-settings button:focus-visible {
+  outline: 2px solid var(--pa-indigo-500);
+  outline-offset: 2px;
+}
+.pa-view .pa-toolbar input,
+.pa-view .pa-toolbar select,
+.pa-view input,
+.pa-view select,
+.pa-view textarea,
+.modal.pa-plugin-modal .pa-field input,
+.modal.pa-plugin-modal .pa-field select,
+.modal.pa-plugin-modal .pa-field textarea {
+  border-radius: 10px;
+}
+.pa-view input:focus,
+.pa-view select:focus,
+.pa-view textarea:focus,
+.modal.pa-plugin-modal .pa-field input:focus,
+.modal.pa-plugin-modal .pa-field select:focus,
+.modal.pa-plugin-modal .pa-field textarea:focus {
+  border-color: var(--pa-indigo-500);
+  box-shadow: 0 0 0 3px var(--pa-indigo-glow);
+}
+
+/* People, transaction rows and lists */
+.pa-view .pa-row {
+  padding: 10px 9px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  margin-block: 3px;
+}
+.pa-view .pa-row:hover {
+  background: var(--pa-hover);
+  border-color: var(--pa-border);
+}
+.pa-view .pa-row-title {
+  font-weight: 700;
+}
+.pa-view .pa-tag {
+  border-radius: 999px;
+  background: var(--pa-indigo-50);
+  border-color: var(--pa-indigo-line);
+  color: var(--pa-indigo-700);
+  padding: 3px 9px;
+}
+.theme-dark .pa-view .pa-tag {
+  background: rgba(99, 102, 241, .13);
+  color: #c7d2fe;
+}
+.pa-view .pa-chip {
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-weight: 650;
+}
+.pa-view .pa-person-info,
+.pa-view .pa-remaining {
+  border-color: var(--pa-border);
+}
+.pa-view .pa-note {
+  border: 1px solid var(--pa-border);
+  border-radius: 12px;
+  background: var(--pa-surface-2);
+}
+
+/* Filters, category controls and saved views */
+.pa-view .pa-toolbar {
+  gap: 8px;
+  margin-bottom: 13px;
+}
+.pa-view .pa-toolbar input,
+.pa-view .pa-toolbar select {
+  min-height: 38px;
+  border-radius: 11px;
+}
+.pa-view .pa-seg button.pa-btn {
+  border-radius: 11px;
+}
+.pa-view .pa-seg button.pa-btn.active {
+  box-shadow: 0 0 0 1px var(--pa-indigo-line);
+}
+.pa-view .pa-link {
+  color: var(--pa-indigo-600);
+  font-weight: 700;
+}
+.theme-dark .pa-view .pa-link {
+  color: #a5b4fc;
+}
+
+/* Charts and analytics */
+.pa-view .pa-chart-wrap {
+  padding: 14px;
+  overflow: hidden;
+}
+.pa-view .pa-kpi {
+  padding: 13px 14px;
+  border-radius: 14px;
+}
+.pa-view .pa-kpi-value {
+  font-weight: 850;
+}
+.pa-view .pa-chart-legend,
+.pa-view .pa-donut-legend {
+  color: var(--text-muted);
+}
+
+/* Modals: match the reference card/header treatment without moving controls */
+.modal.pa-plugin-modal {
+  border: 1px solid var(--pa-border);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, .18);
+}
+.modal.pa-plugin-modal .modal-header {
+  padding: 17px 20px 13px;
+  border-bottom: 1px solid var(--pa-border);
+  background-image: radial-gradient(rgba(99, 102, 241, .11) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.modal.pa-plugin-modal .modal-title {
+  font-weight: 850;
+  letter-spacing: -.015em;
+}
+.modal.pa-plugin-modal .modal-content {
+  padding: 16px 20px 20px;
+}
+.modal.pa-plugin-modal .pa-form-tabs {
+  border: 1px solid var(--pa-border);
+  border-radius: 13px;
+  background: var(--pa-surface-2);
+  padding: 4px;
+  gap: 5px;
+}
+.modal.pa-plugin-modal .pa-form-tab {
+  border-radius: 10px;
+  min-height: 38px;
+  font-weight: 700;
+}
+.modal.pa-plugin-modal .pa-form-tab.active {
+  color: var(--pa-indigo-600);
+  border-color: var(--pa-indigo-line);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .07);
+}
+.theme-dark .modal.pa-plugin-modal .pa-form-tab.active {
+  color: #a5b4fc;
+  background: #1b2740;
+}
+.modal.pa-plugin-modal .pa-field label {
+  font-weight: 750;
+  color: var(--text-normal);
+}
+.modal.pa-plugin-modal .pa-actions {
+  gap: 8px;
+}
+
+/* Date controls are clearly outlined in idle, hover and selected states */
+.modal.pa-plugin-modal button.pa-date-btn {
+  border: 1.5px solid #a5b4fc !important;
+  border-radius: 11px;
+  background: rgba(99, 102, 241, .045);
+  color: var(--pa-indigo-600);
+  min-height: 40px;
+}
+.theme-dark .modal.pa-plugin-modal button.pa-date-btn {
+  border-color: #5966ad !important;
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, .12);
+}
+.modal.pa-plugin-modal button.pa-date-btn:hover,
+.modal.pa-plugin-modal button.pa-date-btn:focus-visible,
+.modal.pa-plugin-modal button.pa-date-btn.pa-open {
+  border-color: var(--pa-indigo-600) !important;
+  box-shadow: 0 0 0 3px var(--pa-indigo-glow);
+}
+.modal.pa-plugin-modal .pa-cal-pop {
+  border: 1px solid var(--pa-indigo-line);
+  border-radius: 16px;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, .2);
+  overflow: hidden;
+}
+.modal.pa-plugin-modal .pa-cal-head {
+  background: var(--pa-indigo-50);
+  color: var(--pa-indigo-700);
+}
+.theme-dark .modal.pa-plugin-modal .pa-cal-head {
+  background: #1b2740;
+  color: #c7d2fe;
+}
+.modal.pa-plugin-modal .pa-cal-day.selected,
+.modal.pa-plugin-modal .pa-cal-day.today {
+  background: var(--pa-indigo-600);
+  border-color: var(--pa-indigo-600);
+  color: #fff;
+}
+
+/* Settings: same visual language while retaining Obsidian's native controls */
+.pa-settings .setting-item {
+  border-bottom-color: var(--pa-border);
+  padding-block: 13px;
+}
+.pa-settings .setting-item-name {
+  font-weight: 750;
+}
+.pa-settings .setting-item-description {
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.pa-settings input,
+.pa-settings select,
+.pa-settings textarea {
+  border-radius: 10px;
+}
+.pa-settings .setting-item-control button {
+  border-radius: 10px;
+}
+
+/* Small screens: visual polish only; preserve existing ordering and placement */
+@media (max-width: 600px) {
+  .pa-view .pa-card {
+    border-radius: 14px;
+    padding: 12px;
+  }
+  .pa-view .pa-stats-primary .pa-stat {
+    border-radius: 13px;
+  }
+  .modal.pa-plugin-modal {
+    border-radius: 18px;
+  }
+  .modal.pa-plugin-modal .modal-header {
+    padding: 14px 15px 11px;
+  }
+  .modal.pa-plugin-modal .modal-content {
+    padding: 13px 15px 18px;
+  }
+}
