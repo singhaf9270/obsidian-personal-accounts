@@ -2548,61 +2548,52 @@ function attachMobileKeyboardHandler(modal) {
 	if (!vv) return () => {};
 	let rafId = null;
 	let scrollTimer = null;
+	const scrollActiveIntoView = () => {
+		const active = document.activeElement;
+		if (!active || !content.contains(active)) return;
+		if (!/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
+		const viewport = window.visualViewport;
+		const viewportTop = viewport ? viewport.offsetTop : 0;
+		const viewportBottom = viewport ? viewportTop + viewport.height : window.innerHeight;
+		const safeTop = viewportTop + 20;
+		const safeBottom = viewportBottom - 96;
+		const rect = active.getBoundingClientRect();
+		let delta = 0;
+		if (rect.bottom > safeBottom) delta = rect.bottom - safeBottom;
+		else if (rect.top < safeTop) delta = rect.top - safeTop;
+		if (delta) content.scrollTop += delta + (delta > 0 ? 20 : -12);
+	};
+	const scheduleScroll = () => {
+		if (scrollTimer) clearTimeout(scrollTimer);
+		scrollTimer = setTimeout(() => {
+			scrollActiveIntoView();
+			requestAnimationFrame(scrollActiveIntoView);
+			setTimeout(scrollActiveIntoView, 120);
+			setTimeout(scrollActiveIntoView, 300);
+		}, 60);
+	};
 	const updateLayout = () => {
 		if (rafId) cancelAnimationFrame(rafId);
 		rafId = requestAnimationFrame(() => {
 			const viewportHeight = vv.height;
 			const viewportTop = vv.offsetTop;
 			const keyboardHeight = window.innerHeight - viewportHeight;
-			const keyboardOpen = keyboardHeight > 150;
-			let modalHeight;
-			if (keyboardOpen) {
-				modalHeight = Math.max(220, viewportHeight - 24)
-			} else {
-				modalHeight = Math.min(window.innerHeight * .85, viewportHeight * .92)
-			}
-			const top = keyboardOpen ? viewportTop + 8 : Math.max(16, viewportTop + (viewportHeight - modalHeight) / 2);
+			const keyboardOpen = keyboardHeight > 120;
+			const modalHeight = Math.max(180, viewportHeight - 16);
+			const top = keyboardOpen
+				? viewportTop + 8
+				: Math.max(12, viewportTop + (viewportHeight - Math.min(window.innerHeight * .88, viewportHeight * .94)) / 2);
 			modalEl.style.setProperty("--pa-modal-height", modalHeight + "px");
 			modalEl.style.setProperty("--pa-modal-top", top + "px");
-			if (keyboardOpen) modalEl.addClass("pa-keyboard-open");
-			else modalEl.removeClass("pa-keyboard-open");
-			scheduleScroll()
-		})
-	};
-	const scrollActiveIntoView = () => {
-		const active = document.activeElement;
-		if (!active || !content.contains(active)) return;
-		if (!/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
-		const vv2 = window.visualViewport;
-		const viewportBottom = vv2 ? vv2.offsetTop + vv2.height : window.innerHeight;
-		const safeBottom = viewportBottom - 120;
-		const rect = active.getBoundingClientRect();
-		if (rect.bottom > safeBottom) {
-			const delta = rect.bottom - safeBottom;
-			content.scrollTop += delta + 24
-		}
-	};
-	const scheduleScroll = () => {
-		if (scrollTimer) clearTimeout(scrollTimer);
-		scrollTimer = setTimeout(() => {
-			scrollActiveIntoView();
-			setTimeout(scrollActiveIntoView, 80);
-			setTimeout(scrollActiveIntoView, 200);
-			setTimeout(scrollActiveIntoView, 400)
-		}, 50)
+			modalEl.toggleClass("pa-keyboard-open", keyboardOpen);
+			scheduleScroll();
+		});
 	};
 	const onFocusIn = e => {
-		const tag = e.target.tagName;
-		if (tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT") {
-			scheduleScroll();
-			setTimeout(scrollActiveIntoView, 200);
-			setTimeout(scrollActiveIntoView, 400);
-			setTimeout(scrollActiveIntoView, 700);
-			setTimeout(scrollActiveIntoView, 1e3)
-		}
+		if (/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) scheduleScroll();
 	};
 	const onInput = e => {
-		if (e.target.tagName === "TEXTAREA") scrollActiveIntoView()
+		if (/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) scheduleScroll();
 	};
 	const onFocusOut = () => setTimeout(updateLayout, 120);
 	content.addEventListener("focusin", onFocusIn);
@@ -2621,8 +2612,8 @@ function attachMobileKeyboardHandler(modal) {
 		vv.removeEventListener("scroll", updateLayout);
 		modalEl.style.removeProperty("--pa-modal-height");
 		modalEl.style.removeProperty("--pa-modal-top");
-		modalEl.removeClass("pa-keyboard-open")
-	}
+		modalEl.removeClass("pa-keyboard-open");
+	};
 }
 let activePicker = null;
 
@@ -3220,7 +3211,6 @@ class TransactionFormModal extends Modal {
 		amount.value = editing ? String(this.existing.amount) : preset.amount != null ? String(preset.amount) : "";
 		const amtFmt = attachAmountInput(amount, () => CURRENT.locale === "fa");
 		amtFmt.refresh();
-		field(mainPane, t("fAmount"), amount);
 		attachTooltip(amount, t("tipAmount"), null, {
 			both: true,
 			delay: 700
@@ -3264,6 +3254,7 @@ class TransactionFormModal extends Modal {
 			for (const p of this.store.data.people) dl.appendChild(new Option(p.name, p.name));
 			personWrap.appendChild(dl)
 		}
+		field(mainPane, t("fAmount"), amount);
 		const dateCtl = createDatePicker(calendar, fa);
 		this._calCloses.push(dateCtl.close);
 		field(mainPane, t("fDate"), dateCtl.el);
