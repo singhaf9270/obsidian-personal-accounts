@@ -7,3 +7,5 @@
 - Refine the responsive two-tab form layout and action buttons.
 
 Validation: JavaScript syntax and release version registry are checked by the repository release workflow. In-app verification on desktop and mobile remains pending.
+
+No data migration is required for this UI and accessibility update.
