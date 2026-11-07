@@ -475,3 +475,26 @@ The interface now uses a consistent modern fintech visual style across the dashb
 ## 🎨 به‌روزرسانی ظاهر (2.0.12)
 
 ظاهر داشبورد، افراد، تراکنش‌ها، تحلیل‌ها، تنظیمات و پنجره‌ها با یک سبک یکپارچه و مدرن بازطراحی شده است. رنگ تأکیدی نیلی، کارت‌ها، کادرها و حالت تمرکز کنترل‌ها هماهنگ شده‌اند؛ بدون تغییر ترتیب بخش‌ها، جای دکمه‌ها یا روند ثبت اطلاعات.
+
+
+---
+
+## ✨ What's New in 2.0.13
+
+- Display transaction amounts in Persian words while entering them.
+- Redesigned the transaction form with separate Main Information and Additional Details tabs.
+- Added quick amount buttons based on the selected currency.
+- Suggests contacts with outstanding balances.
+- Introduced visual cards for transaction types.
+- Added quick access to frequently used categories.
+- Improved form validation and automatic focus on missing required fields.
+
+## ✨ تازه‌های نسخه 2.0.13
+
+- نمایش خودکار مبلغ به حروف فارسی هنگام ورود مبلغ.
+- بازطراحی فرم تراکنش در دو بخش «اطلاعات اصلی» و «جزئیات تکمیلی».
+- افزودن دکمه‌های مبلغ سریع متناسب با واحد پول.
+- پیشنهاد اشخاص دارای مانده تسویه‌نشده.
+- نمایش دیداری انواع تراکنش در کارت‌های جداگانه.
+- دسترسی سریع‌تر به دسته‌بندی‌های پرکاربرد.
+- بهبود اعتبارسنجی فرم و هدایت کاربر به فیلدهای ضروری.
