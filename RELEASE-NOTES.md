@@ -1,8 +1,8 @@
-## 2.0.9
+## 2.0.10
 
-- Preserve each transaction's canonical Gregorian ISO date in Markdown metadata, independently of the selected display calendar.
-- Preserve due dates in the same way, so switching between Jalali and Gregorian calendars changes only presentation, not the underlying day.
-- Read canonical dates when available and retain compatibility with older numeric Gregorian and Jalali dates.
+- Split the transaction form into two tabs to reduce its height on mobile.
+- Keep transaction type, person, amount, and date in the Main tab; move due date, category, and description to Details.
+- Preserve entered values while switching tabs and automatically open Details when due-date validation fails.
+- Improve contrast for the primary transaction button in dark mode on mobile.
 
-Validation: JavaScript syntax check, canonical date metadata parsing, transaction and due-date serialization, and version registry checks passed. In-app verification with an existing vault remains pending.
-
+Validation: JavaScript syntax and release version registry are checked by the repository release workflow. In-app verification on mobile and desktop remains pending.
