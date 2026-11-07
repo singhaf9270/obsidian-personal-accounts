@@ -1,8 +1,9 @@
-## 2.0.10
+## 2.0.11
 
-- Split the transaction form into two tabs to reduce its height on mobile.
-- Keep transaction type, person, amount, and date in the Main tab; move due date, category, and description to Details.
-- Preserve entered values while switching tabs and automatically open Details when due-date validation fails.
-- Improve contrast for the primary transaction button in dark mode on mobile.
+- Improve desktop transaction form layout, button borders, and spacing.
+- Fix light-theme contrast for the selected transaction type and primary transaction action button.
+- Reorder transaction fields for a clearer workflow.
+- Improve mobile visual-viewport handling and focused-field scrolling so the person and description fields remain accessible above the keyboard.
+- Refine the responsive two-tab form layout and action buttons.
 
-Validation: JavaScript syntax and release version registry are checked by the repository release workflow. In-app verification on mobile and desktop remains pending.
+Validation: JavaScript syntax and release version registry are checked by the repository release workflow. In-app verification on desktop and mobile remains pending.
