@@ -3190,8 +3190,8 @@ class TransactionFormModal extends Modal {
 		const detailsTab = el("button", "pa-form-tab", fa ? "جزئیات" : "Details");
 		mainTab.type = detailsTab.type = "button";
 		tabs.append(mainTab, detailsTab);
-		const mainPane = form.createDiv("pa-form-pane pa-form-main active");
-		const detailsPane = form.createDiv("pa-form-pane pa-form-details");
+		const mainPane = form.createDiv("pa-form-pane active");
+		const detailsPane = form.createDiv("pa-form-pane");
 		const switchTab = tab => {
 			const isMain = tab === "main";
 			mainTab.toggleClass("active", isMain);
@@ -3211,6 +3211,7 @@ class TransactionFormModal extends Modal {
 		amount.value = editing ? String(this.existing.amount) : preset.amount != null ? String(preset.amount) : "";
 		const amtFmt = attachAmountInput(amount, () => CURRENT.locale === "fa");
 		amtFmt.refresh();
+		field(mainPane, t("fAmount"), amount);
 		attachTooltip(amount, t("tipAmount"), null, {
 			both: true,
 			delay: 700
@@ -3254,7 +3255,6 @@ class TransactionFormModal extends Modal {
 			for (const p of this.store.data.people) dl.appendChild(new Option(p.name, p.name));
 			personWrap.appendChild(dl)
 		}
-		field(mainPane, t("fAmount"), amount);
 		const dateCtl = createDatePicker(calendar, fa);
 		this._calCloses.push(dateCtl.close);
 		field(mainPane, t("fDate"), dateCtl.el);
@@ -3276,7 +3276,7 @@ class TransactionFormModal extends Modal {
 		field(detailsPane, t("fCategory"), catSel);
 		const desc = inputText(t("phDesc"));
 		desc.value = this.existing && this.existing.description || "";
-		field(detailsPane, t("fDesc"), desc).addClass("pa-field-description");
+		field(detailsPane, t("fDesc"), desc);
 		const submit = async () => {
 			if (!dateCtl.validate()) return;
 			if ((this.type === "receivable" || this.type === "debt") && !dueCtl.validate()) {
