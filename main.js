@@ -3167,6 +3167,51 @@ class PersonModal extends Modal {
 		this.contentEl.empty()
 	}
 }
+/* ===== تبدیل عدد به حروف فارسی ===== */
+const PA_ONES = ["", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه"];
+const PA_TEENS = ["ده", "یازده", "دوازده", "سیزده", "چهارده", "پانزده", "شانزده", "هفده", "هجده", "نوزده"];
+const PA_TENS = ["", "", "بیست", "سی", "چهل", "پنجاه", "شصت", "هفتاد", "هشتاد", "نود"];
+const PA_HUNDREDS = ["", "صد", "دویست", "سیصد", "چهارصد", "پانصد", "ششصد", "هفتصد", "هشتصد", "نهصد"];
+const PA_SCALES = ["", "هزار", "میلیون", "میلیارد", "تریلیون"];
+
+function threeDigitsToFaWords(num) {
+	if (num === 0) return "";
+	const h = Math.floor(num / 100);
+	const rem = num % 100;
+	const parts = [];
+	if (h > 0) parts.push(PA_HUNDREDS[h]);
+	if (rem >= 10 && rem < 20) {
+		parts.push(PA_TEENS[rem - 10]);
+	} else {
+		const t = Math.floor(rem / 10);
+		const o = rem % 10;
+		if (t > 0) parts.push(PA_TENS[t]);
+		if (o > 0) parts.push(PA_ONES[o]);
+	}
+	return parts.join(" و ");
+}
+
+function numberToPersianWords(n) {
+	if (!n || isNaN(n) || n <= 0) return "";
+	const intPart = Math.floor(Math.abs(n));
+	if (intPart === 0) return "";
+	if (intPart >= 1e15) return "";
+	const chunks = [];
+	let temp = intPart;
+	let scaleIdx = 0;
+	while (temp > 0) {
+		const chunk = temp % 1000;
+		if (chunk > 0) {
+			const words = threeDigitsToFaWords(chunk);
+			const scale = PA_SCALES[scaleIdx] || "";
+			chunks.unshift(scale ? words + " " + scale : words);
+		}
+		temp = Math.floor(temp / 1000);
+		scaleIdx++;
+	}
+	return chunks.join(" و ");
+}
+
 class TransactionFormModal extends Modal {
 	constructor(app, store, existing, opts = {}) {
 		super(app);
@@ -3184,12 +3229,26 @@ class TransactionFormModal extends Modal {
 		const calendar = this.store.plugin.settings.calendar;
 		Cal.ensure(this.store.plugin.app);
 		this.titleEl.setText(editing ? t("editTxTitle") : t("addTxTitle"));
-		const form = this.contentEl.createDiv("pa-form");
+		this.modalEl.setAttribute("data-tx-type", this.type);
+		const form = this.contentEl.createDiv("pa-form pa-modern-tx-form");
+
+		/* نوار تب‌های مدرن با آیکون */
 		const tabs = form.createDiv("pa-form-tabs");
-		const mainTab = el("button", "pa-form-tab active", fa ? "اطلاعات اصلی" : "Main");
-		const detailsTab = el("button", "pa-form-tab", fa ? "جزئیات" : "Details");
+		const mainTab = el("button", "pa-form-tab active");
+		const mainTabIcon = mainTab.createSpan("pa-tab-icon");
+		setIcon(mainTabIcon, "info");
+		mainTab.createSpan().setText(fa ? "اطلاعات اصلی" : "Main Info");
+
+		const detailsTab = el("button", "pa-form-tab");
+		const detailsTabIcon = detailsTab.createSpan("pa-tab-icon");
+		setIcon(detailsTabIcon, "sliders-horizontal");
+		detailsTab.createSpan().setText(fa ? "جزئیات تکمیلی" : "Details");
+		const detailsBadge = detailsTab.createSpan("pa-tab-badge pa-hidden");
+		detailsBadge.setText("•");
+
 		mainTab.type = detailsTab.type = "button";
 		tabs.append(mainTab, detailsTab);
+
 		const mainPane = form.createDiv("pa-form-pane active");
 		const detailsPane = form.createDiv("pa-form-pane");
 		const switchTab = tab => {
@@ -3201,60 +3260,171 @@ class TransactionFormModal extends Modal {
 		};
 		mainTab.onclick = () => switchTab("main");
 		detailsTab.onclick = () => switchTab("details");
+
 		const err = form.createDiv("pa-form-error");
 		const fail = m => {
 			err.setText(m);
 			err.addClass("show")
 		};
+
+		/* ۱) فیلد اول: مبلغ (Amount) */
+		const amountFieldWrap = mainPane.createDiv("pa-field pa-field-amount");
+		const amountHead = amountFieldWrap.createDiv("pa-field-head");
+		amountHead.createEl("label").setText(t("fAmount"));
+		const currencyBadge = amountHead.createSpan("pa-currency-pill");
+		currencyBadge.setText(this.store.fmt.currencyLabel());
+
+		const amountInputBox = amountFieldWrap.createDiv("pa-input-icon-wrap pa-amount-box");
+		const amountIcon = amountInputBox.createSpan("pa-input-icon");
+		setIcon(amountIcon, "coins");
 		const amount = inputText(t("phAmount"));
 		amount.inputMode = "decimal";
 		amount.value = editing ? String(this.existing.amount) : preset.amount != null ? String(preset.amount) : "";
+		amountInputBox.appendChild(amount);
 		const amtFmt = attachAmountInput(amount, () => CURRENT.locale === "fa");
 		amtFmt.refresh();
-		field(mainPane, t("fAmount"), amount);
 		attachTooltip(amount, t("tipAmount"), null, {
 			both: true,
 			delay: 700
 		});
+
+		/* نمایش مبلغ به حروف و دکمه‌های سریع */
+		const amountWordsEl = amountFieldWrap.createDiv("pa-amount-words");
+		const updateAmountWords = () => {
+			let v = parseAmount(amount.value);
+			if (v === null) v = evalAmountExpr(amount.value);
+			if (v && v > 0) {
+				if (fa) {
+					const w = numberToPersianWords(v);
+					amountWordsEl.setText(w ? w + " " + this.store.fmt.currencyLabel() : "");
+					amountWordsEl.toggleClass("show", !!w);
+				} else {
+					amountWordsEl.setText(this.store.fmt.amount(v));
+					amountWordsEl.addClass("show");
+				}
+			} else {
+				amountWordsEl.setText("");
+				amountWordsEl.removeClass("show");
+			}
+		};
+		amount.addEventListener("input", updateAmountWords);
+
+		const quickChips = amountFieldWrap.createDiv("pa-quick-amounts");
+		const curCode = this.store.plugin.settings.currency;
+		const isHighDenom = curCode === "toman" || curCode === "rial";
+		const presets = isHighDenom ? [
+			{ label: fa ? "+۱۰۰ هزار" : "+100K", add: 100000 },
+			{ label: fa ? "+۵۰۰ هزار" : "+500K", add: 500000 },
+			{ label: fa ? "+۱ میلیون" : "+1M", add: 1000000 },
+			{ label: fa ? "+۵ میلیون" : "+5M", add: 5000000 }
+		] : [
+			{ label: fa ? "+۱۰" : "+10", add: 10 },
+			{ label: fa ? "+۵۰" : "+50", add: 50 },
+			{ label: fa ? "+۱۰۰" : "+100", add: 100 },
+			{ label: fa ? "+۵۰۰" : "+500", add: 500 }
+		];
+		for (const pr of presets) {
+			const chip = el("button", "pa-quick-chip", pr.label);
+			chip.type = "button";
+			chip.onclick = () => {
+				let cur = parseAmount(amount.value);
+				if (cur === null) cur = evalAmountExpr(amount.value) || 0;
+				amount.value = String(cur + pr.add);
+				amtFmt.refresh();
+				updateAmountWords();
+			};
+			quickChips.appendChild(chip);
+		}
+		const clearAmtChip = el("button", "pa-quick-chip pa-chip-clear", fa ? "پاک‌کردن" : "Clear");
+		clearAmtChip.type = "button";
+		clearAmtChip.onclick = () => {
+			amount.value = "";
+			updateAmountWords();
+			amount.focus();
+		};
+		quickChips.appendChild(clearAmtChip);
+		updateAmountWords();
+
+		/* ۲) فیلد دوم: شخص (Person) */
+		const lockedPersonId = preset.lockPerson ? this.existing ? this.existing.personId : preset.personId || "" : "";
+		const personWrap = mainPane.createDiv("pa-field pa-field-person");
+		personWrap.createEl("label").setText(t("fPerson"));
+		let personInput = null;
+		if (lockedPersonId) {
+			const lockedBox = personWrap.createDiv("pa-locked-box");
+			const pIcon = lockedBox.createSpan("pa-input-icon");
+			setIcon(pIcon, "user-check");
+			lockedBox.appendChild(el("span", "pa-locked", this.store.personName(lockedPersonId)));
+		} else {
+			const personInputBox = personWrap.createDiv("pa-input-icon-wrap");
+			const pIcon = personInputBox.createSpan("pa-input-icon");
+			setIcon(pIcon, "user");
+			personInput = inputText(t("phPerson"));
+			personInput.setAttribute("list", "pa-person-options");
+			personInput.value = this.existing ? this.store.personName(this.existing.personId) : preset.personName || "";
+			personInputBox.appendChild(personInput);
+			const dl = document.createElement("datalist");
+			dl.id = "pa-person-options";
+			for (const p of this.store.data.people) dl.appendChild(new Option(p.name, p.name));
+			personWrap.appendChild(dl);
+
+			const balances = this.store.ledger ? this.store.ledger.balances : computeBalances(this.store.data);
+			const unsettledPeople = this.store.data.people.filter(p => {
+				const b = balances.get(p.id);
+				return b && (b.remainingReceivable > EPS || b.remainingDebt > EPS);
+			});
+			if (unsettledPeople.length > 0) {
+				const recentWrap = personWrap.createDiv("pa-person-chips");
+				for (const p of unsettledPeople.slice(0, 5)) {
+					const pChip = el("button", "pa-person-chip", p.name);
+					pChip.type = "button";
+					pChip.onclick = () => {
+						personInput.value = p.name;
+					};
+					recentWrap.appendChild(pChip);
+				}
+			}
+		}
+
+		/* ۳) فیلد سوم: نوع تراکنش (Transaction Type) */
 		let dueField = null;
 		const updateDueVisibility = () => {
 			if (!dueField) return;
 			const origin = this.type === "receivable" || this.type === "debt";
 			dueField.toggleClass("pa-hidden", !origin)
 		};
-		const typeWrap = mainPane.createDiv("pa-field");
+		const typeWrap = mainPane.createDiv("pa-field pa-field-type");
 		typeWrap.createEl("label").setText(t("fType"));
-		const seg = el("div", "pa-seg");
+		const seg = el("div", "pa-seg pa-seg-modern");
 		typeWrap.appendChild(seg);
 		const typeOptions = preset.paymentOnly ? ["payment_received", "payment_made"] : ["receivable", "debt", "payment_received", "payment_made"];
+		const typeIcons = {
+			receivable: "arrow-down-left",
+			debt: "arrow-up-right",
+			payment_received: "check-circle-2",
+			payment_made: "send"
+		};
 		const segBtns = new Map;
 		for (const ty of typeOptions) {
-			const b = el("button", "pa-btn" + (ty === this.type ? " active" : ""), typeLabel(ty));
+			const b = el("button", "pa-btn pa-type-card" + (ty === this.type ? " active" : ""));
+			b.type = "button";
 			b.setAttribute("data-type", ty);
+			const ic = b.createSpan("pa-type-icon");
+			setIcon(ic, typeIcons[ty] || "circle");
+			const txt = b.createSpan("pa-type-label");
+			txt.setText(typeLabel(ty));
+			b.createSpan("pa-type-radio");
 			b.onclick = () => {
 				this.type = ty;
+				this.modalEl.setAttribute("data-tx-type", ty);
 				segBtns.forEach((bb, tt) => bb.toggleClass("active", tt === ty));
 				updateDueVisibility()
 			};
 			segBtns.set(ty, b);
 			seg.appendChild(b)
 		}
-		const lockedPersonId = preset.lockPerson ? this.existing ? this.existing.personId : preset.personId || "" : "";
-		const personWrap = mainPane.createDiv("pa-field");
-		personWrap.createEl("label").setText(t("fPerson"));
-		let personInput = null;
-		if (lockedPersonId) {
-			personWrap.appendChild(el("span", "pa-locked", this.store.personName(lockedPersonId)))
-		} else {
-			personInput = inputText(t("phPerson"));
-			personInput.setAttribute("list", "pa-person-options");
-			personInput.value = this.existing ? this.store.personName(this.existing.personId) : preset.personName || "";
-			personWrap.appendChild(personInput);
-			const dl = document.createElement("datalist");
-			dl.id = "pa-person-options";
-			for (const p of this.store.data.people) dl.appendChild(new Option(p.name, p.name));
-			personWrap.appendChild(dl)
-		}
+
+		/* ۴) فیلد چهارم: تاریخ (Date) */
 		const dateCtl = createDatePicker(calendar, fa);
 		this._calCloses.push(dateCtl.close);
 		field(mainPane, t("fDate"), dateCtl.el);
@@ -3262,21 +3432,72 @@ class TransactionFormModal extends Modal {
 		attachTooltip(dateCtl.el, t("tipDatePicker"), null, {
 			delay: 700
 		});
-		const dueCtl = createDatePicker(calendar, fa);
-		this._calCloses.push(dueCtl.close);
-		dueField = field(detailsPane, t("fDue"), dueCtl.el);
-		dueCtl.set(editing && this.existing.dueDate ? this.existing.dueDate : "");
-		updateDueVisibility();
+
+		/* ===== تب دوم: جزئیات (۱. شرح، ۲. دسته‌بندی، ۳. سررسید) ===== */
+		const desc = inputText(t("phDesc"));
+		desc.value = this.existing && this.existing.description || "";
+		field(detailsPane, t("fDesc"), desc);
+
 		const catSel = document.createElement("select");
 		catSel.appendChild(new Option(t("noCategory"), ""));
 		for (const c of this.store.plugin.settings.categories) {
 			catSel.appendChild(new Option(c, c))
 		}
 		catSel.value = this.existing && this.existing.category || "";
-		field(detailsPane, t("fCategory"), catSel);
-		const desc = inputText(t("phDesc"));
-		desc.value = this.existing && this.existing.description || "";
-		field(detailsPane, t("fDesc"), desc);
+		const catField = field(detailsPane, t("fCategory"), catSel);
+
+		/* استخراج ۵ دسته اخیر استفاده‌شده در تراکنش‌ها */
+		const recentCats = [];
+		const sortedTxs = [...this.store.data.transactions].sort((a, b) => b.createdAt - a.createdAt || b.date.localeCompare(a.date));
+		for (const tx of sortedTxs) {
+			if (tx.category && this.store.plugin.settings.categories.includes(tx.category) && !recentCats.includes(tx.category)) {
+				recentCats.push(tx.category);
+				if (recentCats.length >= 5) break;
+			}
+		}
+		for (const c of this.store.plugin.settings.categories) {
+			if (recentCats.length >= 5) break;
+			if (!recentCats.includes(c)) recentCats.push(c);
+		}
+
+		if (recentCats.length > 0) {
+			const catPills = catField.createDiv("pa-cat-pills");
+			const syncCatPills = () => {
+				catPills.querySelectorAll(".pa-cat-pill").forEach(btn => {
+					btn.toggleClass("active", btn.getAttribute("data-cat") === catSel.value);
+				});
+			};
+			for (const c of recentCats) {
+				const pill = el("button", "pa-cat-pill", c);
+				pill.type = "button";
+				pill.setAttribute("data-cat", c);
+				pill.onclick = () => {
+					catSel.value = catSel.value === c ? "" : c;
+					syncCatPills();
+					updateDetailsBadge();
+				};
+				catPills.appendChild(pill);
+			}
+			catSel.addEventListener("change", () => {
+				syncCatPills();
+				updateDetailsBadge();
+			});
+			syncCatPills();
+		}
+
+		const dueCtl = createDatePicker(calendar, fa);
+		this._calCloses.push(dueCtl.close);
+		dueField = field(detailsPane, t("fDue"), dueCtl.el);
+		dueCtl.set(editing && this.existing.dueDate ? this.existing.dueDate : "");
+		updateDueVisibility();
+
+		const updateDetailsBadge = () => {
+			const hasDetails = Boolean((dueCtl.get() && (this.type === "receivable" || this.type === "debt")) || catSel.value || desc.value.trim());
+			detailsBadge.toggleClass("pa-hidden", !hasDetails);
+		};
+		desc.addEventListener("input", updateDetailsBadge);
+		updateDetailsBadge();
+
 		const submit = async () => {
 			if (!dateCtl.validate()) return;
 			if ((this.type === "receivable" || this.type === "debt") && !dueCtl.validate()) {
@@ -3285,11 +3506,19 @@ class TransactionFormModal extends Modal {
 			}
 			let amountVal = parseAmount(amount.value);
 			if (amountVal === null) amountVal = evalAmountExpr(amount.value);
-			if (amountVal === null || amountVal <= 0) return fail(t("amountInvalid"));
+			if (amountVal === null || amountVal <= 0) {
+				switchTab("main");
+				amount.focus();
+				return fail(t("amountInvalid"));
+			}
 			let personId = lockedPersonId;
 			if (!personId) {
 				const nameVal = personInput.value.trim();
-				if (!nameVal) return fail(t("personRequired"));
+				if (!nameVal) {
+					switchTab("main");
+					personInput.focus();
+					return fail(t("personRequired"));
+				}
 				personId = (await this.store.ensurePerson(nameVal)).id
 			}
 			const origin = this.type === "receivable" || this.type === "debt";
@@ -3312,10 +3541,15 @@ class TransactionFormModal extends Modal {
 			if (this.opts.onSaved) this.opts.onSaved();
 			this.close()
 		};
-		const actions = form.createDiv("pa-actions");
-		const cancel = el("button", "pa-btn", t("cancel"));
+		const actions = form.createDiv("pa-actions pa-modal-footer");
+		const cancel = el("button", "pa-btn pa-btn-cancel", t("cancel"));
+		cancel.type = "button";
 		cancel.onclick = () => this.close();
-		const saveBtn = el("button", "pa-btn primary", editing ? t("save") : t("addTxTitle"));
+		const saveBtn = el("button", "pa-btn primary pa-btn-submit");
+		saveBtn.type = "button";
+		const saveIcon = saveBtn.createSpan("pa-btn-icon");
+		setIcon(saveIcon, editing ? "check" : "plus");
+		saveBtn.createSpan().setText(editing ? t("save") : t("addTxTitle"));
 		saveBtn.onclick = submit;
 		actions.append(cancel, saveBtn);
 		form.addEventListener("keydown", e => {
@@ -5656,3 +5890,5 @@ function renderCreatorSupport(container, language) {
 }
 
 
+
+/* nosourcemap */
