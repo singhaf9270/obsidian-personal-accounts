@@ -1712,3 +1712,49 @@ a.uts-channel-card:hover .uts-channel-arrow {
 .pa-csv-preview table { width: 100%; border-collapse: collapse; font-size: .85em; }
 .pa-csv-preview th, .pa-csv-preview td { text-align: start; padding: 9px 12px; border-bottom: 1px solid var(--background-modifier-border); white-space: nowrap; }
 .pa-csv-preview th { background: var(--background-secondary); font-weight: 600; }
+
+
+/* Transaction form: compact two-step tabs */
+.modal.pa-plugin-modal .pa-form-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  margin-bottom: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-secondary);
+}
+.modal.pa-plugin-modal .pa-form-tab {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.modal.pa-plugin-modal .pa-form-tab.active {
+  border-color: var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.modal.pa-plugin-modal .pa-form-pane { display: none; }
+.modal.pa-plugin-modal .pa-form-pane.active { display: block; }
+.modal.pa-plugin-modal .pa-form-pane .pa-field { margin-bottom: 12px; }
+@media (max-width: 600px) {
+  .modal.pa-plugin-modal .pa-form-tabs { margin-bottom: 10px; }
+  .modal.pa-plugin-modal .pa-form-pane .pa-field { margin-bottom: 10px; }
+  .modal.pa-plugin-modal .pa-form-tab { min-height: 34px; padding: 6px 8px; }
+  .theme-dark .modal.pa-plugin-modal button.pa-btn.primary {
+    color: #ffffff !important;
+    background: var(--interactive-accent) !important;
+    border-color: var(--interactive-accent) !important;
+  }
+  .theme-dark .modal.pa-plugin-modal button.pa-btn.primary svg {
+    color: #ffffff !important;
+  }
+}
