@@ -1758,3 +1758,143 @@ a.uts-channel-card:hover .uts-channel-arrow {
     color: #ffffff !important;
   }
 }
+
+
+/* ==========================================================================
+   ۲۰) یکپارچه‌سازی فرم تراکنش در دسکتاپ و موبایل
+   ========================================================================== */
+
+.modal.pa-plugin-modal button.pa-btn {
+  border: 1px solid var(--background-modifier-border-hover, var(--pa-border));
+  color: var(--text-normal);
+  background: var(--background-secondary);
+  min-height: 34px;
+}
+.modal.pa-plugin-modal button.pa-btn:hover {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+.modal.pa-plugin-modal button.pa-btn.primary,
+.theme-light .modal.pa-plugin-modal button.pa-btn.primary {
+  color: #fff !important;
+  background: var(--interactive-accent) !important;
+  border: 1px solid var(--interactive-accent) !important;
+}
+.modal.pa-plugin-modal button.pa-btn.primary:hover {
+  color: #fff !important;
+  background: var(--interactive-accent-hover) !important;
+  border-color: var(--interactive-accent-hover) !important;
+}
+.modal.pa-plugin-modal .pa-seg button.pa-btn.active,
+.theme-light .modal.pa-plugin-modal .pa-seg button.pa-btn.active {
+  color: #fff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,.16);
+}
+.modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="receivable"].active,
+.modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_received"].active {
+  background: var(--pa-color-green) !important;
+  border-color: var(--pa-color-green) !important;
+}
+.modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="debt"].active,
+.modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_made"].active {
+  background: var(--pa-color-red) !important;
+  border-color: var(--pa-color-red) !important;
+}
+
+/* Desktop form hierarchy: type/person full width, amount/date paired. */
+.modal.pa-plugin-modal .pa-form-pane {
+  display: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 14px;
+  row-gap: 2px;
+  align-items: start;
+}
+.modal.pa-plugin-modal .pa-form-pane.active { display: grid; }
+.modal.pa-plugin-modal .pa-form-pane .pa-field { min-width: 0; margin-bottom: 12px; }
+.modal.pa-plugin-modal .pa-form-pane.active > .pa-field:nth-child(1),
+.modal.pa-plugin-modal .pa-form-pane.active > .pa-field:nth-child(2) {
+  grid-column: 1 / -1;
+}
+.modal.pa-plugin-modal .pa-form-pane.active > .pa-field textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+.modal.pa-plugin-modal .pa-actions {
+  justify-content: flex-start;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+.modal.pa-plugin-modal .pa-actions button.pa-btn {
+  min-width: 108px;
+  padding: 7px 16px;
+}
+.modal.pa-plugin-modal .pa-form-tabs {
+  border-color: var(--background-modifier-border-hover, var(--pa-border));
+}
+.modal.pa-plugin-modal .pa-form-tab {
+  border: 1px solid var(--background-modifier-border);
+}
+.modal.pa-plugin-modal .pa-form-tab.active {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+@media (max-width: 600px) {
+  .modal.pa-plugin-modal .pa-form-pane {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+  }
+  .modal.pa-plugin-modal .pa-form-pane.active > .pa-field:nth-child(n) {
+    grid-column: 1;
+  }
+  .modal.pa-plugin-modal .pa-seg {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .modal.pa-plugin-modal .pa-seg button.pa-btn {
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 10px 9px 30px;
+    border-width: 1.5px;
+    white-space: normal;
+    line-height: 1.35;
+  }
+  .modal.pa-plugin-modal .pa-actions {
+    position: sticky;
+    bottom: -1px;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    background: var(--background-primary);
+    padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+    margin-top: 8px;
+  }
+  .modal.pa-plugin-modal .pa-actions button.pa-btn {
+    min-width: 0;
+    min-height: 42px;
+  }
+  .modal.pa-plugin-modal button.pa-btn.primary,
+  .theme-light .modal.pa-plugin-modal button.pa-btn.primary {
+    color: #fff !important;
+    background: var(--interactive-accent) !important;
+    border-color: var(--interactive-accent) !important;
+  }
+  .modal.pa-mobile-modal .modal-content {
+    max-height: calc(var(--pa-modal-height) - 52px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 28px;
+    scroll-padding-block: 24px 110px;
+  }
+  .modal.pa-mobile-modal.pa-keyboard-open .modal-content {
+    padding-bottom: 110px;
+    scroll-padding-bottom: 110px;
+  }
+  .modal.pa-mobile-modal .modal-content input,
+  .modal.pa-mobile-modal .modal-content textarea,
+  .modal.pa-mobile-modal .modal-content select {
+    scroll-margin-block: 28px 120px;
+  }
+}
