@@ -3190,8 +3190,8 @@ class TransactionFormModal extends Modal {
 		const detailsTab = el("button", "pa-form-tab", fa ? "جزئیات" : "Details");
 		mainTab.type = detailsTab.type = "button";
 		tabs.append(mainTab, detailsTab);
-		const mainPane = form.createDiv("pa-form-pane active");
-		const detailsPane = form.createDiv("pa-form-pane");
+		const mainPane = form.createDiv("pa-form-pane pa-form-main active");
+		const detailsPane = form.createDiv("pa-form-pane pa-form-details");
 		const switchTab = tab => {
 			const isMain = tab === "main";
 			mainTab.toggleClass("active", isMain);
@@ -3276,7 +3276,7 @@ class TransactionFormModal extends Modal {
 		field(detailsPane, t("fCategory"), catSel);
 		const desc = inputText(t("phDesc"));
 		desc.value = this.existing && this.existing.description || "";
-		field(detailsPane, t("fDesc"), desc);
+		field(detailsPane, t("fDesc"), desc).addClass("pa-field-description");
 		const submit = async () => {
 			if (!dateCtl.validate()) return;
 			if ((this.type === "receivable" || this.type === "debt") && !dueCtl.validate()) {
