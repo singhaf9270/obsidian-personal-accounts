@@ -3113,6 +3113,22 @@ class PersonModal extends Modal {
 		const p = this.person;
 		this.titleEl.setText(p ? t("editPersonTitle") : t("addPersonTitle"));
 		const form = this.contentEl.createDiv("pa-form");
+		const tabs = form.createDiv("pa-form-tabs");
+		const mainTab = el("button", "pa-form-tab active", fa ? "اطلاعات اصلی" : "Main");
+		const detailsTab = el("button", "pa-form-tab", fa ? "جزئیات" : "Details");
+		mainTab.type = detailsTab.type = "button";
+		tabs.append(mainTab, detailsTab);
+		const mainPane = form.createDiv("pa-form-pane active");
+		const detailsPane = form.createDiv("pa-form-pane");
+		const switchTab = tab => {
+			const isMain = tab === "main";
+			mainTab.toggleClass("active", isMain);
+			detailsTab.toggleClass("active", !isMain);
+			mainPane.toggleClass("active", isMain);
+			detailsPane.toggleClass("active", !isMain);
+		};
+		mainTab.onclick = () => switchTab("main");
+		detailsTab.onclick = () => switchTab("details");
 		const err = form.createDiv("pa-form-error");
 		const fail = m => {
 			err.setText(m);
@@ -3204,7 +3220,7 @@ class TransactionFormModal extends Modal {
 		amount.value = editing ? String(this.existing.amount) : preset.amount != null ? String(preset.amount) : "";
 		const amtFmt = attachAmountInput(amount, () => CURRENT.locale === "fa");
 		amtFmt.refresh();
-		field(form, t("fAmount"), amount);
+		field(mainPane, t("fAmount"), amount);
 		attachTooltip(amount, t("tipAmount"), null, {
 			both: true,
 			delay: 700
@@ -3215,7 +3231,7 @@ class TransactionFormModal extends Modal {
 			const origin = this.type === "receivable" || this.type === "debt";
 			dueField.toggleClass("pa-hidden", !origin)
 		};
-		const typeWrap = form.createDiv("pa-field");
+		const typeWrap = mainPane.createDiv("pa-field");
 		typeWrap.createEl("label").setText(t("fType"));
 		const seg = el("div", "pa-seg");
 		typeWrap.appendChild(seg);
@@ -3233,7 +3249,7 @@ class TransactionFormModal extends Modal {
 			seg.appendChild(b)
 		}
 		const lockedPersonId = preset.lockPerson ? this.existing ? this.existing.personId : preset.personId || "" : "";
-		const personWrap = form.createDiv("pa-field");
+		const personWrap = mainPane.createDiv("pa-field");
 		personWrap.createEl("label").setText(t("fPerson"));
 		let personInput = null;
 		if (lockedPersonId) {
@@ -3250,14 +3266,14 @@ class TransactionFormModal extends Modal {
 		}
 		const dateCtl = createDatePicker(calendar, fa);
 		this._calCloses.push(dateCtl.close);
-		field(form, t("fDate"), dateCtl.el);
+		field(mainPane, t("fDate"), dateCtl.el);
 		dateCtl.set(editing ? this.existing.date : todayISO());
 		attachTooltip(dateCtl.el, t("tipDatePicker"), null, {
 			delay: 700
 		});
 		const dueCtl = createDatePicker(calendar, fa);
 		this._calCloses.push(dueCtl.close);
-		dueField = field(form, t("fDue"), dueCtl.el);
+		dueField = field(detailsPane, t("fDue"), dueCtl.el);
 		dueCtl.set(editing && this.existing.dueDate ? this.existing.dueDate : "");
 		updateDueVisibility();
 		const catSel = document.createElement("select");
@@ -3266,13 +3282,16 @@ class TransactionFormModal extends Modal {
 			catSel.appendChild(new Option(c, c))
 		}
 		catSel.value = this.existing && this.existing.category || "";
-		field(form, t("fCategory"), catSel);
+		field(detailsPane, t("fCategory"), catSel);
 		const desc = inputText(t("phDesc"));
 		desc.value = this.existing && this.existing.description || "";
-		field(form, t("fDesc"), desc);
+		field(detailsPane, t("fDesc"), desc);
 		const submit = async () => {
 			if (!dateCtl.validate()) return;
-			if ((this.type === "receivable" || this.type === "debt") && !dueCtl.validate()) return;
+			if ((this.type === "receivable" || this.type === "debt") && !dueCtl.validate()) {
+				switchTab("details");
+				return;
+			}
 			let amountVal = parseAmount(amount.value);
 			if (amountVal === null) amountVal = evalAmountExpr(amount.value);
 			if (amountVal === null || amountVal <= 0) return fail(t("amountInvalid"));
