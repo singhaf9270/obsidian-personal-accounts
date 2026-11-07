@@ -1820,16 +1820,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   min-height: 72px;
   resize: vertical;
 }
-.modal.pa-plugin-modal .pa-actions {
-  justify-content: flex-start;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--background-modifier-border);
-}
-.modal.pa-plugin-modal .pa-actions button.pa-btn {
-  min-width: 108px;
-  padding: 7px 16px;
-}
 .modal.pa-plugin-modal .pa-form-tabs {
   border-color: var(--background-modifier-border-hover, var(--pa-border));
 }
@@ -1861,20 +1851,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
     border-width: 1.5px;
     white-space: normal;
     line-height: 1.35;
-  }
-  .modal.pa-plugin-modal .pa-actions {
-    position: sticky;
-    bottom: -1px;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: 1fr 1.4fr;
-    background: var(--background-primary);
-    padding: 10px 0 max(10px, env(safe-area-inset-bottom));
-    margin-top: 8px;
-  }
-  .modal.pa-plugin-modal .pa-actions button.pa-btn {
-    min-width: 0;
-    min-height: 42px;
   }
   .modal.pa-plugin-modal button.pa-btn.primary,
   .theme-light .modal.pa-plugin-modal button.pa-btn.primary {
