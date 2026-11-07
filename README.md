@@ -466,3 +466,12 @@ npm run dev
 - مرتب‌سازی فرم برای دسترسی بهتر به اطلاعات اصلی و جزئیات.
 - بهبود اسکرول هوشمند هنگام باز بودن کیبورد تا فیلد نام و شرح/دلیل هنگام تایپ پنهان نشوند.
 - تنظیم چینش فرم دو‌تبّه متناسب با دسکتاپ و صفحه‌نمایش کوچک.
+
+
+## 🎨 Visual refresh (2.0.12)
+
+The interface now uses a consistent modern fintech visual style across the dashboard, people, transactions, analytics, settings, and dialogs. The update refines indigo accents, cards, borders, controls, and focus states while preserving the existing layout and workflows.
+
+## 🎨 به‌روزرسانی ظاهر (2.0.12)
+
+ظاهر داشبورد، افراد، تراکنش‌ها، تحلیل‌ها، تنظیمات و پنجره‌ها با یک سبک یکپارچه و مدرن بازطراحی شده است. رنگ تأکیدی نیلی، کارت‌ها، کادرها و حالت تمرکز کنترل‌ها هماهنگ شده‌اند؛ بدون تغییر ترتیب بخش‌ها، جای دکمه‌ها یا روند ثبت اطلاعات.
