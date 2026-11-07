@@ -1297,162 +1297,169 @@ a.uts-channel-card:hover .uts-channel-arrow {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
 }
 
-.pa-card {
-  border: 1px solid var(--background-modifier-border) !important;
-}
 
-.pa-stat {
-  border: 1px solid var(--background-modifier-border) !important;
-}
-
-.pa-stats-primary .pa-stat,
-.pa-stats-secondary .pa-stat {
-  border: 1px solid var(--background-modifier-border) !important;
-}
-
-.pa-kpi {
-  border: 1px solid var(--background-modifier-border) !important;
-}
-
-.pa-row {
-  border-bottom: 1px solid var(--background-modifier-border) !important;
-}
-
-.pa-person-info {
-  border-top: 1px solid var(--background-modifier-border) !important;
-}
-
-.pa-remaining {
-  border-top: 1px solid var(--background-modifier-border) !important;
-}
-
-.pa-analytics-tabs {
-  border-bottom: 1px solid var(--background-modifier-border) !important;
-}
-
-.pa-cashflow-row {
-  border-inline-start: 3px solid var(--background-modifier-border) !important;
-}
 /* ==========================================================================
-   ۱۶) RTL مودال‌های پلاگین — فقط .modal.pa-plugin-modal
+   ۱۶) خطوط جداکننده و کادرها با Specificity بالا 
    ========================================================================== */
 
-.modal.pa-plugin-modal.pa-rtl-modal {
+.pa-view .pa-card,
+.theme-dark .pa-view .pa-card,
+.theme-light .pa-view .pa-card {
+  border: 1px solid var(--background-modifier-border);
+}
+
+.pa-view .pa-stat,
+.theme-dark .pa-view .pa-stat,
+.theme-light .pa-view .pa-stat {
+  border: 1px solid var(--background-modifier-border);
+}
+
+.pa-view .pa-stats-primary .pa-stat,
+.pa-view .pa-stats-secondary .pa-stat {
+  border: 1px solid var(--background-modifier-border);
+}
+
+.pa-view .pa-kpi,
+.theme-dark .pa-view .pa-kpi {
+  border: 1px solid var(--background-modifier-border);
+}
+
+.pa-view .pa-row {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.pa-view .pa-person-info {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.pa-view .pa-remaining {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.pa-view .pa-analytics-tabs {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.pa-view .pa-cashflow-row {
+  border-inline-start: 3px solid var(--background-modifier-border);
+}
+
+/* ==========================================================================
+   ۱۷) RTL مودال‌های پلاگین — فقط .modal.pa-plugin-modal
+   ========================================================================== */
+
+body .modal.pa-plugin-modal.pa-rtl-modal {
   direction: rtl;
   text-align: right;
 }
-.modal.pa-plugin-modal.pa-rtl-modal .modal-title {
+body .modal.pa-plugin-modal.pa-rtl-modal .modal-title {
   text-align: right;
 }
-.modal.pa-plugin-modal.pa-rtl-modal .modal-content {
+body .modal.pa-plugin-modal.pa-rtl-modal .modal-content {
   direction: rtl;
   text-align: right;
 }
 
-/* فرم و فیلدها */
-.modal.pa-plugin-modal.pa-rtl-modal .pa-form,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-actions,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-detail,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-help-body {
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-form,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-actions,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-detail,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-help-body {
   direction: rtl;
   text-align: right;
 }
-.modal.pa-plugin-modal.pa-rtl-modal .pa-field > label {
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-field > label,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-field-head > label {
   text-align: right;
 }
 
-/* ورودی‌ها — راست‌چین */
-.modal.pa-plugin-modal.pa-rtl-modal input[type="text"],
-.modal.pa-plugin-modal.pa-rtl-modal input[type="email"],
-.modal.pa-plugin-modal.pa-rtl-modal input[type="tel"],
-.modal.pa-plugin-modal.pa-rtl-modal input[type="search"],
-.modal.pa-plugin-modal.pa-rtl-modal textarea,
-.modal.pa-plugin-modal.pa-rtl-modal select {
+body .modal.pa-plugin-modal.pa-rtl-modal input[type="text"],
+body .modal.pa-plugin-modal.pa-rtl-modal input[type="email"],
+body .modal.pa-plugin-modal.pa-rtl-modal input[type="tel"],
+body .modal.pa-plugin-modal.pa-rtl-modal input[type="search"],
+body .modal.pa-plugin-modal.pa-rtl-modal textarea,
+body .modal.pa-plugin-modal.pa-rtl-modal select {
   direction: rtl;
   text-align: right;
 }
 
-/* ورودی مبلغ و مبالغ — چپ‌چین بمانند (چون عدد و کاما دارن) */
-.modal.pa-plugin-modal.pa-rtl-modal input[inputmode="decimal"],
-.modal.pa-plugin-modal.pa-rtl-modal .pa-money,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-detail-val,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-row-amt,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-stat-value,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-kpi-value,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-date-label {
+/* ورودی مبلغ و مبالغ — چپ‌چین بمانند */
+body .modal.pa-plugin-modal.pa-rtl-modal input[inputmode="decimal"],
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-money,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-detail-val,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-row-amt,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-stat-value,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-kpi-value,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-date-label {
   direction: ltr;
   text-align: left;
   unicode-bidi: plaintext;
 }
 
-/* date picker button — راست‌چین */
-.modal.pa-plugin-modal.pa-rtl-modal button.pa-date-btn {
+body .modal.pa-plugin-modal.pa-rtl-modal button.pa-date-btn {
   direction: rtl;
   text-align: right;
 }
-/* ولی label داخلش چپ‌چین (چون تاریخ عددیه) */
-.modal.pa-plugin-modal.pa-rtl-modal button.pa-date-btn .pa-date-label {
+body .modal.pa-plugin-modal.pa-rtl-modal button.pa-date-btn .pa-date-label {
   direction: ltr;
   text-align: left;
 }
 
-/* segmented و چیپ‌ها راست‌چین */
-.modal.pa-plugin-modal.pa-rtl-modal .pa-seg,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-row-sub,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-info-row {
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-seg,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-row-sub,
+body .modal.pa-plugin-modal.pa-rtl-modal .pa-info-row {
   direction: rtl;
 }
 
 /* ==========================================================================
-   ۱۷) خط دور دکمه‌ها و فیلدها در موبایل — فقط داخل مودال پلاگین
+   ۱۸) خط دور دکمه‌ها و فیلدها در موبایل — فقط داخل مودال پلاگین
    ========================================================================== */
 
 @media (max-width: 600px) {
-  .modal.pa-plugin-modal button.pa-btn {
+  body .modal.pa-plugin-modal button.pa-btn {
     border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border));
     background: var(--background-secondary);
     box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
   }
-  .modal.pa-plugin-modal button.pa-btn.primary {
+  body .modal.pa-plugin-modal button.pa-btn.primary {
     border: 1.5px solid var(--interactive-accent);
     box-shadow: 0 1px 3px rgba(0, 0, 0, .15);
   }
-  .modal.pa-plugin-modal button.pa-btn.danger {
+  body .modal.pa-plugin-modal button.pa-btn.danger {
     border: 1.5px solid var(--pa-color-red);
   }
-  .modal.pa-plugin-modal button.pa-btn.icon {
+  body .modal.pa-plugin-modal button.pa-btn.icon {
     border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border));
     background: var(--background-secondary);
   }
 
-  .modal.pa-plugin-modal .pa-field input,
-  .modal.pa-plugin-modal .pa-field select,
-  .modal.pa-plugin-modal .pa-field textarea,
-  .modal.pa-plugin-modal button.pa-date-btn {
+  body .modal.pa-plugin-modal .pa-field input,
+  body .modal.pa-plugin-modal .pa-field select,
+  body .modal.pa-plugin-modal .pa-field textarea,
+  body .modal.pa-plugin-modal button.pa-date-btn {
     border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border));
     background: var(--background-primary);
   }
-  .modal.pa-plugin-modal .pa-field input:focus,
-  .modal.pa-plugin-modal .pa-field select:focus,
-  .modal.pa-plugin-modal .pa-field textarea:focus,
-  .modal.pa-plugin-modal button.pa-date-btn:focus,
-  .modal.pa-plugin-modal button.pa-date-btn.pa-open {
+  body .modal.pa-plugin-modal .pa-field input:focus,
+  body .modal.pa-plugin-modal .pa-field select:focus,
+  body .modal.pa-plugin-modal .pa-field textarea:focus,
+  body .modal.pa-plugin-modal button.pa-date-btn:focus,
+  body .modal.pa-plugin-modal button.pa-date-btn.pa-open {
     border-color: var(--interactive-accent);
     box-shadow: 0 0 0 2px var(--interactive-accent-hover);
   }
 
-  .modal.pa-plugin-modal .pa-form-error.show {
+  body .modal.pa-plugin-modal .pa-form-error.show {
     border: 1.5px solid var(--pa-color-red);
     background: rgba(225, 87, 89, .08);
     padding: 8px 10px;
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
-  .modal.pa-plugin-modal .pa-seg button.pa-btn {
+  body .modal.pa-plugin-modal .pa-seg button.pa-btn {
     border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border));
     background: var(--background-secondary);
   }
-  .modal.pa-plugin-modal .pa-seg button.pa-btn.active {
+  body .modal.pa-plugin-modal .pa-seg button.pa-btn.active {
     border-width: 2px;
   }
 }
@@ -1466,9 +1473,9 @@ a.uts-channel-card:hover .uts-channel-arrow {
 .theme-dark .modal.pa-plugin-modal button.pa-date-btn {
   border-color: var(--background-modifier-border-hover, #3a3a3a);
 }
+
 /* ==========================================================================
-   ۱۸) RTL تنظیمات Obsidian — جدا از مودال‌های پلاگین
-   نکته: :not(.modal) باعث می‌شود قوانین زیر به مودال‌ها دست نزنند.
+   ۱۹) RTL تنظیمات Obsidian — جدا از مودال‌های پلاگین
    ========================================================================== */
 .pa-rtl-modal:not(.modal) {
   direction: rtl;
@@ -1505,52 +1512,15 @@ a.uts-channel-card:hover .uts-channel-arrow {
   text-align: right;
 }
 
-/* مسیر فایل معمولاً لاتین است؛ آن ورودی را چپ‌به‌راست نگه می‌داریم. */
 .pa-rtl-modal:not(.modal) .setting-item-control input[type="text"] {
   direction: ltr;
   text-align: left;
 }
 
-/* FIX: Restore Persian RTL inside plugin modals only.
-   These rules are intentionally scoped to the modal and do not affect settings. */
-.modal.pa-plugin-modal.pa-rtl-modal {
-  direction: rtl !important;
-  text-align: right !important;
-}
-.modal.pa-plugin-modal.pa-rtl-modal .modal-title,
-.modal.pa-plugin-modal.pa-rtl-modal .modal-content,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-form,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-actions,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-detail,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-help-body {
-  direction: rtl !important;
-  text-align: right !important;
-}
-.modal.pa-plugin-modal.pa-rtl-modal input,
-.modal.pa-plugin-modal.pa-rtl-modal select,
-.modal.pa-plugin-modal.pa-rtl-modal textarea,
-.modal.pa-plugin-modal.pa-rtl-modal button.pa-date-btn {
-  direction: rtl !important;
-  text-align: right !important;
-}
-.modal.pa-plugin-modal.pa-rtl-modal .pa-money,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-detail-val,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-row-amt,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-stat-value,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-kpi-value,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-date-label {
-  direction: ltr !important;
-}
-.modal.pa-plugin-modal.pa-rtl-modal .pa-seg,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-row-sub,
-.modal.pa-plugin-modal.pa-rtl-modal .pa-info-row {
-  direction: rtl !important;
-}
 /* ==========================================================================
-   ۱۹) اصلاح نمایش اعداد و آمار در موبایل
+   ۲۰) اصلاح نمایش اعداد و آمار در موبایل 
    ========================================================================== */
 
-/* --- اعداد بزرگ: جلوگیری از بریده شدن --- */
 .pa-stats-primary .pa-stat-value,
 .pa-stat-value,
 .pa-kpi-value,
@@ -1562,7 +1532,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   line-height: 1.2;
 }
 
-/* آیکون‌ها در آمار ثانویه */
 .pa-stat-icon {
   display: inline-flex;
   align-items: center;
@@ -1583,28 +1552,22 @@ a.uts-channel-card:hover .uts-channel-arrow {
   gap: 2px;
 }
 
-/* ==========================================================================
-   موبایل: آمار اصلی هر کدوم یه ردیف
-   ========================================================================== */
 @media (max-width: 600px) {
-  .pa-stats-primary {
-    grid-template-columns: 1fr !important;
+  .pa-view .pa-body .pa-stats-primary {
+    grid-template-columns: 1fr;
     gap: 8px;
   }
-  .pa-stats-primary .pa-stat {
+  .pa-view .pa-body .pa-stats-primary .pa-stat {
     padding: 10px 12px;
   }
-  .pa-stats-primary .pa-stat-value {
+  .pa-view .pa-body .pa-stats-primary .pa-stat-value {
     font-size: 1.25em;
     white-space: normal;
     word-break: break-word;
   }
 
-  /* ==========================================================================
-     موبایل: آمار ثانویه (۵ تا) → آیکون کوچیک تو یه ردیف
-     ========================================================================== */
-  .pa-stats-secondary {
-    display: flex !important;
+  .pa-view .pa-body .pa-stats-secondary {
+    display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     gap: 6px;
@@ -1612,7 +1575,7 @@ a.uts-channel-card:hover .uts-channel-arrow {
     padding: 4px 0;
     justify-content: space-between;
   }
-  .pa-stats-secondary .pa-stat {
+  .pa-view .pa-body .pa-stats-secondary .pa-stat {
     flex: 1 1 0;
     min-width: 44px;
     max-width: none;
@@ -1624,42 +1587,38 @@ a.uts-channel-card:hover .uts-channel-arrow {
     gap: 2px;
     border-radius: 10px;
   }
-  /* در موبایل فقط آیکون دیده بشه، متن لیبل مخفی */
-  .pa-stats-secondary .pa-stat-label-text {
+  .pa-view .pa-body .pa-stats-secondary .pa-stat-label-text {
     display: none;
   }
-  .pa-stats-secondary .pa-stat-icon {
+  .pa-view .pa-body .pa-stats-secondary .pa-stat-icon {
     margin: 0;
     width: 22px;
     height: 22px;
   }
-  .pa-stats-secondary .pa-stat-icon svg {
+  .pa-view .pa-body .pa-stats-secondary .pa-stat-icon svg {
     width: 20px;
     height: 20px;
   }
-  .pa-stats-secondary .pa-stat-value {
+  .pa-view .pa-body .pa-stats-secondary .pa-stat-value {
     font-size: .8em;
     font-weight: 700;
     margin-top: 0;
     white-space: normal;
     word-break: break-word;
   }
-  /* رنگ آیکون‌ها */
-  .pa-stats-secondary .pa-stat .pa-stat-icon {
+  .pa-view .pa-body .pa-stats-secondary .pa-stat .pa-stat-icon {
     color: var(--text-muted);
   }
-  .pa-stats-secondary .pa-stat.warn .pa-stat-icon,
-  .pa-stats-secondary .pa-stat.warn .pa-stat-value {
+  .pa-view .pa-body .pa-stats-secondary .pa-stat.warn .pa-stat-icon,
+  .pa-view .pa-body .pa-stats-secondary .pa-stat.warn .pa-stat-value {
     color: var(--pa-color-orange);
   }
-  .pa-stats-secondary .pa-stat.danger .pa-stat-icon,
-  .pa-stats-secondary .pa-stat.danger .pa-stat-value {
+  .pa-view .pa-body .pa-stats-secondary .pa-stat.danger .pa-stat-icon,
+  .pa-view .pa-body .pa-stats-secondary .pa-stat.danger .pa-stat-value {
     color: var(--pa-color-red);
   }
 }
 
-
-/* Settings follow the plugin language independently of Obsidian's language. */
 .pa-settings { text-align: start; }
 .pa-settings .setting-item { direction: inherit; gap: 16px; }
 .pa-settings .setting-item-info { margin-inline: 0 auto; min-width: 0; text-align: start; }
@@ -1678,7 +1637,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   .pa-settings .setting-item-control { max-width: 100%; }
 }
 
-/* Visible transaction and payment dates in reports, lists and details. */
 .pa-transaction-date {
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
   width: fit-content; max-width: 100%; margin-block: 6px;
@@ -1694,17 +1652,16 @@ a.uts-channel-card:hover .uts-channel-arrow {
 .pa-payment-date { border-inline-start: 3px solid var(--color-green, #4caf50); }
 .pa-payment-date .pa-transaction-date-icon { color: var(--color-green, #4caf50); }
 
-/* Preview: understated date metadata, with no repeated title or payment label. */
 .pa-row-main .pa-transaction-date,
 .modal-content > .pa-transaction-date {
- display: inline-flex; align-items: center; gap: 6px;
- border: 0; border-inline-start: 0; border-radius: 0;
- background: transparent; padding: 0; margin-block: 5px 7px;
- font-size: .8em; line-height: 1.7; color: var(--text-muted);
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 0; border-inline-start: 0; border-radius: 0;
+  background: transparent; padding: 0; margin-block: 5px 7px;
+  font-size: .8em; line-height: 1.7; color: var(--text-muted);
 }
 .pa-row-main .pa-transaction-date .pa-transaction-date-value,
 .modal-content > .pa-transaction-date .pa-transaction-date-value {
- color: var(--text-muted); font-weight: 500;
+  color: var(--text-muted); font-weight: 500;
 }
 .pa-row-main .pa-transaction-date .pa-transaction-date-icon,
 .modal-content > .pa-transaction-date .pa-transaction-date-icon { color: var(--text-faint); }
@@ -1713,150 +1670,8 @@ a.uts-channel-card:hover .uts-channel-arrow {
 .pa-csv-preview th, .pa-csv-preview td { text-align: start; padding: 9px 12px; border-bottom: 1px solid var(--background-modifier-border); white-space: nowrap; }
 .pa-csv-preview th { background: var(--background-secondary); font-weight: 600; }
 
-
-/* Transaction form: compact two-step tabs */
-.modal.pa-plugin-modal .pa-form-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  padding: 4px;
-  margin-bottom: 12px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  background: var(--background-secondary);
-}
-.modal.pa-plugin-modal .pa-form-tab {
-  min-height: 36px;
-  padding: 7px 12px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  cursor: pointer;
-}
-.modal.pa-plugin-modal .pa-form-tab.active {
-  border-color: var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0,0,0,.08);
-}
-.modal.pa-plugin-modal .pa-form-pane { display: none; }
-.modal.pa-plugin-modal .pa-form-pane.active { display: block; }
-.modal.pa-plugin-modal .pa-form-pane .pa-field { margin-bottom: 12px; }
-@media (max-width: 600px) {
-  .modal.pa-plugin-modal .pa-form-tabs { margin-bottom: 10px; }
-  .modal.pa-plugin-modal .pa-form-pane .pa-field { margin-bottom: 10px; }
-  .modal.pa-plugin-modal .pa-form-tab { min-height: 34px; padding: 6px 8px; }
-  .theme-dark .modal.pa-plugin-modal button.pa-btn.primary {
-    color: #ffffff !important;
-    background: var(--interactive-accent) !important;
-    border-color: var(--interactive-accent) !important;
-  }
-  .theme-dark .modal.pa-plugin-modal button.pa-btn.primary svg {
-    color: #ffffff !important;
-  }
-}
-
-
 /* ==========================================================================
-   ۲۰) یکپارچه‌سازی فرم تراکنش در دسکتاپ و موبایل
-   ========================================================================== */
-
-.modal.pa-plugin-modal button.pa-btn {
-  border: 1px solid var(--background-modifier-border-hover, var(--pa-border));
-  color: var(--text-normal);
-  background: var(--background-secondary);
-  min-height: 34px;
-}
-.modal.pa-plugin-modal button.pa-btn:hover {
-  border-color: var(--interactive-accent);
-  background: var(--background-modifier-hover);
-}
-.modal.pa-plugin-modal button.pa-btn.primary,
-.theme-light .modal.pa-plugin-modal button.pa-btn.primary {
-  color: #fff !important;
-  background: var(--interactive-accent) !important;
-  border: 1px solid var(--interactive-accent) !important;
-}
-.modal.pa-plugin-modal button.pa-btn.primary:hover {
-  color: #fff !important;
-  background: var(--interactive-accent-hover) !important;
-  border-color: var(--interactive-accent-hover) !important;
-}
-.modal.pa-plugin-modal .pa-seg button.pa-btn.active,
-.theme-light .modal.pa-plugin-modal .pa-seg button.pa-btn.active {
-  color: #fff !important;
-  text-shadow: 0 1px 1px rgba(0,0,0,.16);
-}
-.modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="receivable"].active,
-.modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_received"].active {
-  background: var(--pa-color-green) !important;
-  border-color: var(--pa-color-green) !important;
-}
-.modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="debt"].active,
-.modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_made"].active {
-  background: var(--pa-color-red) !important;
-  border-color: var(--pa-color-red) !important;
-}
-
-/* Keep the original single-column transaction form layout. */
-.modal.pa-plugin-modal .pa-form-pane { display: none; }
-.modal.pa-plugin-modal .pa-form-pane.active { display: block; }
-.modal.pa-plugin-modal .pa-form-tabs {
-  border-color: var(--background-modifier-border-hover, var(--pa-border));
-}
-.modal.pa-plugin-modal .pa-form-tab {
-  border: 1px solid var(--background-modifier-border);
-}
-.modal.pa-plugin-modal .pa-form-tab.active {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 1px var(--interactive-accent);
-}
-
-@media (max-width: 600px) {
-  .modal.pa-plugin-modal button.pa-btn.primary,
-  .theme-light .modal.pa-plugin-modal button.pa-btn.primary {
-    color: #fff !important;
-    background: var(--interactive-accent) !important;
-    border-color: var(--interactive-accent) !important;
-  }
-  .modal.pa-mobile-modal .modal-content {
-    max-height: calc(var(--pa-modal-height) - 52px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding-bottom: 28px;
-    scroll-padding-block: 24px 110px;
-  }
-  .modal.pa-mobile-modal.pa-keyboard-open .modal-content {
-    padding-bottom: 110px;
-    scroll-padding-bottom: 110px;
-  }
-  .modal.pa-mobile-modal .modal-content input,
-  .modal.pa-mobile-modal .modal-content textarea,
-  .modal.pa-mobile-modal .modal-content select {
-    scroll-margin-block: 28px 120px;
-  }
-}
-
-
-/* Make date picker controls visibly interactive without changing their placement. */
-.modal.pa-plugin-modal button.pa-date-btn {
-  border: 1.5px solid var(--background-modifier-border-hover, var(--pa-border)) !important;
-  background: var(--background-primary);
-}
-.modal.pa-plugin-modal button.pa-date-btn:hover,
-.modal.pa-plugin-modal button.pa-date-btn:focus-visible,
-.modal.pa-plugin-modal button.pa-date-btn.pa-open {
-  border-color: var(--interactive-accent) !important;
-  box-shadow: 0 0 0 1px var(--interactive-accent);
-}
-
-
-/* ==========================================================================
-   ۲۱) Modern Fintech visual system — inspired by the supplied reference
-   Visual-only layer: preserves component order, placement and workflows.
+   ۲۱) سیستم بصری مدرن فین‌تک و طراحی جدید مودال تراکنش 
    ========================================================================== */
 :root {
   --pa-indigo-50: #eef2ff;
@@ -1865,7 +1680,16 @@ a.uts-channel-card:hover .uts-channel-arrow {
   --pa-indigo-600: #4f46e5;
   --pa-indigo-700: #4338ca;
   --pa-indigo-line: rgba(99, 102, 241, .24);
-  --pa-indigo-glow: rgba(99, 102, 241, .10);
+  --pa-indigo-glow: rgba(99, 102, 241, .14);
+  --pa-emerald-500: #10b981;
+  --pa-emerald-600: #059669;
+  --pa-emerald-glow: rgba(16, 185, 129, .18);
+  --pa-rose-500: #ef4444;
+  --pa-rose-600: #dc2626;
+  --pa-rose-glow: rgba(239, 68, 68, .18);
+  --pa-amber-500: #f59e0b;
+  --pa-amber-600: #d97706;
+  --pa-amber-glow: rgba(245, 158, 11, .18);
   --pa-radius: 14px;
 }
 .theme-light {
@@ -1881,7 +1705,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   --pa-hover: #202c40;
 }
 
-/* Main dashboard surfaces */
 .pa-view {
   color: var(--text-normal);
 }
@@ -1938,7 +1761,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   border-color: rgba(129, 140, 248, .32);
 }
 
-/* Stat cards and numeric hierarchy */
 .pa-view .pa-stats-primary .pa-stat,
 .pa-view .pa-stats-secondary .pa-stat,
 .pa-view .pa-stats .pa-stat {
@@ -1968,61 +1790,69 @@ a.uts-channel-card:hover .uts-channel-arrow {
   inset-block: 12px;
 }
 
-/* Buttons: rounded, bordered, consistent hover/focus */
 .pa-view button,
-.modal.pa-plugin-modal button,
+body .modal.pa-plugin-modal button,
 .pa-settings button {
-  transition: background-color .16s ease, border-color .16s ease,
-              color .16s ease, box-shadow .16s ease, transform .16s ease;
+  transition: background-color .18s ease, border-color .18s ease,
+              color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 .pa-view button.pa-btn,
-.modal.pa-plugin-modal button.pa-btn,
+body .modal.pa-plugin-modal button.pa-btn,
 .pa-settings button {
-  border-radius: 10px;
+  border-radius: 11px;
 }
 .pa-view button.pa-btn.primary,
-.modal.pa-plugin-modal button.pa-btn.primary,
+body .modal.pa-plugin-modal button.pa-btn.primary,
+body.theme-light .modal.pa-plugin-modal button.pa-btn.primary,
+body.theme-dark .modal.pa-plugin-modal button.pa-btn.primary,
 .pa-settings button.mod-cta {
-  background: var(--pa-indigo-600);
-  border-color: var(--pa-indigo-600);
-  color: #fff;
+  background: linear-gradient(135deg, var(--pa-indigo-500) 0%, var(--pa-indigo-600) 100%);
+  border: 1px solid var(--pa-indigo-600);
+  color: #ffffff;
   font-weight: 750;
-  box-shadow: 0 3px 9px rgba(79, 70, 229, .18);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, .22);
 }
 .pa-view button.pa-btn.primary:hover,
-.modal.pa-plugin-modal button.pa-btn.primary:hover,
+body .modal.pa-plugin-modal button.pa-btn.primary:hover,
+body.theme-light .modal.pa-plugin-modal button.pa-btn.primary:hover,
+body.theme-dark .modal.pa-plugin-modal button.pa-btn.primary:hover,
 .pa-settings button.mod-cta:hover {
-  background: var(--pa-indigo-700);
+  background: linear-gradient(135deg, var(--pa-indigo-600) 0%, var(--pa-indigo-700) 100%);
   border-color: var(--pa-indigo-700);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, .24);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, .3);
+  transform: translateY(-1px);
+}
+body .modal.pa-plugin-modal button.pa-btn.primary svg {
+  color: #ffffff;
 }
 .pa-view button:focus-visible,
-.modal.pa-plugin-modal button:focus-visible,
+body .modal.pa-plugin-modal button:focus-visible,
 .pa-settings button:focus-visible {
   outline: 2px solid var(--pa-indigo-500);
   outline-offset: 2px;
 }
+
 .pa-view .pa-toolbar input,
 .pa-view .pa-toolbar select,
 .pa-view input,
 .pa-view select,
 .pa-view textarea,
-.modal.pa-plugin-modal .pa-field input,
-.modal.pa-plugin-modal .pa-field select,
-.modal.pa-plugin-modal .pa-field textarea {
-  border-radius: 10px;
+body .modal.pa-plugin-modal .pa-field input,
+body .modal.pa-plugin-modal .pa-field select,
+body .modal.pa-plugin-modal .pa-field textarea {
+  border-radius: 11px;
 }
 .pa-view input:focus,
 .pa-view select:focus,
 .pa-view textarea:focus,
-.modal.pa-plugin-modal .pa-field input:focus,
-.modal.pa-plugin-modal .pa-field select:focus,
-.modal.pa-plugin-modal .pa-field textarea:focus {
+body .modal.pa-plugin-modal .pa-field input:focus,
+body .modal.pa-plugin-modal .pa-field select:focus,
+body .modal.pa-plugin-modal .pa-field textarea:focus {
   border-color: var(--pa-indigo-500);
-  box-shadow: 0 0 0 3px var(--pa-indigo-glow);
+  box-shadow: 0 0 0 3.5px var(--pa-indigo-glow);
 }
 
-/* People, transaction rows and lists */
 .pa-view .pa-row {
   padding: 10px 9px;
   border: 1px solid transparent;
@@ -2062,7 +1892,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   background: var(--pa-surface-2);
 }
 
-/* Filters, category controls and saved views */
 .pa-view .pa-toolbar {
   gap: 8px;
   margin-bottom: 13px;
@@ -2072,12 +1901,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   min-height: 38px;
   border-radius: 11px;
 }
-.pa-view .pa-seg button.pa-btn {
-  border-radius: 11px;
-}
-.pa-view .pa-seg button.pa-btn.active {
-  box-shadow: 0 0 0 1px var(--pa-indigo-line);
-}
 .pa-view .pa-link {
   color: var(--pa-indigo-600);
   font-weight: 700;
@@ -2086,7 +1909,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   color: #a5b4fc;
 }
 
-/* Charts and analytics */
 .pa-view .pa-chart-wrap {
   padding: 14px;
   overflow: hidden;
@@ -2103,96 +1925,501 @@ a.uts-channel-card:hover .uts-channel-arrow {
   color: var(--text-muted);
 }
 
-/* Modals: match the reference card/header treatment without moving controls */
-.modal.pa-plugin-modal {
+/* ==========================================================================
+   ۲۲) طراحی مدرن و حرفه‌ای مودال افزودن/ویرایش تراکنش
+   ========================================================================== */
+
+body .modal.pa-plugin-modal {
   border: 1px solid var(--pa-border);
   border-radius: 22px;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, .18);
+  background: var(--pa-surface);
+  box-shadow: 0 24px 60px -12px rgba(15, 23, 42, .25);
+  max-width: 560px;
+  width: 100%;
+  position: relative;
 }
-.modal.pa-plugin-modal .modal-header {
-  padding: 17px 20px 13px;
+
+/* نوار رنگی بالای مودال متناسب با نوع تراکنش */
+body .modal.pa-plugin-modal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--pa-indigo-500), #818cf8);
+  z-index: 3;
+  transition: background .25s ease;
+}
+body .modal.pa-plugin-modal[data-tx-type="receivable"]::before {
+  background: linear-gradient(90deg, var(--pa-emerald-500), #34d399);
+}
+body .modal.pa-plugin-modal[data-tx-type="debt"]::before {
+  background: linear-gradient(90deg, var(--pa-rose-500), #f87171);
+}
+body .modal.pa-plugin-modal[data-tx-type="payment_received"]::before {
+  background: linear-gradient(90deg, var(--pa-indigo-500), #60a5fa);
+}
+body .modal.pa-plugin-modal[data-tx-type="payment_made"]::before {
+  background: linear-gradient(90deg, var(--pa-amber-500), #fbbf24);
+}
+
+body .modal.pa-plugin-modal .modal-header {
+  padding: 18px 24px 14px;
   border-bottom: 1px solid var(--pa-border);
-  background-image: radial-gradient(rgba(99, 102, 241, .11) 1px, transparent 1px);
-  background-size: 12px 12px;
+  background: linear-gradient(135deg, var(--pa-surface-2) 0%, var(--pa-surface) 100%);
 }
-.modal.pa-plugin-modal .modal-title {
+body .modal.pa-plugin-modal .modal-title {
+  font-size: 1.08em;
   font-weight: 850;
   letter-spacing: -.015em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.modal.pa-plugin-modal .modal-content {
-  padding: 16px 20px 20px;
+body .modal.pa-plugin-modal .modal-title::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--pa-indigo-500), #818cf8);
 }
-.modal.pa-plugin-modal .pa-form-tabs {
+body .modal.pa-plugin-modal[data-tx-type="receivable"] .modal-title::before {
+  background: linear-gradient(180deg, var(--pa-emerald-500), #34d399);
+}
+body .modal.pa-plugin-modal[data-tx-type="debt"] .modal-title::before {
+  background: linear-gradient(180deg, var(--pa-rose-500), #f87171);
+}
+
+body .modal.pa-plugin-modal .modal-content {
+  padding: 18px 24px 22px;
+}
+
+/* نوار تب‌های مدرن کپسولی */
+body .modal.pa-plugin-modal .pa-form-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: 18px;
   border: 1px solid var(--pa-border);
   border-radius: 13px;
   background: var(--pa-surface-2);
-  padding: 4px;
-  gap: 5px;
 }
-.modal.pa-plugin-modal .pa-form-tab {
-  border-radius: 10px;
+body .modal.pa-plugin-modal .pa-form-tab {
   min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: .88em;
   font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
 }
-.modal.pa-plugin-modal .pa-form-tab.active {
+body .modal.pa-plugin-modal .pa-form-tab:hover:not(.active) {
+  color: var(--text-normal);
+  background: rgba(99, 102, 241, .05);
+}
+body .modal.pa-plugin-modal .pa-form-tab.active {
   color: var(--pa-indigo-600);
+  background: var(--pa-surface);
   border-color: var(--pa-indigo-line);
-  box-shadow: 0 1px 4px rgba(15, 23, 42, .07);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, .07);
 }
-.theme-dark .modal.pa-plugin-modal .pa-form-tab.active {
+.theme-dark body .modal.pa-plugin-modal .pa-form-tab.active,
+body.theme-dark .modal.pa-plugin-modal .pa-form-tab.active {
   color: #a5b4fc;
-  background: #1b2740;
+  background: #1e293b;
+  border-color: rgba(129, 140, 248, .35);
 }
-.modal.pa-plugin-modal .pa-field label {
+body .modal.pa-plugin-modal .pa-tab-icon {
+  display: inline-flex;
+  align-items: center;
+}
+body .modal.pa-plugin-modal .pa-tab-icon svg {
+  width: 15px;
+  height: 15px;
+}
+body .modal.pa-plugin-modal .pa-tab-badge {
+  color: var(--pa-emerald-500);
+  font-size: 1.3em;
+  line-height: 1;
+}
+
+body .modal.pa-plugin-modal .pa-form-pane {
+  display: none;
+}
+body .modal.pa-plugin-modal .pa-form-pane.active {
+  display: block;
+  animation: paPaneFade .22s ease;
+}
+@keyframes paPaneFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+body .modal.pa-plugin-modal .pa-field {
+  margin-bottom: 16px;
+}
+body .modal.pa-plugin-modal .pa-field > label,
+body .modal.pa-plugin-modal .pa-field-head > label {
+  font-size: .82em;
   font-weight: 750;
   color: var(--text-normal);
 }
-.modal.pa-plugin-modal .pa-actions {
-  gap: 8px;
+body .modal.pa-plugin-modal .pa-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+body .modal.pa-plugin-modal .pa-currency-pill {
+  font-size: .74em;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--pa-indigo-50);
+  color: var(--pa-indigo-600);
+  border: 1px solid var(--pa-indigo-line);
+}
+body.theme-dark .modal.pa-plugin-modal .pa-currency-pill {
+  background: rgba(99, 102, 241, .16);
+  color: #c7d2fe;
 }
 
-/* Date controls are clearly outlined in idle, hover and selected states */
-.modal.pa-plugin-modal button.pa-date-btn {
-  border: 1.5px solid #a5b4fc !important;
+/* کادر ورودی آیکون‌دار (مبلغ و شخص) */
+body .modal.pa-plugin-modal .pa-input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+body .modal.pa-plugin-modal .pa-input-icon-wrap .pa-input-icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: color .18s ease;
+}
+body .modal.pa-plugin-modal .pa-input-icon-wrap .pa-input-icon svg {
+  width: 17px;
+  height: 17px;
+}
+body .modal.pa-plugin-modal .pa-input-icon-wrap:focus-within .pa-input-icon {
+  color: var(--pa-indigo-500);
+}
+body .modal.pa-plugin-modal .pa-input-icon-wrap input {
+  padding-inline-start: 38px;
+  min-height: 44px;
+  font-size: .95em;
+  background: var(--pa-surface-2);
+  border: 1.5px solid var(--pa-border);
+}
+body .modal.pa-plugin-modal .pa-input-icon-wrap input:focus {
+  background: var(--pa-surface);
+  border-color: var(--pa-indigo-500);
+}
+
+/* کادر ویژه مبلغ */
+body .modal.pa-plugin-modal .pa-amount-box input {
+  font-size: 1.18em;
+  font-weight: 800;
+  letter-spacing: .02em;
+  min-height: 48px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* معادل حروفی مبلغ */
+body .modal.pa-plugin-modal .pa-amount-words {
+  font-size: .78em;
+  font-weight: 600;
+  color: var(--pa-indigo-600);
+  min-height: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all .2s ease;
+  padding-inline: 4px;
+}
+body.theme-dark .modal.pa-plugin-modal .pa-amount-words {
+  color: #a5b4fc;
+}
+body .modal.pa-plugin-modal .pa-amount-words.show {
+  min-height: 20px;
+  max-height: 48px;
+  opacity: 1;
+  margin-top: 5px;
+}
+
+/* دکمه‌های افزودن سریع مبلغ و انتخاب سریع شخص */
+body .modal.pa-plugin-modal .pa-quick-amounts,
+body .modal.pa-plugin-modal .pa-person-chips,
+body .modal.pa-plugin-modal .pa-cat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+body .modal.pa-plugin-modal button.pa-quick-chip,
+body .modal.pa-plugin-modal button.pa-person-chip,
+body .modal.pa-plugin-modal button.pa-cat-pill {
+  padding: 4px 10px;
+  min-height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--pa-border);
+  background: var(--pa-surface-2);
+  color: var(--text-muted);
+  font-size: .75em;
+  font-weight: 650;
+  cursor: pointer;
+}
+body .modal.pa-plugin-modal button.pa-quick-chip:hover,
+body .modal.pa-plugin-modal button.pa-person-chip:hover,
+body .modal.pa-plugin-modal button.pa-cat-pill:hover {
+  border-color: var(--pa-indigo-500);
+  color: var(--pa-indigo-600);
+  background: var(--pa-indigo-50);
+}
+body.theme-dark .modal.pa-plugin-modal button.pa-quick-chip:hover,
+body.theme-dark .modal.pa-plugin-modal button.pa-person-chip:hover,
+body.theme-dark .modal.pa-plugin-modal button.pa-cat-pill:hover {
+  background: rgba(99, 102, 241, .18);
+  color: #c7d2fe;
+}
+body .modal.pa-plugin-modal button.pa-cat-pill.active {
+  background: var(--pa-indigo-600);
+  border-color: var(--pa-indigo-600);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal button.pa-quick-chip.pa-chip-clear:hover {
+  border-color: var(--pa-rose-500);
+  color: var(--pa-rose-500);
+  background: rgba(239, 68, 68, .08);
+}
+
+/* شخص قفل شده */
+body .modal.pa-plugin-modal .pa-locked-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 11px;
+  border: 1.5px solid var(--pa-border);
+  background: var(--pa-surface-2);
+}
+body .modal.pa-plugin-modal .pa-locked-box .pa-locked {
+  background: transparent;
+  padding: 0;
+}
+
+/* کارت‌های انتخاب نوع تراکنش (۴ حالت رنگی متمایز) */
+body .modal.pa-plugin-modal .pa-seg.pa-seg-modern {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-modern button.pa-btn.pa-type-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid var(--pa-border);
+  background: var(--pa-surface-2);
+  color: var(--text-normal);
+  font-weight: 700;
+  justify-content: flex-start;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-modern button.pa-btn.pa-type-card::before {
+  display: none;
+}
+body .modal.pa-plugin-modal .pa-type-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pa-surface);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all .18s ease;
+}
+body .modal.pa-plugin-modal .pa-type-icon svg {
+  width: 15px;
+  height: 15px;
+}
+body .modal.pa-plugin-modal .pa-type-label {
+  flex: 1;
+  text-align: start;
+  font-size: .9em;
+}
+body .modal.pa-plugin-modal .pa-type-radio {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--text-faint);
+  flex-shrink: 0;
+  position: relative;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-modern button.pa-btn.pa-type-card.active .pa-type-radio {
+  border-color: #ffffff;
+  background: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-modern button.pa-btn.pa-type-card.active .pa-type-radio::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* رنگ‌بندی اختصاصی هر نوع تراکنش در حالت فعال */
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="receivable"].active {
+  background: linear-gradient(135deg, var(--pa-emerald-500), var(--pa-emerald-600));
+  border-color: var(--pa-emerald-600);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--pa-emerald-glow);
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="receivable"].active .pa-type-icon {
+  background: rgba(255, 255, 255, .2);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="receivable"].active .pa-type-radio {
+  color: var(--pa-emerald-600);
+}
+
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="debt"].active {
+  background: linear-gradient(135deg, var(--pa-rose-500), var(--pa-rose-600));
+  border-color: var(--pa-rose-600);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--pa-rose-glow);
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="debt"].active .pa-type-icon {
+  background: rgba(255, 255, 255, .2);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="debt"].active .pa-type-radio {
+  color: var(--pa-rose-600);
+}
+
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_received"].active {
+  background: linear-gradient(135deg, var(--pa-indigo-500), var(--pa-indigo-600));
+  border-color: var(--pa-indigo-600);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--pa-indigo-glow);
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_received"].active .pa-type-icon {
+  background: rgba(255, 255, 255, .2);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_received"].active .pa-type-radio {
+  color: var(--pa-indigo-600);
+}
+
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_made"].active {
+  background: linear-gradient(135deg, var(--pa-amber-500), var(--pa-amber-600));
+  border-color: var(--pa-amber-600);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--pa-amber-glow);
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_made"].active .pa-type-icon {
+  background: rgba(255, 255, 255, .2);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="payment_made"].active .pa-type-radio {
+  color: var(--pa-amber-600);
+}
+
+/* کنترل‌های تاریخ */
+body .modal.pa-plugin-modal button.pa-date-btn {
+  border: 1.5px solid #a5b4fc;
   border-radius: 11px;
   background: rgba(99, 102, 241, .045);
   color: var(--pa-indigo-600);
-  min-height: 40px;
+  min-height: 42px;
 }
-.theme-dark .modal.pa-plugin-modal button.pa-date-btn {
-  border-color: #5966ad !important;
+body.theme-dark .modal.pa-plugin-modal button.pa-date-btn {
+  border-color: #5966ad;
   color: #c7d2fe;
   background: rgba(99, 102, 241, .12);
 }
-.modal.pa-plugin-modal button.pa-date-btn:hover,
-.modal.pa-plugin-modal button.pa-date-btn:focus-visible,
-.modal.pa-plugin-modal button.pa-date-btn.pa-open {
-  border-color: var(--pa-indigo-600) !important;
+body .modal.pa-plugin-modal button.pa-date-btn:hover,
+body .modal.pa-plugin-modal button.pa-date-btn:focus-visible,
+body .modal.pa-plugin-modal button.pa-date-btn.pa-open {
+  border-color: var(--pa-indigo-600);
   box-shadow: 0 0 0 3px var(--pa-indigo-glow);
 }
-.modal.pa-plugin-modal .pa-cal-pop {
+body .modal.pa-plugin-modal .pa-cal-pop {
   border: 1px solid var(--pa-indigo-line);
   border-radius: 16px;
   box-shadow: 0 14px 38px rgba(15, 23, 42, .2);
   overflow: hidden;
 }
-.modal.pa-plugin-modal .pa-cal-head {
+body .modal.pa-plugin-modal .pa-cal-head {
   background: var(--pa-indigo-50);
   color: var(--pa-indigo-700);
 }
-.theme-dark .modal.pa-plugin-modal .pa-cal-head {
+body.theme-dark .modal.pa-plugin-modal .pa-cal-head {
   background: #1b2740;
   color: #c7d2fe;
 }
-.modal.pa-plugin-modal .pa-cal-day.selected,
-.modal.pa-plugin-modal .pa-cal-day.today {
+body .modal.pa-plugin-modal .pa-cal-day.selected,
+body .modal.pa-plugin-modal .pa-cal-day.today {
   background: var(--pa-indigo-600);
   border-color: var(--pa-indigo-600);
-  color: #fff;
+  color: #ffffff;
 }
 
-/* Settings: same visual language while retaining Obsidian's native controls */
+/* فوتر دکمه‌های مودال */
+body .modal.pa-plugin-modal .pa-actions.pa-modal-footer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pa-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+body .modal.pa-plugin-modal button.pa-btn.pa-btn-cancel,
+body .modal.pa-plugin-modal button.pa-btn.pa-btn-submit {
+  min-height: 42px;
+  padding: 9px 22px;
+  font-size: .9em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+body .modal.pa-plugin-modal button.pa-btn.pa-btn-cancel:hover {
+  border-color: #fecaca;
+  color: var(--pa-rose-500);
+  background: rgba(239, 68, 68, .06);
+}
+body .modal.pa-plugin-modal .pa-btn-icon {
+  display: inline-flex;
+  align-items: center;
+}
+body .modal.pa-plugin-modal .pa-btn-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Settings */
 .pa-settings .setting-item {
   border-bottom-color: var(--pa-border);
   padding-block: 13px;
@@ -2213,7 +2440,6 @@ a.uts-channel-card:hover .uts-channel-arrow {
   border-radius: 10px;
 }
 
-/* Small screens: visual polish only; preserve existing ordering and placement */
 @media (max-width: 600px) {
   .pa-view .pa-card {
     border-radius: 14px;
@@ -2222,13 +2448,28 @@ a.uts-channel-card:hover .uts-channel-arrow {
   .pa-view .pa-stats-primary .pa-stat {
     border-radius: 13px;
   }
-  .modal.pa-plugin-modal {
+  body .modal.pa-plugin-modal {
     border-radius: 18px;
   }
-  .modal.pa-plugin-modal .modal-header {
-    padding: 14px 15px 11px;
+  body .modal.pa-plugin-modal .modal-header {
+    padding: 14px 16px 11px;
   }
-  .modal.pa-plugin-modal .modal-content {
-    padding: 13px 15px 18px;
+  body .modal.pa-plugin-modal .modal-content {
+    padding: 14px 16px 18px;
+    max-height: calc(var(--pa-modal-height) - 52px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 28px;
+    scroll-padding-block: 24px 110px;
+  }
+  body .modal.pa-plugin-modal.pa-keyboard-open .modal-content {
+    padding-bottom: 110px;
+    scroll-padding-bottom: 110px;
+  }
+  body .modal.pa-plugin-modal .pa-actions.pa-modal-footer {
+    flex-direction: column-reverse;
+  }
+  body .modal.pa-plugin-modal .pa-actions.pa-modal-footer button.pa-btn {
+    width: 100%;
   }
 }
