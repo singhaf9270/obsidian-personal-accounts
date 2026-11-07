@@ -3113,22 +3113,6 @@ class PersonModal extends Modal {
 		const p = this.person;
 		this.titleEl.setText(p ? t("editPersonTitle") : t("addPersonTitle"));
 		const form = this.contentEl.createDiv("pa-form");
-		const tabs = form.createDiv("pa-form-tabs");
-		const mainTab = el("button", "pa-form-tab active", fa ? "اطلاعات اصلی" : "Main");
-		const detailsTab = el("button", "pa-form-tab", fa ? "جزئیات" : "Details");
-		mainTab.type = detailsTab.type = "button";
-		tabs.append(mainTab, detailsTab);
-		const mainPane = form.createDiv("pa-form-pane active");
-		const detailsPane = form.createDiv("pa-form-pane");
-		const switchTab = tab => {
-			const isMain = tab === "main";
-			mainTab.toggleClass("active", isMain);
-			detailsTab.toggleClass("active", !isMain);
-			mainPane.toggleClass("active", isMain);
-			detailsPane.toggleClass("active", !isMain);
-		};
-		mainTab.onclick = () => switchTab("main");
-		detailsTab.onclick = () => switchTab("details");
 		const err = form.createDiv("pa-form-error");
 		const fail = m => {
 			err.setText(m);
@@ -3210,6 +3194,22 @@ class TransactionFormModal extends Modal {
 		Cal.ensure(this.store.plugin.app);
 		this.titleEl.setText(editing ? t("editTxTitle") : t("addTxTitle"));
 		const form = this.contentEl.createDiv("pa-form");
+		const tabs = form.createDiv("pa-form-tabs");
+		const mainTab = el("button", "pa-form-tab active", fa ? "اطلاعات اصلی" : "Main");
+		const detailsTab = el("button", "pa-form-tab", fa ? "جزئیات" : "Details");
+		mainTab.type = detailsTab.type = "button";
+		tabs.append(mainTab, detailsTab);
+		const mainPane = form.createDiv("pa-form-pane active");
+		const detailsPane = form.createDiv("pa-form-pane");
+		const switchTab = tab => {
+			const isMain = tab === "main";
+			mainTab.toggleClass("active", isMain);
+			detailsTab.toggleClass("active", !isMain);
+			mainPane.toggleClass("active", isMain);
+			detailsPane.toggleClass("active", !isMain);
+		};
+		mainTab.onclick = () => switchTab("main");
+		detailsTab.onclick = () => switchTab("details");
 		const err = form.createDiv("pa-form-error");
 		const fail = m => {
 			err.setText(m);
