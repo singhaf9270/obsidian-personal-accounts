@@ -7,12 +7,14 @@ const {
 	PluginSettingTab,
 	Setting,
 	TFile,
+	TFolder,
 	normalizePath,
 	setIcon
 } = require("obsidian");
 const VIEW_TYPE_PERSONAL_ACCOUNTS = "personal-accounts-view";
-const DATA_VERSION = 4;
+const DATA_VERSION = 5;
 const DEFAULT_FILE_PATH = "Personal Accounts.md";
+const DEFAULT_DATA_FOLDER = "Personal Accounts";
 const EPS = 1e-6;
 const CURRENCIES = [{
 	code: "usd",
@@ -92,7 +94,16 @@ const CURRENCIES = [{
 }];
 const DEFAULT_CATEGORIES_FA = ["وام", "خرید", "خدمات", "کار", "خانواده", "دوستان", "سایر"];
 const DEFAULT_CATEGORIES_EN = ["Loan", "Purchase", "Service", "Work", "Family", "Friends", "Other"];
-const VALID_TYPES = ["receivable", "debt", "payment_received", "payment_made"];
+const DEFAULT_EXPENSE_CATEGORIES_FA = ["خوراک", "حمل‌ونقل", "قبوض و شارژ", "مسکن و اجاره", "خرید", "سلامت", "تفریح", "آموزش", "سایر"];
+const DEFAULT_EXPENSE_CATEGORIES_EN = ["Food", "Transport", "Bills & Utilities", "Housing", "Shopping", "Health", "Entertainment", "Education", "Other"];
+const DEFAULT_INCOME_CATEGORIES_FA = ["حقوق", "پروژه و فریلنس", "سرمایه‌گذاری", "فروش", "هدیه", "سایر"];
+const DEFAULT_INCOME_CATEGORIES_EN = ["Salary", "Freelance", "Investment", "Sales", "Gift", "Other"];
+const FINANCE_TYPES = ["expense", "income", "transfer"];
+const DEBT_TYPES = ["receivable", "debt", "payment_received", "payment_made"];
+const VALID_TYPES = [...FINANCE_TYPES, ...DEBT_TYPES];
+const ACCOUNT_TYPES = ["bank", "cash", "savings", "card", "other"];
+const isFinanceType = ty => FINANCE_TYPES.includes(ty);
+const isDebtType = ty => DEBT_TYPES.includes(ty);
 const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 const STRINGS = {
 	fa: {
@@ -684,8 +695,237 @@ function t(key, vars) {
 	return s
 }
 
+Object.assign(STRINGS.fa, {
+	tabAccounts: "حساب‌ها و بودجه",
+	tipAccounts: "مدیریت حساب‌ها، کیف‌پول‌ها، بودجهٔ ماهانه و تراکنش‌های تکراری",
+	typeExpense: "هزینه",
+	typeIncome: "درآمد / واریز",
+	typeTransfer: "انتقال داخلی",
+	accTypeBank: "حساب بانکی",
+	accTypeCash: "پول نقد",
+	accTypeSavings: "پس‌انداز",
+	accTypeCard: "کارت بانکی",
+	accTypeOther: "سایر",
+	fAccount: "حساب / کیف‌پول",
+	fFromAccount: "از حساب *",
+	fToAccount: "به حساب *",
+	noAccount: "— بدون حساب —",
+	accountRequired: "انتخاب حساب الزامی است.",
+	transferSameAccount: "حساب مبدأ و مقصد نمی‌توانند یکسان باشند.",
+	fAccountType: "نوع حساب",
+	fInitialBalance: "موجودی اولیه",
+	addAccountTitle: "افزودن حساب / کیف‌پول",
+	editAccountTitle: "ویرایش حساب",
+	addAccountBtn: "+ حساب جدید",
+	noAccounts: "هنوز حسابی تعریف نشده است. اولین حساب بانکی یا کیف‌پول خود را بسازید.",
+	accountSaved: "حساب ذخیره شد",
+	deleteAccountTitle: "حذف حساب؟",
+	deleteAccountLine: "حساب «{name}» حذف شود؟ تراکنش‌های آن حفظ می‌شوند.",
+	accountsCard: "حساب‌ها و کیف‌پول‌ها",
+	budgetsTitle: "بودجه‌های ماهانه",
+	addBudgetBtn: "+ بودجه جدید",
+	addBudgetTitle: "تعیین بودجه ماهانه",
+	editBudgetTitle: "ویرایش بودجه",
+	fBudgetLimit: "سقف ماهانه *",
+	noBudgets: "هنوز بودجه‌ای تعریف نشده است.",
+	budgetSaved: "بودجه ذخیره شد",
+	deleteBudgetTitle: "حذف بودجه؟",
+	deleteBudgetLine: "بودجهٔ دسته «{name}» حذف شود؟",
+	spentOf: "{spent} از {limit}",
+	overBudget: "عبور از سقف!",
+	recurringTitle: "تراکنش‌های تکراری",
+	addRecurringBtn: "+ الگوی تکراری",
+	addRecurringTitle: "افزودن الگوی تکراری",
+	editRecurringTitle: "ویرایش الگوی تکراری",
+	fDayOfMonth: "روز ماه (۱ تا ۳۱)",
+	recordNow: "ثبت برای این ماه",
+	recordedThisMonth: "این ماه ثبت شد",
+	noRecurring: "هنوز تراکنش تکراری تعریف نشده است.",
+	recurringSaved: "الگوی تکراری ذخیره شد",
+	deleteRecurringTitle: "حذف الگوی تکراری؟",
+	deleteRecurringLine: "الگوی «{name}» حذف شود؟",
+	statNetWorth: "دارایی خالص",
+	statTotalBalance: "موجودی کل حساب‌ها",
+	statMonthIncome: "درآمد این ماه",
+	statMonthExpense: "هزینه این ماه",
+	statMonthNet: "تراز این ماه",
+	statSavingsRate: "نرخ پس‌انداز",
+	statDailyAvg: "میانگین هزینه روزانه",
+	statAccountsCount: "حساب‌ها",
+	statMonthTxCount: "تراکنش‌های ماه",
+	setModules: "حالت کاری پلاگین (ماژول‌ها)",
+	setEnableDebts: "ماژول طلب و بدهی",
+	setEnableDebtsDesc: "مدیریت افراد، مطالبات، بدهی‌ها، تسویه‌ها و سررسیدها.",
+	setEnableFinance: "ماژول مدیریت مالی شخصی",
+	setEnableFinanceDesc: "مدیریت حساب‌ها و کیف‌پول‌ها، درآمد، هزینه، انتقال وجه، بودجه و تراکنش‌های تکراری.",
+	moduleAtLeastOne: "حداقل یکی از دو ماژول باید فعال بماند.",
+	setChangeMode: "انتخاب سریع حالت کاری",
+	setChangeModeDesc: "بین حالت «فقط طلب و بدهی»، «فقط مدیریت مالی» یا «جامع» جابه‌جا شوید. هیچ داده‌ای پاک نمی‌شود.",
+	changeModeBtn: "تغییر حالت",
+	setDataFolder: "پوشهٔ ذخیره‌سازی ماهانه",
+	setDataFolderDesc: "فایل Master.md و فایل‌های ماهانه (Transactions/YYYY-MM.md) در این پوشه ذخیره می‌شوند.",
+	openMasterFile: "باز کردن Master.md",
+	reorganizeFiles: "بازسازی فایل‌های ماهانه",
+	reorganizeFilesDesc: "تراکنش‌ها را بر اساس تقویم فعلی در فایل‌های ماهانه مرتب و بازنویسی می‌کند.",
+	reorganizeDone: "فایل‌های ماهانه بازسازی شدند",
+	setExpenseCats: "دسته‌بندی‌های هزینه",
+	setIncomeCats: "دسته‌بندی‌های درآمد",
+	setDebtCats: "دسته‌بندی‌های طلب و بدهی",
+	modeSetupTitle: "چطور می‌خواهید از این پلاگین استفاده کنید؟",
+	modeSetupIntro: "هر زمان بعداً در تنظیمات می‌توانید این انتخاب را بدون از دست رفتن داده‌ها تغییر دهید.",
+	modeDebtsOnly: "فقط طلب و بدهی",
+	modeDebtsOnlyDesc: "ثبت و پیگیری مطالبات، بدهی‌ها، تسویه‌حساب با افراد و سررسیدها.",
+	modeFinanceOnly: "فقط مدیریت مالی شخصی",
+	modeFinanceOnlyDesc: "ثبت درآمد و هزینه روزانه، مدیریت حساب‌های بانکی/کیف‌پول، بودجه‌بندی و تراکنش‌های تکراری.",
+	modeBoth: "هر دو (مدیریت جامع)",
+	modeBothDesc: "همهٔ امکانات مدیریت مالی شخصی و طلب و بدهی در یکجا؛ تسویه‌ها مستقیماً روی موجودی حساب اثر می‌گذارند.",
+	modeStartBtn: "ذخیره و شروع",
+	filterExpense: "هزینه‌ها",
+	filterIncome: "درآمدها",
+	filterTransfer: "انتقال‌ها",
+	filterAccount: "همهٔ حساب‌ها",
+	chartIncomeExpense: "درآمد در برابر هزینه (ماهانه)",
+	chartExpensePie: "توزیع هزینه‌ها بر اساس دسته",
+	helpIncomeExpense: "مقایسهٔ کل درآمد (سبز) و کل هزینه (قرمز) در هر ماه.",
+	helpExpensePie: "سهم هر دسته‌بندی از کل هزینه‌های ثبت‌شده.",
+	anaFinance: "مالی و بودجه",
+	thAccount: "حساب",
+	thToAccount: "حساب مقصد",
+	thTypeAcc: "نوع حساب",
+	thInitial: "موجودی اولیه",
+	thCurrent: "موجودی فعلی",
+	thLimit: "سقف ماهانه",
+	thDay: "روز ماه",
+	masterAccountsH: "حساب‌ها و کیف‌پول‌ها",
+	masterBudgetsH: "بودجه‌های ماهانه",
+	masterRecurringH: "تراکنش‌های تکراری",
+	dAccount: "حساب",
+	dToAccount: "حساب مقصد",
+	defaultAccountName: "حساب اصلی",
+	migrateOldFileTitle: "انتقال به ساختار ماهانه",
+	migrateOldFileDesc: "داده‌های قبلی شما در فایل قدیمی خوانده شد و در پوشهٔ ماهانه ذخیره می‌شود (فایل قدیمی به‌عنوان پشتیبان باقی می‌ماند).",
+	grpFinance: "مدیریت مالی",
+	grpDebts: "طلب و بدهی"
+});
+
+Object.assign(STRINGS.en, {
+	tabAccounts: "Accounts & Budgets",
+	tipAccounts: "Manage wallets, bank accounts, monthly budgets, and recurring transactions",
+	typeExpense: "Expense",
+	typeIncome: "Income",
+	typeTransfer: "Internal Transfer",
+	accTypeBank: "Bank Account",
+	accTypeCash: "Cash",
+	accTypeSavings: "Savings",
+	accTypeCard: "Debit/Credit Card",
+	accTypeOther: "Other",
+	fAccount: "Account / Wallet",
+	fFromAccount: "From Account *",
+	fToAccount: "To Account *",
+	noAccount: "— no account —",
+	accountRequired: "Please select an account.",
+	transferSameAccount: "Source and destination accounts cannot be the same.",
+	fAccountType: "Account type",
+	fInitialBalance: "Initial balance",
+	addAccountTitle: "Add Account / Wallet",
+	editAccountTitle: "Edit Account",
+	addAccountBtn: "+ New Account",
+	noAccounts: "No accounts yet. Create your first bank account or cash wallet.",
+	accountSaved: "Account saved",
+	deleteAccountTitle: "Delete account?",
+	deleteAccountLine: 'Delete account "{name}"? Its transactions will be kept.',
+	accountsCard: "Accounts & Wallets",
+	budgetsTitle: "Monthly Budgets",
+	addBudgetBtn: "+ New Budget",
+	addBudgetTitle: "Set Monthly Budget",
+	editBudgetTitle: "Edit Budget",
+	fBudgetLimit: "Monthly limit *",
+	noBudgets: "No monthly budgets set yet.",
+	budgetSaved: "Budget saved",
+	deleteBudgetTitle: "Delete budget?",
+	deleteBudgetLine: 'Delete budget for "{name}"?',
+	spentOf: "{spent} of {limit}",
+	overBudget: "Over budget!",
+	recurringTitle: "Recurring Transactions",
+	addRecurringBtn: "+ New Recurring",
+	addRecurringTitle: "Add Recurring Template",
+	editRecurringTitle: "Edit Recurring Template",
+	fDayOfMonth: "Day of month (1-31)",
+	recordNow: "Record for this month",
+	recordedThisMonth: "Recorded this month",
+	noRecurring: "No recurring templates yet.",
+	recurringSaved: "Recurring template saved",
+	deleteRecurringTitle: "Delete recurring template?",
+	deleteRecurringLine: 'Delete template "{name}"?',
+	statNetWorth: "Net Worth",
+	statTotalBalance: "Total Accounts",
+	statMonthIncome: "This Month Income",
+	statMonthExpense: "This Month Expense",
+	statMonthNet: "This Month Net",
+	statSavingsRate: "Savings Rate",
+	statDailyAvg: "Daily Avg Expense",
+	statAccountsCount: "Accounts",
+	statMonthTxCount: "Month Txs",
+	setModules: "Plugin Mode (Modules)",
+	setEnableDebts: "Debts & Receivables Module",
+	setEnableDebtsDesc: "Track people, receivables, debts, settlements, and due dates.",
+	setEnableFinance: "Personal Finance Module",
+	setEnableFinanceDesc: "Track bank accounts/wallets, daily income & expenses, transfers, budgets, and recurring items.",
+	moduleAtLeastOne: "At least one module must remain enabled.",
+	setChangeMode: "Quick Mode Switcher",
+	setChangeModeDesc: "Switch between Debts Only, Finance Only, or All-in-One mode. No data is ever deleted.",
+	changeModeBtn: "Switch Mode",
+	setDataFolder: "Monthly Data Folder",
+	setDataFolderDesc: "Stores Master.md and monthly files (Transactions/YYYY-MM.md) inside this folder.",
+	openMasterFile: "Open Master.md",
+	reorganizeFiles: "Reorganize Monthly Files",
+	reorganizeFilesDesc: "Rewrites all monthly files according to your current calendar setting.",
+	reorganizeDone: "Monthly files reorganized",
+	setExpenseCats: "Expense Categories",
+	setIncomeCats: "Income Categories",
+	setDebtCats: "Debt & Receivable Categories",
+	modeSetupTitle: "How would you like to use this plugin?",
+	modeSetupIntro: "You can change this anytime in Settings without losing any data.",
+	modeDebtsOnly: "Debts & Receivables Only",
+	modeDebtsOnlyDesc: "Track who owes you, who you owe, partial settlements, and due dates.",
+	modeFinanceOnly: "Personal Finance Only",
+	modeFinanceOnlyDesc: "Track daily income & expenses, wallets/bank accounts, monthly budgets, and recurring bills.",
+	modeBoth: "Both (All-in-One)",
+	modeBothDesc: "Full personal finance + debts & receivables together; debt payments update your account balances.",
+	modeStartBtn: "Save & Continue",
+	filterExpense: "Expenses",
+	filterIncome: "Income",
+	filterTransfer: "Transfers",
+	filterAccount: "All accounts",
+	chartIncomeExpense: "Income vs Expense (Monthly)",
+	chartExpensePie: "Expenses by Category",
+	helpIncomeExpense: "Compares total income (green) vs total expenses (red) for each month.",
+	helpExpensePie: "Share of each category in total recorded expenses.",
+	anaFinance: "Finance & Budgets",
+	thAccount: "Account",
+	thToAccount: "To Account",
+	thTypeAcc: "Account Type",
+	thInitial: "Initial Balance",
+	thCurrent: "Current Balance",
+	thLimit: "Monthly Limit",
+	thDay: "Day",
+	masterAccountsH: "Accounts & Wallets",
+	masterBudgetsH: "Monthly Budgets",
+	masterRecurringH: "Recurring Transactions",
+	dAccount: "Account",
+	dToAccount: "To Account",
+	defaultAccountName: "Main Account",
+	migrateOldFileTitle: "Migrating to Monthly Files",
+	migrateOldFileDesc: "Your previous data was loaded and saved into the new monthly folder structure (your old file remains untouched as a backup).",
+	grpFinance: "Personal Finance",
+	grpDebts: "Debts & Receivables"
+});
+
 function typeLabel(type) {
 	const map = {
+		expense: "typeExpense",
+		income: "typeIncome",
+		transfer: "typeTransfer",
 		receivable: "typeReceivable",
 		debt: "typeDebt",
 		payment_received: "typePaymentReceived",
@@ -694,6 +934,28 @@ function typeLabel(type) {
 	return t(map[type] || type)
 }
 
+function accountTypeLabel(type) {
+	const map = {
+		bank: "accTypeBank",
+		cash: "accTypeCash",
+		savings: "accTypeSavings",
+		card: "accTypeCard",
+		other: "accTypeOther"
+	};
+	return t(map[type] || "accTypeOther")
+}
+
+function labelToAccountType(label) {
+	const s = String(label || "").trim().toLowerCase();
+	const map = {
+		bank: "bank", "bank account": "bank", "حساب بانکی": "bank",
+		cash: "cash", "پول نقد": "cash",
+		savings: "savings", "پس‌انداز": "savings", "پس انداز": "savings",
+		card: "card", "debit/credit card": "card", "کارت بانکی": "card",
+		other: "other", "سایر": "other"
+	};
+	return map[s] || "bank"
+}
 function el(tag, cls, text) {
 	const e = document.createElement(tag);
 	if (cls) e.className = cls;
@@ -1157,6 +1419,142 @@ class Fmt {
 const isOrigin = tx => tx.type === "receivable" || tx.type === "debt";
 const chronological = (a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt;
 
+function monthKeyForISO(iso, calendar) {
+	if (!iso || !ISO_RE.test(iso)) return "unknown";
+	if (calendar === "jalali") {
+		const j = Cal.isoToJ(iso);
+		if (j) return String(j.jy) + "-" + pad2(j.jm)
+	}
+	return iso.slice(0, 7)
+}
+
+function currentMonthKey(calendar) {
+	return monthKeyForISO(todayISO(), calendar)
+}
+
+function formatMonthKey(mKey, calendar) {
+	if (!mKey || mKey === "unknown") return "—";
+	const m = /^(\d{4})-(\d{2})$/.exec(mKey);
+	if (!m) return mKey;
+	const y = Number(m[1]), mo = Number(m[2]);
+	const fa = CURRENT.locale === "fa";
+	if (calendar === "jalali" || y < 1700) {
+		return Cal.monthName(mo) + " " + localizeDigits(String(y), fa)
+	}
+	return gregMonthName(mo) + " " + localizeDigits(String(y), fa)
+}
+
+function computeAccountBalances(data) {
+	const map = new Map;
+	for (const a of data.accounts || []) {
+		map.set(a.id, {
+			account: a,
+			balance: Number(a.initialBalance) || 0,
+			inflow: 0,
+			outflow: 0,
+			txCount: 0
+		})
+	}
+	for (const tx of data.transactions || []) {
+		if (tx.type === "income") {
+			const ab = map.get(tx.accountId);
+			if (ab) {
+				ab.balance += tx.amount;
+				ab.inflow += tx.amount;
+				ab.txCount += 1
+			}
+		} else if (tx.type === "expense") {
+			const ab = map.get(tx.accountId);
+			if (ab) {
+				ab.balance -= tx.amount;
+				ab.outflow += tx.amount;
+				ab.txCount += 1
+			}
+		} else if (tx.type === "transfer") {
+			const fromB = map.get(tx.accountId);
+			const toB = map.get(tx.toAccountId);
+			if (fromB) {
+				fromB.balance -= tx.amount;
+				fromB.outflow += tx.amount;
+				fromB.txCount += 1
+			}
+			if (toB) {
+				toB.balance += tx.amount;
+				toB.inflow += tx.amount;
+				toB.txCount += 1
+			}
+		} else if (tx.type === "payment_received" && tx.accountId) {
+			const ab = map.get(tx.accountId);
+			if (ab) {
+				ab.balance += tx.amount;
+				ab.inflow += tx.amount;
+				ab.txCount += 1
+			}
+		} else if (tx.type === "payment_made" && tx.accountId) {
+			const ab = map.get(tx.accountId);
+			if (ab) {
+				ab.balance -= tx.amount;
+				ab.outflow += tx.amount;
+				ab.txCount += 1
+			}
+		}
+	}
+	return map
+}
+
+function computeFinanceStats(data, calendar, accountBalances) {
+	const curMonth = currentMonthKey(calendar);
+	let totalBalance = 0;
+	for (const ab of accountBalances.values()) totalBalance += ab.balance;
+	let monthIncome = 0, monthExpense = 0, monthTxCount = 0;
+	const spentByCat = new Map;
+	for (const tx of data.transactions || []) {
+		if (!isFinanceType(tx.type)) continue;
+		if (monthKeyForISO(tx.date, calendar) !== curMonth) continue;
+		monthTxCount += 1;
+		if (tx.type === "income") monthIncome += tx.amount;
+		else if (tx.type === "expense") {
+			monthExpense += tx.amount;
+			const cat = tx.category || "";
+			if (cat) spentByCat.set(cat, (spentByCat.get(cat) || 0) + tx.amount)
+		}
+	}
+	const monthNet = monthIncome - monthExpense;
+	const savingsRate = monthIncome > 0 ? Math.max(-100, Math.min(100, (monthIncome - monthExpense) / monthIncome * 100)) : 0;
+	let dayOfMonth = 1;
+	if (calendar === "jalali") {
+		const j = Cal.isoToJ(todayISO());
+		dayOfMonth = j ? Math.max(1, j.jd) : 1
+	} else {
+		dayOfMonth = Math.max(1, new Date().getDate())
+	}
+	const dailyAvgExpense = monthExpense / dayOfMonth;
+	const budgetUsage = [];
+	for (const b of data.budgets || []) {
+		const spent = spentByCat.get(b.category) || 0;
+		const pct = b.limit > 0 ? spent / b.limit * 100 : 0;
+		budgetUsage.push({
+			budget: b,
+			spent,
+			remaining: b.limit - spent,
+			pct
+		})
+	}
+	budgetUsage.sort((a, b) => b.pct - a.pct);
+	return {
+		curMonth,
+		totalBalance,
+		monthIncome,
+		monthExpense,
+		monthNet,
+		savingsRate,
+		dailyAvgExpense,
+		monthTxCount,
+		accountsCount: (data.accounts || []).length,
+		budgetUsage
+	}
+}
+
 function computeBalances(data) {
 	const map = new Map;
 	for (const p of data.people) {
@@ -1174,8 +1572,10 @@ function computeBalances(data) {
 		})
 	}
 	for (const tx of data.transactions) {
+		if (!tx.personId) continue;
 		const b = map.get(tx.personId);
 		if (!b) continue;
+		if (!isDebtType(tx.type)) continue;
 		b.txCount += 1;
 		b.lastActivity = Math.max(b.lastActivity, tx.createdAt);
 		switch (tx.type) {
@@ -1308,13 +1708,16 @@ function computeTxStates(data, today, soonDays) {
 	return states
 }
 
-function computeLedger(data, today, dueSoonDays) {
+function computeLedger(data, today, dueSoonDays, calendar) {
 	const balances = computeBalances(data);
 	const states = computeTxStates(data, today, dueSoonDays);
+	const accountBalances = computeAccountBalances(data);
+	const finance = computeFinanceStats(data, calendar || "gregorian", accountBalances);
 	const stats = {
 		totalReceivables: 0,
 		totalDebts: 0,
 		net: 0,
+		netWorth: 0,
 		peopleCount: 0,
 		unpaidCount: 0,
 		settledCount: 0,
@@ -1329,6 +1732,7 @@ function computeLedger(data, today, dueSoonDays) {
 		else if (b.txCount > 0) stats.settledCount += 1
 	}
 	stats.net = stats.totalReceivables - stats.totalDebts;
+	stats.netWorth = finance.totalBalance + stats.net;
 	const names = new Map(data.people.map(p => [p.id, p.name]));
 	const attention = [];
 	for (const tx of data.transactions) {
@@ -1347,14 +1751,20 @@ function computeLedger(data, today, dueSoonDays) {
 	attention.sort((a, b) => a.due.days - b.due.days || a.tx.date.localeCompare(b.tx.date));
 	return {
 		balances,
+		accountBalances,
+		finance,
 		states,
 		stats,
 		attention
 	}
 }
+
 function emptyData() {
 	return {
 		version: DATA_VERSION,
+		accounts: [],
+		budgets: [],
+		recurring: [],
 		people: [],
 		transactions: []
 	}
@@ -1373,6 +1783,62 @@ function toNum(v, fallback) {
 function sanitizeData(raw) {
 	const src = raw && typeof raw === "object" ? raw : {};
 	const data = emptyData();
+	const seenAcc = new Set;
+	for (const a of Array.isArray(src.accounts) ? src.accounts : []) {
+		if (!a || typeof a !== "object") continue;
+		const id = optString(a.id) || randomId("a");
+		if (seenAcc.has(id)) continue;
+		seenAcc.add(id);
+		data.accounts.push({
+			id,
+			name: optString(a.name) || "?",
+			type: ACCOUNT_TYPES.includes(a.type) ? a.type : "bank",
+			initialBalance: toNum(a.initialBalance, 0),
+			note: optString(a.note),
+			createdAt: toNum(a.createdAt, Date.now()),
+			updatedAt: toNum(a.updatedAt, Date.now())
+		})
+	}
+	const seenBud = new Set;
+	for (const b of Array.isArray(src.budgets) ? src.budgets : []) {
+		if (!b || typeof b !== "object") continue;
+		const category = optString(b.category);
+		const limit = toNum(b.limit, NaN);
+		if (!category || !Number.isFinite(limit) || limit <= 0) continue;
+		const id = optString(b.id) || randomId("b");
+		if (seenBud.has(id)) continue;
+		seenBud.add(id);
+		data.budgets.push({
+			id,
+			category,
+			limit: Math.abs(limit)
+		})
+	}
+	const seenRec = new Set;
+	for (const r of Array.isArray(src.recurring) ? src.recurring : []) {
+		if (!r || typeof r !== "object") continue;
+		const name = optString(r.name);
+		const type = VALID_TYPES.includes(r.type) ? r.type : "expense";
+		const amount = toNum(r.amount, NaN);
+		if (!name || !Number.isFinite(amount) || amount <= 0) continue;
+		const id = optString(r.id) || randomId("r");
+		if (seenRec.has(id)) continue;
+		seenRec.add(id);
+		const day = Math.max(1, Math.min(31, Math.round(toNum(r.dayOfMonth, 1))));
+		data.recurring.push({
+			id,
+			name,
+			type,
+			amount: Math.abs(amount),
+			dayOfMonth: day,
+			accountId: optString(r.accountId),
+			toAccountId: optString(r.toAccountId),
+			personId: optString(r.personId),
+			category: optString(r.category),
+			description: optString(r.description),
+			lastRunMonth: optString(r.lastRunMonth)
+		})
+	}
 	const seen = new Set;
 	for (const p of Array.isArray(src.people) ? src.people : []) {
 		if (!p || typeof p !== "object") continue;
@@ -1399,6 +1865,8 @@ function sanitizeData(raw) {
 		data.transactions.push({
 			id: optString(tx.id) || randomId("t"),
 			personId: optString(tx.personId) || "",
+			accountId: optString(tx.accountId),
+			toAccountId: type === "transfer" ? optString(tx.toAccountId) : undefined,
 			type,
 			amount: Math.abs(amount),
 			date: ISO_RE.test(tx.date || "") ? tx.date : todayISO(),
@@ -1414,14 +1882,17 @@ function sanitizeData(raw) {
 }
 
 function cleanNumber(s) {
-	const n = normalizeDigits(String(s || "")).replace(/[,٬\s]/g, "").replace(/٫/g, ".");
+	const n = normalizeDigits(String(s || "")).replace(/[,٬\s]/g, "").replace(/٫/g, ".").replace(/−/g, "-");
 	const v = Number(n);
 	return Number.isFinite(v) ? v : 0
 }
 
 function parseTable(lines, startIdx) {
 	let i = startIdx;
-	while (i < lines.length && !lines[i].trim().startsWith("|")) i++;
+	while (i < lines.length && !lines[i].trim().startsWith("|")) {
+		if (/^##\s+/.test(lines[i])) return { rows: [], endIdx: i };
+		i++
+	}
 	if (i >= lines.length) return {
 		rows: [],
 		endIdx: startIdx
@@ -1448,6 +1919,18 @@ function parseTable(lines, startIdx) {
 function labelToType(label) {
 	const s = String(label || "").trim().toLowerCase();
 	const map = {
+		"هزینه": "expense",
+		expense: "expense",
+		"درآمد": "income",
+		"درآمد / واریز": "income",
+		"واریز": "income",
+		income: "income",
+		"انتقال وجه": "transfer",
+		"انتقال داخلی": "transfer",
+		"انتقال بین حساب‌ها": "transfer",
+		"انتقال": "transfer",
+		"internal transfer": "transfer",
+		transfer: "transfer",
 		"طلب": "receivable",
 		receivable: "receivable",
 		"بدهی": "debt",
@@ -1463,7 +1946,6 @@ function labelToType(label) {
 	};
 	return map[s] || null
 }
-
 function parseDateString(s, calendar) {
 	if (!s || s === "—") return null;
 	const raw = normalizeDigits(String(s).trim()).replace(/[\u200e\u200f\u061c]/g, "");
@@ -1646,65 +2128,166 @@ function parsePeopleDetailsLegacy(lines, startIdx, endIdx) {
 	}
 }
 
-function parseMarkdownData(content, calendar) {
+function escCell(s) {
+	return String(s == null ? "" : s).replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>")
+}
+
+function ensureByName(list, byName, name, prefix, extra) {
+	const n = (name || "").trim();
+	if (!n) return null;
+	let item = byName.get(n);
+	if (!item) {
+		item = list.find(x => x.name === n);
+		if (!item) {
+			const st = stableTime(n);
+			item = Object.assign({
+				id: randomId(prefix),
+				name: n,
+				createdAt: st,
+				updatedAt: st
+			}, extra || {});
+			list.push(item)
+		}
+		byName.set(n, item)
+	}
+	return item
+}
+
+function parseMasterMarkdown(content) {
 	const data = emptyData();
 	const lines = content.split("\n");
-	const findHeader = re => lines.findIndex(l => re.test(l));
-	const balancesHeader = findHeader(/^##\s+افراد و مانده‌ها|^##\s+People\s*&\s*Balances/i);
-	const txHeader = findHeader(/^##\s+تراکنش|^##\s+Transactions/i);
-	const peopleHeader = findHeader(/^##\s+افراد\s*$|^##\s+People\s*$/i);
+	const sectionBounds = re => {
+		const start = lines.findIndex(l => re.test(l));
+		if (start < 0) return null;
+		let end = lines.length;
+		for (let i = start + 1; i < lines.length; i++) {
+			if (/^##\s+/.test(lines[i])) {
+				end = i;
+				break
+			}
+		}
+		return { start, end }
+	};
+	const accountByName = new Map;
 	const personByName = new Map;
-	if (peopleHeader >= 0) {
-		const endIdx = lines.length;
-		const parsed = parsePeopleDetails(lines, peopleHeader, endIdx);
+
+	const accB = sectionBounds(/^##\s+حساب‌ها|^##\s+Accounts/i);
+	if (accB) {
+		const { rows } = parseTable(lines.slice(0, accB.end), accB.start + 1);
+		for (const row of rows) {
+			const name = (row["نام"] || row["Name"] || row["حساب"] || row["Account"] || "").trim();
+			if (!name) continue;
+			const type = labelToAccountType(row["نوع حساب"] || row["Account Type"] || row["نوع"] || row["Type"]);
+			const initialBalance = cleanNumber(row["موجودی اولیه"] || row["Initial Balance"] || "0");
+			const note = (row["یادداشت"] || row["Note"] || "").replace(/<br\s*\/?>/gi, "\n").trim() || undefined;
+			const st = stableTime("acc:" + name);
+			const acc = {
+				id: randomId("a"),
+				name,
+				type,
+				initialBalance,
+				note,
+				createdAt: st,
+				updatedAt: st
+			};
+			data.accounts.push(acc);
+			accountByName.set(name, acc)
+		}
+	}
+
+	const budB = sectionBounds(/^##\s+بودجه|^##\s+Monthly Budgets|^##\s+Budgets/i);
+	if (budB) {
+		const { rows } = parseTable(lines.slice(0, budB.end), budB.start + 1);
+		for (const row of rows) {
+			const cat = (row["دسته"] || row["Category"] || "").trim();
+			const limit = cleanNumber(row["سقف ماهانه"] || row["Monthly Limit"] || row["مبلغ"] || row["Limit"]);
+			if (!cat || limit <= 0) continue;
+			data.budgets.push({
+				id: randomId("b"),
+				category: cat,
+				limit
+			})
+		}
+	}
+
+	const peopleB = sectionBounds(/^##\s+افراد\s*$|^##\s+People\s*$/i);
+	if (peopleB) {
+		const parsed = parsePeopleDetails(lines, peopleB.start, peopleB.end);
 		for (const p of parsed.people) {
 			data.people.push(p);
 			personByName.set(p.name, p)
 		}
 	}
-	if (txHeader < 0) return sanitizeData(data);
-	const {
-		rows
-	} = parseTable(lines, txHeader + 1);
+
+	const recB = sectionBounds(/^##\s+تراکنش‌های تکراری|^##\s+Recurring/i);
+	if (recB) {
+		const { rows } = parseTable(lines.slice(0, recB.end), recB.start + 1);
+		for (const row of rows) {
+			const name = (row["نام"] || row["Name"] || "").trim();
+			const type = labelToType(row["نوع"] || row["Type"]) || "expense";
+			const amount = cleanNumber(row["مبلغ"] || row["Amount"]);
+			const day = Math.max(1, Math.min(31, Math.round(cleanNumber(row["روز ماه"] || row["Day"] || "1"))));
+			if (!name || amount <= 0) continue;
+			const accName = (row["حساب"] || row["Account"] || "").trim();
+			const toAccName = (row["حساب مقصد"] || row["To Account"] || "").trim();
+			const personName = (row["شخص"] || row["Person"] || "").trim();
+			const acc = accName ? ensureByName(data.accounts, accountByName, accName, "a", { type: "bank", initialBalance: 0 }) : null;
+			const toAcc = toAccName ? ensureByName(data.accounts, accountByName, toAccName, "a", { type: "bank", initialBalance: 0 }) : null;
+			const person = personName ? ensureByName(data.people, personByName, personName, "p", { tags: [] }) : null;
+			data.recurring.push({
+				id: randomId("r"),
+				name,
+				type,
+				amount,
+				dayOfMonth: day,
+				accountId: acc ? acc.id : undefined,
+				toAccountId: toAcc ? toAcc.id : undefined,
+				personId: person ? person.id : undefined,
+				category: (row["دسته"] || row["Category"] || "").trim() || undefined,
+				description: (row["شرح"] || row["Description"] || "").trim() || undefined,
+				lastRunMonth: (row["آخرین ثبت"] || row["Last Run"] || "").trim() || undefined
+			})
+		}
+	}
+
+	return { data, accountByName, personByName }
+}
+
+function parseMonthTransactions(content, data, personByName, accountByName, calendar) {
+	const lines = content.split("\n");
+	const txHeader = lines.findIndex(l => /^##\s+تراکنش|^##\s+Transactions/i.test(l));
+	const startIdx = txHeader >= 0 ? txHeader + 1 : 0;
+	const { rows } = parseTable(lines, startIdx);
 	for (const row of rows) {
 		const dateRaw = row["تاریخ"] || row["Date"];
-		const personName = (row["شخص"] || row["Person"] || "").trim();
 		const typeRaw = row["نوع"] || row["Type"];
 		const amountRaw = row["مبلغ"] || row["Amount"];
+		const personName = (row["شخص"] || row["Person"] || "").trim();
+		const accName = (row["حساب"] || row["Account"] || "").trim();
+		const toAccName = (row["حساب مقصد"] || row["To Account"] || "").trim();
 		const categoryRaw = (row["دسته"] || row["Category"] || "").trim();
 		const descRaw = row["شرح"] || row["Description"] || "";
 		const dueRaw = row["سررسید"] || row["Due"] || "";
-		if (!personName || !typeRaw || !amountRaw) continue;
+		if (!typeRaw || !amountRaw) continue;
 		const type = labelToType(typeRaw);
 		if (!type) continue;
 		const amount = cleanNumber(amountRaw);
 		if (!amount || amount <= 0) continue;
 		const dateIso = parseDateString(dateRaw, calendar);
-		if (!dateIso) throw new Error((CURRENT.locale === "fa" ? "تاریخ تراکنش نامعتبر است؛ فایل تغییر نکرد: " : "Invalid transaction date; file unchanged: ") + String(dateRaw || ""));
-		let person = personByName.get(personName);
-		if (!person) {
-			person = data.people.find(p => p.name === personName);
-			if (!person) {
-				const st = stableTime(personName);
-				person = {
-					id: randomId("p"),
-					name: personName,
-					tags: [],
-					createdAt: st,
-					updatedAt: st
-				};
-				data.people.push(person)
-			}
-			personByName.set(personName, person)
-		}
+		if (!dateIso) throw new Error((CURRENT.locale === "fa" ? "تاریخ تراکنش نامعتبر است: " : "Invalid transaction date: ") + String(dateRaw || ""));
+		if (isDebtType(type) && !personName) continue;
+		const person = personName ? ensureByName(data.people, personByName, personName, "p", { tags: [] }) : null;
+		const account = accName ? ensureByName(data.accounts, accountByName, accName, "a", { type: "bank", initialBalance: 0 }) : null;
+		const toAccount = type === "transfer" && toAccName ? ensureByName(data.accounts, accountByName, toAccName, "a", { type: "bank", initialBalance: 0 }) : null;
 		const origin = type === "receivable" || type === "debt";
 		const dueIso = origin ? parseDateString(dueRaw, calendar) : null;
 		if (origin && dueRaw.trim() && dueRaw.trim() !== "—" && !dueIso) throw new Error("Invalid due date: " + dueRaw);
-		/* ✅ FIX #2: createdAt پایدار بر اساس اندیس تراکنش (نه Date.now()) */
 		const idx = data.transactions.length + 1;
 		data.transactions.push({
 			id: randomId("t"),
-			personId: person.id,
+			personId: person ? person.id : "",
+			accountId: account ? account.id : undefined,
+			toAccountId: toAccount ? toAccount.id : undefined,
 			type,
 			amount,
 			date: dateIso,
@@ -1715,77 +2298,148 @@ function parseMarkdownData(content, calendar) {
 			updatedAt: idx
 		})
 	}
+}
+
+function parseMarkdownData(content, calendar) {
+	const { data, accountByName, personByName } = parseMasterMarkdown(content);
+	parseMonthTransactions(content, data, personByName, accountByName, calendar);
 	return sanitizeData(data)
 }
 
-function renderMarkdownData(data, fmt) {
+function renderMasterMarkdown(data, fmt) {
 	const lines = [];
 	const fa = CURRENT.locale === "fa";
-	const warnTitle = fa ? "⚠️ **این فایل را پاک نکنید!**" : "⚠️ **Do not delete this file!**";
-	const warnBody = fa ? "در صورت پاک کردن، تمام اطلاعات حساب‌های شخصی شما حذف خواهد شد." : "If you delete it, all of your personal account data will be lost.";
-	const warnFooter = fa ? "این فایل توسط پلاگین «حساب‌های شخصی» مدیریت می‌شود." : 'This file is managed by the "Personal Accounts" plugin.';
-	lines.push("> " + warnTitle);
-	lines.push("> " + warnBody);
-	lines.push("> " + warnFooter);
+	lines.push("> " + (fa ? "⚠️ **این فایل را پاک نکنید!**" : "⚠️ **Do not delete this file!**"));
+	lines.push("> " + (fa ? "اطلاعات پایهٔ حساب‌ها، بودجه‌ها، افراد و الگوهای تکراری در این فایل ذخیره می‌شود. تراکنش‌ها به تفکیک ماه در پوشهٔ Transactions قرار دارند." : "Accounts, budgets, people, and recurring templates are stored here. Monthly transactions are saved inside the Transactions folder."));
 	lines.push("");
-	lines.push("# " + t("appTitle"), "");
-	lines.push("## " + t("ledgerPeopleH"), "");
-	const balances = computeBalances(data);
-	lines.push("| " + t("thPerson") + " | " + t("thRec") + " | " + t("thDebt") + " | " + t("thNet") + " |");
-	lines.push("|---|---:|---:|---:|");
-	const sortedPeople = [...data.people].sort((a, b) => {
-		const ba = balances.get(a.id),
-			bb = balances.get(b.id);
-		const na = ba ? Math.abs(ba.net) : 0,
-			nb = bb ? Math.abs(bb.net) : 0;
-		return nb - na || a.name.localeCompare(b.name)
-	});
-	for (const p of sortedPeople) {
-		const b = balances.get(p.id);
-		if (!b) continue;
-		if (b.txCount === 0) continue;
-		const rec = b.remainingReceivable > EPS ? fmt.num(b.remainingReceivable) : "0";
-		const debt = b.remainingDebt > EPS ? fmt.num(b.remainingDebt) : "0";
-		const net = fmt.num(b.net);
-		lines.push("| " + [p.name, rec, debt, net].join(" | ") + " |")
+	lines.push("# " + t("appTitle") + " — Master", "");
+
+	const accBalances = computeAccountBalances(data);
+	lines.push("## " + t("masterAccountsH"), "");
+	if (data.accounts.length) {
+		lines.push("| " + [t("fName").replace(" *", ""), t("thTypeAcc"), t("thInitial"), t("thCurrent"), t("fNote")].join(" | ") + " |");
+		lines.push("|---|---|---:|---:|---|");
+		for (const a of data.accounts) {
+			const ab = accBalances.get(a.id);
+			const cur = ab ? ab.balance : a.initialBalance;
+			lines.push("| " + [escCell(a.name), accountTypeLabel(a.type), fmt.num(a.initialBalance || 0), fmt.num(cur), escCell(a.note || "")].join(" | ") + " |")
+		}
+		lines.push("")
+	} else {
+		lines.push("> " + t("noAccounts"), "")
 	}
-	lines.push("");
-	lines.push("## " + t("ledgerTxH"), "");
-	lines.push("| " + [t("thDate"), t("thPerson"), t("thType"), t("thAmount"), t("dCategory"), t("dDesc"), t("dDue")].join(" | ") + " |");
-	lines.push("|---|---|---|---:|---|---|---|");
-	const txs = [...data.transactions].sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
-	const nameOf = new Map(data.people.map(p => [p.id, p.name]));
+
+	lines.push("## " + t("masterBudgetsH"), "");
+	if (data.budgets.length) {
+		lines.push("| " + [t("dCategory"), t("thLimit")].join(" | ") + " |");
+		lines.push("|---|---:|");
+		for (const b of data.budgets) {
+			lines.push("| " + [escCell(b.category), fmt.num(b.limit)].join(" | ") + " |")
+		}
+		lines.push("")
+	} else {
+		lines.push("> " + t("noBudgets"), "")
+	}
+
+	lines.push("## " + t("ledgerPeopleDetailsH"), "");
+	if (data.people.length) {
+		const hName = t("fName").replace(" *", "") || (fa ? "نام" : "Name");
+		lines.push("| " + [hName, t("fPhone"), t("fEmail"), t("fTags"), t("fNote")].join(" | ") + " |");
+		lines.push("|---|---|---|---|---|");
+		const sorted = [...data.people].sort((a, b) => a.name.localeCompare(b.name));
+		for (const p of sorted) {
+			const tags = p.tags && p.tags.length ? p.tags.map(x => "`" + x + "`").join(" ") : "";
+			lines.push("| " + [escCell(p.name), escCell(p.phone || ""), escCell(p.email || ""), tags, escCell(p.note || "")].join(" | ") + " |")
+		}
+		lines.push("")
+	} else {
+		lines.push("> " + (fa ? "هنوز شخصی ثبت نشده است." : "No people recorded yet."), "")
+	}
+
+	lines.push("## " + t("masterRecurringH"), "");
+	if (data.recurring.length) {
+		const accMap = new Map(data.accounts.map(a => [a.id, a.name]));
+		const pMap = new Map(data.people.map(p => [p.id, p.name]));
+		const hLast = fa ? "آخرین ثبت" : "Last Run";
+		lines.push("| " + [t("fName").replace(" *", ""), t("thType"), t("thAmount"), t("thDay"), t("thAccount"), t("thToAccount"), t("thPerson"), t("dCategory"), t("dDesc"), hLast].join(" | ") + " |");
+		lines.push("|---|---|---:|---:|---|---|---|---|---|---|");
+		for (const r of data.recurring) {
+			lines.push("| " + [
+				escCell(r.name),
+				typeLabel(r.type),
+				fmt.num(r.amount),
+				String(r.dayOfMonth),
+				escCell(accMap.get(r.accountId) || ""),
+				escCell(accMap.get(r.toAccountId) || ""),
+				escCell(pMap.get(r.personId) || ""),
+				escCell(r.category || ""),
+				escCell(r.description || ""),
+				escCell(r.lastRunMonth || "")
+			].join(" | ") + " |")
+		}
+		lines.push("")
+	} else {
+		lines.push("> " + t("noRecurring"), "")
+	}
+
+	return lines.join("\n")
+}
+
+function renderMonthMarkdown(mKey, txs, data, fmt, calendar) {
+	const lines = [];
+	const fa = CURRENT.locale === "fa";
+	let income = 0, expense = 0, receivable = 0, debt = 0;
 	for (const tx of txs) {
+		if (tx.type === "income") income += tx.amount;
+		else if (tx.type === "expense") expense += tx.amount;
+		else if (tx.type === "receivable") receivable += tx.amount;
+		else if (tx.type === "debt") debt += tx.amount
+	}
+	lines.push("---");
+	lines.push("month: \"" + mKey + "\"");
+	lines.push("income: " + income);
+	lines.push("expense: " + expense);
+	lines.push("receivable: " + receivable);
+	lines.push("debt: " + debt);
+	lines.push("tx_count: " + txs.length);
+	lines.push("---");
+	lines.push("");
+	lines.push("# " + t("appTitle") + " — " + formatMonthKey(mKey, calendar), "");
+	const summaryParts = [];
+	if (income > 0 || expense > 0) {
+		summaryParts.push((fa ? "درآمد: " : "Income: ") + fmt.amount(income));
+		summaryParts.push((fa ? "هزینه: " : "Expense: ") + fmt.amount(expense))
+	}
+	if (receivable > 0 || debt > 0) {
+		summaryParts.push((fa ? "طلب: " : "Receivable: ") + fmt.amount(receivable));
+		summaryParts.push((fa ? "بدهی: " : "Debt: ") + fmt.amount(debt))
+	}
+	if (summaryParts.length) lines.push("> " + summaryParts.join("  •  "), "");
+
+	lines.push("## " + t("ledgerTxH"), "");
+	lines.push("| " + [t("thDate"), t("thType"), t("thAmount"), t("thAccount"), t("thToAccount"), t("thPerson"), t("dCategory"), t("dDesc"), t("dDue")].join(" | ") + " |");
+	lines.push("|---|---|---:|---|---|---|---|---|---|");
+	const sorted = [...txs].sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
+	const nameOf = new Map(data.people.map(p => [p.id, p.name]));
+	const accOf = new Map(data.accounts.map(a => [a.id, a.name]));
+	for (const tx of sorted) {
 		const dateStr = fmt.dateForNote(tx.date) + "<!--PA-ISO:" + tx.date + "-->";
 		const dueStr = tx.dueDate ? fmt.dateForNote(tx.dueDate) + "<!--PA-ISO:" + tx.dueDate + "-->" : "";
 		const desc = (tx.description || "").replace(/\|/g, "\\|").replace(/\n/g, " ");
 		const cat = (tx.category || "").replace(/\|/g, "\\|").replace(/\n/g, " ");
-		lines.push("| " + [dateStr, nameOf.get(tx.personId) || "?", typeLabel(tx.type), fmt.num(tx.amount), cat, desc, dueStr].join(" | ") + " |")
+		lines.push("| " + [
+			dateStr,
+			typeLabel(tx.type),
+			fmt.num(tx.amount),
+			escCell(accOf.get(tx.accountId) || ""),
+			escCell(accOf.get(tx.toAccountId) || ""),
+			escCell(nameOf.get(tx.personId) || ""),
+			cat,
+			desc,
+			dueStr
+		].join(" | ") + " |")
 	}
 	lines.push("");
-	lines.push("## " + t("ledgerPeopleDetailsH"), "");
-	const hasDetails = data.people.some(p => p.phone || p.email || p.tags && p.tags.length || p.note);
-	if (hasDetails) {
-		const hName = t("fName").replace(" *", "") || (fa ? "نام" : "Name");
-		const hPhone = t("fPhone");
-		const hEmail = t("fEmail");
-		const hTags = t("fTags");
-		const hNote = t("fNote");
-		const headers = [hName, hPhone, hEmail, hTags, hNote];
-		lines.push("| " + headers.join(" | ") + " |");
-		lines.push("|" + "---|".repeat(headers.length));
-		const sorted = [...data.people].sort((a, b) => a.name.localeCompare(b.name));
-		for (const p of sorted) {
-			const esc = s => String(s == null ? "" : s).replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>");
-			const tags = p.tags && p.tags.length ? p.tags.map(x => "`" + x + "`").join(" ") : "";
-			const note = p.note ? esc(p.note) : "";
-			lines.push("| " + [esc(p.name), esc(p.phone || ""), esc(p.email || ""), tags, note].join(" | ") + " |")
-		}
-		lines.push("")
-	} else {
-		lines.push("> " + (fa ? "هنوز اطلاعات تکمیلی برای کسی ثبت نشده است." : "No extra info recorded yet."));
-		lines.push("")
-	}
 	return lines.join("\n")
 }
 
@@ -1794,7 +2448,8 @@ class PluginDataStore {
 		this.app = app;
 		this.getSettings = getSettings;
 		this.fmt = fmt;
-		this.plugin = plugin
+		this.plugin = plugin;
+		this._migratedFromLegacy = false
 	}
 	get settings() {
 		return this.getSettings()
@@ -1802,34 +2457,226 @@ class PluginDataStore {
 	get calendar() {
 		return this.settings.calendar || "gregorian"
 	}
+	folderPath() {
+		return normalizePath((this.settings.dataFolder || "").trim() || DEFAULT_DATA_FOLDER)
+	}
+	masterPath() {
+		return normalizePath(this.folderPath() + "/Master.md")
+	}
+	txFolderPath() {
+		return normalizePath(this.folderPath() + "/Transactions")
+	}
+	monthFilePath(mKey) {
+		return normalizePath(this.txFolderPath() + "/" + mKey + ".md")
+	}
 	filePath() {
+		return this.masterPath()
+	}
+	legacyFilePath() {
 		return normalizePath((this.settings.filePath || "").trim() || DEFAULT_FILE_PATH)
 	}
-	async load() {
-		const path = this.filePath();
-		const file = this.app.vault.getAbstractFileByPath(path);
-		if (!(file instanceof TFile)) return emptyData();
-		const content = await this.app.vault.read(file);
-		try {
-			return parseMarkdownData(content, this.calendar)
-		} catch (e) {
-			console.error("PA parse error:", e);
-			throw e
+	async ensureFolder(path) {
+		const norm = normalizePath(path);
+		const parts = norm.split("/").filter(Boolean);
+		let cur = "";
+		for (const part of parts) {
+			cur = cur ? cur + "/" + part : part;
+			const existing = this.app.vault.getAbstractFileByPath(cur);
+			if (!existing) {
+				try {
+					await this.app.vault.createFolder(cur)
+				} catch (e) {}
+			}
 		}
 	}
-	async save(data) {
-		const path = this.filePath();
-		const body = renderMarkdownData(data, this.fmt);
-		let file = this.app.vault.getAbstractFileByPath(path);
+	async writeFile(path, content) {
+		const file = this.app.vault.getAbstractFileByPath(path);
 		if (file instanceof TFile) {
-			await this.app.vault.modify(file, body)
+			await this.app.vault.modify(file, content)
 		} else if (!file) {
-			await this.app.vault.create(path, body)
+			await this.app.vault.create(path, content)
+		}
+	}
+	async load() {
+		const masterFile = this.app.vault.getAbstractFileByPath(this.masterPath());
+		const txFolder = this.app.vault.getAbstractFileByPath(this.txFolderPath());
+		const hasNewStructure = (masterFile instanceof TFile) || (txFolder instanceof TFolder);
+
+		if (!hasNewStructure) {
+			const legacy = this.app.vault.getAbstractFileByPath(this.legacyFilePath());
+			if (legacy instanceof TFile) {
+				const content = await this.app.vault.read(legacy);
+				const data = parseMarkdownData(content, this.calendar);
+				if (data.people.length || data.transactions.length) {
+					await this.save(data, { full: true });
+					if (!this._migratedFromLegacy) {
+						this._migratedFromLegacy = true;
+						new Notice(t("migrateOldFileDesc"), 8000)
+					}
+				}
+				return data
+			}
+			return emptyData()
+		}
+
+		let parsed = { data: emptyData(), accountByName: new Map, personByName: new Map };
+		if (masterFile instanceof TFile) {
+			const content = await this.app.vault.read(masterFile);
+			parsed = parseMasterMarkdown(content)
+		}
+		const { data, accountByName, personByName } = parsed;
+		if (txFolder instanceof TFolder) {
+			const mdFiles = txFolder.children
+				.filter(f => f instanceof TFile && f.extension === "md")
+				.sort((a, b) => a.name.localeCompare(b.name));
+			for (const mf of mdFiles) {
+				const content = await this.app.vault.read(mf);
+				parseMonthTransactions(content, data, personByName, accountByName, this.calendar)
+			}
+		}
+		return sanitizeData(data)
+	}
+	async save(data, opts) {
+		const o = opts || {};
+		await this.ensureFolder(this.folderPath());
+		await this.ensureFolder(this.txFolderPath());
+		if (o.saveMaster !== false) {
+			const masterBody = renderMasterMarkdown(data, this.fmt);
+			await this.writeFile(this.masterPath(), masterBody)
+		}
+		const byMonth = new Map;
+		for (const tx of data.transactions) {
+			const mk = monthKeyForISO(tx.date, this.calendar);
+			if (!byMonth.has(mk)) byMonth.set(mk, []);
+			byMonth.get(mk).push(tx)
+		}
+		if (o.dirtyMonths && o.dirtyMonths.size && !o.full) {
+			for (const mk of o.dirtyMonths) {
+				const list = byMonth.get(mk) || [];
+				const path = this.monthFilePath(mk);
+				if (list.length === 0) {
+					const existing = this.app.vault.getAbstractFileByPath(path);
+					if (existing instanceof TFile) await this.app.vault.delete(existing)
+				} else {
+					const body = renderMonthMarkdown(mk, list, data, this.fmt, this.calendar);
+					await this.writeFile(path, body)
+				}
+			}
+		} else {
+			for (const [mk, list] of byMonth.entries()) {
+				const body = renderMonthMarkdown(mk, list, data, this.fmt, this.calendar);
+				await this.writeFile(this.monthFilePath(mk), body)
+			}
+			const txFolder = this.app.vault.getAbstractFileByPath(this.txFolderPath());
+			if (txFolder instanceof TFolder) {
+				for (const f of [...txFolder.children]) {
+					if (!(f instanceof TFile) || f.extension !== "md") continue;
+					if (!byMonth.has(f.basename)) {
+						await this.app.vault.delete(f)
+					}
+				}
+			}
 		}
 	}
 	async writeReadableNote(data) {
-		await this.save(data)
+		await this.save(data, { full: true })
 	}
+}
+
+function addAccount(data, input) {
+	const now = Date.now();
+	const acc = {
+		id: randomId("a"),
+		name: input.name.trim(),
+		type: ACCOUNT_TYPES.includes(input.type) ? input.type : "bank",
+		initialBalance: Number(input.initialBalance) || 0,
+		note: (input.note || "").trim() || undefined,
+		createdAt: now,
+		updatedAt: now
+	};
+	data.accounts.push(acc);
+	return acc
+}
+
+function updateAccount(data, id, patch) {
+	const a = data.accounts.find(x => x.id === id);
+	if (!a) return;
+	if (patch.name !== undefined && patch.name.trim()) a.name = patch.name.trim();
+	if (patch.type !== undefined && ACCOUNT_TYPES.includes(patch.type)) a.type = patch.type;
+	if (patch.initialBalance !== undefined && Number.isFinite(Number(patch.initialBalance))) a.initialBalance = Number(patch.initialBalance);
+	if (patch.note !== undefined) a.note = (patch.note || "").trim() || undefined;
+	a.updatedAt = Date.now()
+}
+
+function deleteAccount(data, id) {
+	data.accounts = data.accounts.filter(a => a.id !== id);
+	for (const tx of data.transactions) {
+		if (tx.accountId === id) tx.accountId = undefined;
+		if (tx.toAccountId === id) tx.toAccountId = undefined
+	}
+}
+
+function addBudget(data, input) {
+	const existing = data.budgets.find(b => b.category === input.category);
+	if (existing) {
+		existing.limit = Math.abs(Number(input.limit));
+		return existing
+	}
+	const b = {
+		id: randomId("b"),
+		category: input.category.trim(),
+		limit: Math.abs(Number(input.limit))
+	};
+	data.budgets.push(b);
+	return b
+}
+
+function updateBudget(data, id, patch) {
+	const b = data.budgets.find(x => x.id === id);
+	if (!b) return;
+	if (patch.category) b.category = patch.category.trim();
+	if (patch.limit !== undefined && Number.isFinite(Number(patch.limit)) && Number(patch.limit) > 0) b.limit = Math.abs(Number(patch.limit))
+}
+
+function deleteBudget(data, id) {
+	data.budgets = data.budgets.filter(b => b.id !== id)
+}
+
+function addRecurring(data, input) {
+	const r = {
+		id: randomId("r"),
+		name: input.name.trim(),
+		type: VALID_TYPES.includes(input.type) ? input.type : "expense",
+		amount: Math.abs(Number(input.amount)),
+		dayOfMonth: Math.max(1, Math.min(31, Math.round(Number(input.dayOfMonth) || 1))),
+		accountId: input.accountId || undefined,
+		toAccountId: input.type === "transfer" ? input.toAccountId || undefined : undefined,
+		personId: input.personId || undefined,
+		category: (input.category || "").trim() || undefined,
+		description: (input.description || "").trim() || undefined,
+		lastRunMonth: input.lastRunMonth || undefined
+	};
+	data.recurring.push(r);
+	return r
+}
+
+function updateRecurring(data, id, patch) {
+	const r = data.recurring.find(x => x.id === id);
+	if (!r) return;
+	if (patch.name !== undefined && patch.name.trim()) r.name = patch.name.trim();
+	if (patch.type && VALID_TYPES.includes(patch.type)) r.type = patch.type;
+	if (patch.amount !== undefined && Number.isFinite(Number(patch.amount))) r.amount = Math.abs(Number(patch.amount));
+	if (patch.dayOfMonth !== undefined) r.dayOfMonth = Math.max(1, Math.min(31, Math.round(Number(patch.dayOfMonth) || 1)));
+	if (patch.accountId !== undefined) r.accountId = patch.accountId || undefined;
+	if (patch.toAccountId !== undefined) r.toAccountId = r.type === "transfer" ? patch.toAccountId || undefined : undefined;
+	if (patch.personId !== undefined) r.personId = patch.personId || undefined;
+	if (patch.category !== undefined) r.category = (patch.category || "").trim() || undefined;
+	if (patch.description !== undefined) r.description = (patch.description || "").trim() || undefined;
+	if (patch.lastRunMonth !== undefined) r.lastRunMonth = patch.lastRunMonth || undefined
+}
+
+function deleteRecurring(data, id) {
+	data.recurring = data.recurring.filter(r => r.id !== id)
 }
 
 function addPerson(data, input) {
@@ -1875,7 +2722,9 @@ function addTransaction(data, input) {
 	const origin = input.type === "receivable" || input.type === "debt";
 	const tx = {
 		id: randomId("t"),
-		personId: input.personId,
+		personId: input.personId || "",
+		accountId: input.accountId || undefined,
+		toAccountId: input.type === "transfer" ? input.toAccountId || undefined : undefined,
 		type: input.type,
 		amount: Math.abs(input.amount),
 		date: ISO_RE.test(input.date || "") ? input.date : todayISO(),
@@ -1898,7 +2747,9 @@ function updateTransaction(data, id, patch) {
 	if (patch.date && ISO_RE.test(patch.date)) tx.date = patch.date;
 	if (patch.description !== undefined) tx.description = (patch.description || "").trim() || undefined;
 	if (patch.category !== undefined) tx.category = (patch.category || "").trim() || undefined;
-	if (patch.personId) tx.personId = patch.personId;
+	if (patch.personId !== undefined) tx.personId = patch.personId || "";
+	if (patch.accountId !== undefined) tx.accountId = patch.accountId || undefined;
+	if (patch.toAccountId !== undefined) tx.toAccountId = tx.type === "transfer" ? patch.toAccountId || undefined : undefined;
 	const origin = tx.type === "receivable" || tx.type === "debt";
 	if (!origin) {
 		tx.dueDate = undefined;
@@ -1923,101 +2774,236 @@ function exportToJSON(data) {
 }
 
 function parseCSVRows(text) {
- const s = String(text).replace(/^\uFEFF/, '');
- const first = s.split(/\r?\n/, 1)[0];
- const delimiter = [',', ';', '\t'].sort((a,b) => first.split(b).length-first.split(a).length)[0];
- const rows=[]; let row=[], cell='', quoted=false, ended=false;
- for(let i=0;i<s.length;i++) {
-  const ch=s[i];
-  if(quoted) { if(ch==='"') { if(s[i+1]==='"'){cell+='"';i++;} else {quoted=false;ended=true;} } else cell+=ch; continue; }
-  if(ch==='"') { if(cell || ended) throw new Error('Invalid CSV quote'); quoted=true; }
-  else if(ch===delimiter) {row.push(cell);cell='';ended=false;}
-  else if(ch==='\r'||ch==='\n') {if(ch==='\r'&&s[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell='';ended=false;}
-  else {if(ended && ch.trim()) throw new Error('Invalid CSV cell');cell+=ch;}
- }
- if(quoted) throw new Error('Unclosed CSV quote');
- row.push(cell);if(row.some(x=>x.trim()))rows.push(row);
- return rows;
+	const s = String(text).replace(/^\uFEFF/, "");
+	const first = s.split(/\r?\n/, 1)[0];
+	const delimiter = [",", ";", "\t"].sort((a, b) => first.split(b).length - first.split(a).length)[0];
+	const rows = [];
+	let row = [], cell = "", quoted = false, ended = false;
+	for (let i = 0; i < s.length; i++) {
+		const ch = s[i];
+		if (quoted) {
+			if (ch === '"') {
+				if (s[i + 1] === '"') { cell += '"'; i++ } else { quoted = false; ended = true }
+			} else cell += ch;
+			continue
+		}
+		if (ch === '"') {
+			if (cell || ended) throw new Error("Invalid CSV quote");
+			quoted = true
+		} else if (ch === delimiter) {
+			row.push(cell); cell = ""; ended = false
+		} else if (ch === "\r" || ch === "\n") {
+			if (ch === "\r" && s[i + 1] === "\n") i++;
+			row.push(cell);
+			if (row.some(x => x.trim())) rows.push(row);
+			row = []; cell = ""; ended = false
+		} else {
+			if (ended && ch.trim()) throw new Error("Invalid CSV cell");
+			cell += ch
+		}
+	}
+	if (quoted) throw new Error("Unclosed CSV quote");
+	row.push(cell);
+	if (row.some(x => x.trim())) rows.push(row);
+	return rows
 }
+
 function parseCSVTransactions(text, calendar) {
- const rows=parseCSVRows(text); if(rows.length<2) throw new Error(CURRENT.locale==='fa'?'فایل باید شامل عنوان ستون‌ها و حداقل یک تراکنش باشد.':'Headers and at least one transaction are required.');
- const aliases={date:['date','تاریخ','تاریخ تراکنش'],person:['person','name','شخص','نام','نام شخص'],type:['type','نوع'],amount:['amount','مبلغ'],category:['category','دسته','دسته‌بندی'],description:['description','شرح','توضیحات'],due:['due','due date','duedate','سررسید']};
- const heads=rows[0].map(x=>x.trim().toLowerCase());const columns={};
- for(const [key,names] of Object.entries(aliases)){columns[key]=heads.findIndex(h=>names.includes(h));}
- for(const key of ['date','person','type','amount']) if(columns[key]<0)throw new Error((CURRENT.locale==='fa'?'ستون ضروری پیدا نشد: ':'Missing column: ')+aliases[key].join(' / '));
- const result=[];
- for(let i=1;i<rows.length;i++) {
-  const row=rows[i],get=k=>columns[k]<0?'':(row[columns[k]]||'').trim();
-  const date=parseDateString(get('date'),calendar), type=labelToType(get('type')), amount=cleanNumber(get('amount')), person=get('person');
-  const dueRaw=get('due'),due=dueRaw&&dueRaw!=='—'?parseDateString(dueRaw,calendar):null;
-  if(row.length!==heads.length || !date || !type || !person || amount<=0 || (dueRaw&&dueRaw!=='—'&&!due))throw new Error((CURRENT.locale==='fa'?'اطلاعات نامعتبر در ردیف ':'Invalid data on row ')+(i+1));
-  result.push({date,type,amount,person,category:get('category')||undefined,description:get('description')||undefined,dueDate:isOrigin({type})?due||undefined:undefined});
- }
- return result;
+	const rows = parseCSVRows(text);
+	if (rows.length < 2) throw new Error(CURRENT.locale === "fa" ? "فایل باید شامل عنوان ستون‌ها و حداقل یک تراکنش باشد." : "Headers and at least one transaction are required.");
+	const aliases = {
+		date: ["date", "تاریخ", "تاریخ تراکنش"],
+		person: ["person", "name", "شخص", "نام", "نام شخص"],
+		account: ["account", "حساب", "کیف‌پول", "wallet"],
+		toAccount: ["to account", "toaccount", "حساب مقصد"],
+		type: ["type", "نوع"],
+		amount: ["amount", "مبلغ"],
+		category: ["category", "دسته", "دسته‌بندی"],
+		description: ["description", "شرح", "توضیحات"],
+		due: ["due", "due date", "duedate", "سررسید"]
+	};
+	const heads = rows[0].map(x => x.trim().toLowerCase());
+	const columns = {};
+	for (const [key, names] of Object.entries(aliases)) {
+		columns[key] = heads.findIndex(h => names.includes(h))
+	}
+	for (const key of ["date", "type", "amount"]) {
+		if (columns[key] < 0) throw new Error((CURRENT.locale === "fa" ? "ستون ضروری پیدا نشد: " : "Missing column: ") + aliases[key].join(" / "))
+	}
+	const result = [];
+	for (let i = 1; i < rows.length; i++) {
+		const row = rows[i];
+		const get = k => columns[k] < 0 ? "" : (row[columns[k]] || "").trim();
+		const date = parseDateString(get("date"), calendar);
+		const type = labelToType(get("type"));
+		const amount = cleanNumber(get("amount"));
+		const person = get("person");
+		const account = get("account");
+		const toAccount = get("toAccount");
+		const dueRaw = get("due");
+		const due = dueRaw && dueRaw !== "—" ? parseDateString(dueRaw, calendar) : null;
+		if (row.length !== heads.length || !date || !type || amount <= 0 || (isDebtType(type) && !person) || (dueRaw && dueRaw !== "—" && !due)) {
+			throw new Error((CURRENT.locale === "fa" ? "اطلاعات نامعتبر در ردیف " : "Invalid data on row ") + (i + 1))
+		}
+		result.push({
+			date,
+			type,
+			amount,
+			person,
+			account: account || undefined,
+			toAccount: type === "transfer" ? toAccount || undefined : undefined,
+			category: get("category") || undefined,
+			description: get("description") || undefined,
+			dueDate: isOrigin({ type }) ? due || undefined : undefined
+		})
+	}
+	return result
 }
+
 function mergeCSVTransactions(existing, incoming) {
- const data=JSON.parse(JSON.stringify(existing));const names=new Map(data.people.map(p=>[p.id,p.name]));
- const key=(tx,name)=>JSON.stringify([name,tx.date,tx.type,tx.amount,tx.category||'',tx.description||'',tx.dueDate||'']);
- const seen=new Set(data.transactions.map(tx=>key(tx,names.get(tx.personId))));let added=0,skipped=0;
- for(const item of incoming) {
-  const fingerprint=key(item,item.person);if(seen.has(fingerprint)){skipped++;continue;}
-  let person=data.people.find(p=>p.name===item.person);
-  if(!person){person={id:randomId('p'),name:item.person,tags:[],createdAt:Date.now(),updatedAt:Date.now()};data.people.push(person);}
-  const {person:_,...fields}=item;
-  data.transactions.push({...fields,id:randomId('t'),personId:person.id,createdAt:Date.now(),updatedAt:Date.now()});seen.add(fingerprint);added++;
- }
- return {data,added,skipped};
+	const data = JSON.parse(JSON.stringify(existing));
+	const names = new Map(data.people.map(p => [p.id, p.name]));
+	const accNames = new Map((data.accounts || []).map(a => [a.id, a.name]));
+	const key = (tx, pName, aName) => JSON.stringify([pName || "", aName || "", tx.date, tx.type, tx.amount, tx.category || "", tx.description || "", tx.dueDate || ""]);
+	const seen = new Set(data.transactions.map(tx => key(tx, names.get(tx.personId), accNames.get(tx.accountId))));
+	let added = 0, skipped = 0;
+	for (const item of incoming) {
+		const fingerprint = key(item, item.person, item.account);
+		if (seen.has(fingerprint)) { skipped++; continue }
+		let personId = "";
+		if (item.person) {
+			let person = data.people.find(p => p.name === item.person);
+			if (!person) {
+				person = { id: randomId("p"), name: item.person, tags: [], createdAt: Date.now(), updatedAt: Date.now() };
+				data.people.push(person)
+			}
+			personId = person.id
+		}
+		let accountId = undefined;
+		if (item.account) {
+			let acc = data.accounts.find(a => a.name === item.account);
+			if (!acc) {
+				acc = { id: randomId("a"), name: item.account, type: "bank", initialBalance: 0, createdAt: Date.now(), updatedAt: Date.now() };
+				data.accounts.push(acc)
+			}
+			accountId = acc.id
+		}
+		let toAccountId = undefined;
+		if (item.type === "transfer" && item.toAccount) {
+			let acc = data.accounts.find(a => a.name === item.toAccount);
+			if (!acc) {
+				acc = { id: randomId("a"), name: item.toAccount, type: "bank", initialBalance: 0, createdAt: Date.now(), updatedAt: Date.now() };
+				data.accounts.push(acc)
+			}
+			toAccountId = acc.id
+		}
+		data.transactions.push({
+			id: randomId("t"),
+			date: item.date,
+			type: item.type,
+			amount: item.amount,
+			personId,
+			accountId,
+			toAccountId,
+			category: item.category,
+			description: item.description,
+			dueDate: item.dueDate,
+			createdAt: Date.now(),
+			updatedAt: Date.now()
+		});
+		seen.add(fingerprint);
+		added++
+	}
+	return { data, added, skipped }
 }
+
 class CSVImportModal extends Modal {
- constructor(app, plugin, incoming, onDone){super(app);this.plugin=plugin;this.incoming=incoming;this.onDone=onDone;}
- onOpen(){
-  modalRtl(this);const fa=CURRENT.locale==='fa';this.titleEl.setText(fa?'پیش‌نمایش ورود CSV':'CSV import preview');
-  const preview=mergeCSVTransactions(this.plugin.accounts.data,this.incoming);
-  this.contentEl.createDiv('pa-muted').setText(fa?`${preview.added} تراکنش جدید · ${preview.skipped} مورد تکراری کنار گذاشته شد`:`${preview.added} new transactions · ${preview.skipped} duplicates skipped`);
-  this.contentEl.createDiv('pa-hint').setText(fa?'اطلاعات به داده‌های فعلی اضافه می‌شود. پیش از ثبت، نسخهٔ پشتیبان خودکار ساخته می‌شود.':'Appends to current data. An automatic backup is saved before importing.');
-  const scroll=this.contentEl.createDiv('pa-csv-preview');
-  const table=scroll.createEl('table');const header=table.createEl('tr');
-  for(const title of [t('thDate'),t('thPerson'),t('thType'),t('thAmount')])header.createEl('th',{text:title});
-  for(const tx of this.incoming.slice(0,30)){const row=table.createEl('tr');for(const value of [this.plugin.fmt.date(tx.date),tx.person,typeLabel(tx.type),this.plugin.fmt.amount(tx.amount)])row.createEl('td',{text:value});}
-  if(this.incoming.length>30)this.contentEl.createDiv('pa-hint').setText(fa?'نمایش ۳۰ ردیف اول؛ همهٔ ردیف‌ها وارد می‌شوند.':'First 30 rows shown; all rows will be imported.');
-  const actions=this.contentEl.createDiv('pa-actions');const cancel=actions.createEl('button',{text:t('cancel')});cancel.onclick=()=>this.close();
-  const button=actions.createEl('button',{cls:'mod-cta',text:fa?'تأیید و افزودن':'Confirm and append'});button.disabled=!preview.added;
-  button.onclick=async()=>{
-   button.disabled=true;
-   try {
-    await this.plugin.accounts.reload();if(this.plugin.accounts.error)throw new Error(this.plugin.accounts.error);
-    const next=mergeCSVTransactions(this.plugin.accounts.data,this.incoming);
-    if(!next.added){new Notice(fa?'همهٔ موارد قبلاً ثبت شده‌اند.':'All records already exist.');this.close();return;}
-    const backup=normalizePath(this.plugin.repo.filePath()+'.csv-backup-'+Date.now()+'.json');
-    await this.app.vault.create(backup,JSON.stringify(this.plugin.accounts.data,null,2));
-    await this.plugin.repo.save(next.data);
-    this.plugin.accounts.data=next.data;this.plugin.accounts.recompute();this.plugin.accounts.emit();
-    new Notice((fa?'تراکنش‌های افزوده‌شده: ':'Transactions added: ')+next.added);this.close();if(this.onDone)this.onDone();
-   }catch(e){new Notice(String(e.message||e));button.disabled=false;}
-  };
- }
- onClose(){this.contentEl.empty();}
+	constructor(app, plugin, incoming, onDone) {
+		super(app);
+		this.plugin = plugin;
+		this.incoming = incoming;
+		this.onDone = onDone
+	}
+	onOpen() {
+		modalRtl(this);
+		const fa = CURRENT.locale === "fa";
+		this.titleEl.setText(fa ? "پیش‌نمایش ورود CSV" : "CSV import preview");
+		const preview = mergeCSVTransactions(this.plugin.accounts.data, this.incoming);
+		this.contentEl.createDiv("pa-muted").setText(fa ? `${preview.added} تراکنش جدید · ${preview.skipped} مورد تکراری کنار گذاشته شد` : `${preview.added} new transactions · ${preview.skipped} duplicates skipped`);
+		this.contentEl.createDiv("pa-hint").setText(fa ? "اطلاعات به داده‌های فعلی اضافه می‌شود. پیش از ثبت، نسخهٔ پشتیبان خودکار ساخته می‌شود." : "Appends to current data. An automatic backup is saved before importing.");
+		const scroll = this.contentEl.createDiv("pa-csv-preview");
+		const table = scroll.createEl("table");
+		const header = table.createEl("tr");
+		for (const title of [t("thDate"), t("thType"), t("thAmount"), t("thAccount"), t("thPerson")]) header.createEl("th", { text: title });
+		for (const tx of this.incoming.slice(0, 30)) {
+			const row = table.createEl("tr");
+			for (const value of [this.plugin.fmt.date(tx.date), typeLabel(tx.type), this.plugin.fmt.amount(tx.amount), tx.account || "—", tx.person || "—"]) row.createEl("td", { text: value })
+		}
+		if (this.incoming.length > 30) this.contentEl.createDiv("pa-hint").setText(fa ? "نمایش ۳۰ ردیف اول؛ همهٔ ردیف‌ها وارد می‌شوند." : "First 30 rows shown; all rows will be imported.");
+		const actions = this.contentEl.createDiv("pa-actions");
+		const cancel = actions.createEl("button", { text: t("cancel") });
+		cancel.onclick = () => this.close();
+		const button = actions.createEl("button", { cls: "mod-cta", text: fa ? "تأیید و افزودن" : "Confirm and append" });
+		button.disabled = !preview.added;
+		button.onclick = async () => {
+			button.disabled = true;
+			try {
+				await this.plugin.accounts.reload();
+				if (this.plugin.accounts.error) throw new Error(this.plugin.accounts.error);
+				const next = mergeCSVTransactions(this.plugin.accounts.data, this.incoming);
+				if (!next.added) {
+					new Notice(fa ? "همهٔ موارد قبلاً ثبت شده‌اند." : "All records already exist.");
+					this.close();
+					return
+				}
+				const backup = normalizePath(this.plugin.repo.folderPath() + "/csv-backup-" + Date.now() + ".json");
+				await this.plugin.repo.ensureFolder(this.plugin.repo.folderPath());
+				await this.app.vault.create(backup, JSON.stringify(this.plugin.accounts.data, null, 2));
+				await this.plugin.repo.save(next.data, { full: true });
+				this.plugin.accounts.data = next.data;
+				this.plugin.accounts.recompute();
+				this.plugin.accounts.emit();
+				new Notice((fa ? "تراکنش‌های افزوده‌شده: " : "Transactions added: ") + next.added);
+				this.close();
+				if (this.onDone) this.onDone()
+			} catch (e) {
+				new Notice(String(e.message || e));
+				button.disabled = false
+			}
+		}
+	}
+	onClose() {
+		this.contentEl.empty()
+	}
 }
 
 function exportToCSV(data, fmt) {
 	const nameOf = new Map(data.people.map(p => [p.id, p.name]));
+	const accOf = new Map((data.accounts || []).map(a => [a.id, a.name]));
 	const esc = s => {
 		if (s === undefined || s === null) return "";
 		const str = String(s);
-		if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-			return '"' + str.replace(/"/g, '""') + '"'
-		}
+		if (str.includes(",") || str.includes('"') || str.includes("\n")) return '"' + str.replace(/"/g, '""') + '"';
 		return str
 	};
-	const headers = [t("thDate"), t("thPerson"), t("thType"), t("thAmount"), t("dCategory"), t("dDesc"), t("dDue")];
+	const headers = [t("thDate"), t("thType"), t("thAmount"), t("thAccount"), t("thToAccount"), t("thPerson"), t("dCategory"), t("dDesc"), t("dDue")];
 	const rows = [headers.map(esc).join(",")];
 	const txs = [...data.transactions].sort((a, b) => a.date.localeCompare(b.date));
 	for (const tx of txs) {
-		rows.push([esc(fmt.date(tx.date)), esc(nameOf.get(tx.personId) || "?"), esc(typeLabel(tx.type)), esc(tx.amount), esc(tx.category || ""), esc(tx.description || ""), esc(tx.dueDate ? fmt.date(tx.dueDate) : "")].join(","))
+		rows.push([
+			esc(fmt.date(tx.date)),
+			esc(typeLabel(tx.type)),
+			esc(tx.amount),
+			esc(accOf.get(tx.accountId) || ""),
+			esc(accOf.get(tx.toAccountId) || ""),
+			esc(nameOf.get(tx.personId) || ""),
+			esc(tx.category || ""),
+			esc(tx.description || ""),
+			esc(tx.dueDate ? fmt.date(tx.dueDate) : "")
+		].join(","))
 	}
 	return "\ufeff" + rows.join("\r\n")
 }
-
 function downloadFile(filename, content, mime) {
 	const blob = new Blob([content], {
 		type: mime
@@ -2171,12 +3157,30 @@ class AccountsStore {
 	get confirmDelete() {
 		return this.plugin.settings.confirmDelete
 	}
+	get calendar() {
+		return this.plugin.settings.calendar || "gregorian"
+	}
 	personName(id) {
 		const p = this.data.people.find(x => x.id === id);
-		return p ? p.name : "?"
+		return p ? p.name : ""
 	}
 	person(id) {
 		return this.data.people.find(x => x.id === id)
+	}
+	accountName(id) {
+		const a = (this.data.accounts || []).find(x => x.id === id);
+		return a ? a.name : ""
+	}
+	account(id) {
+		return (this.data.accounts || []).find(x => x.id === id)
+	}
+	visibleTransactions() {
+		const s = this.plugin.settings;
+		return this.data.transactions.filter(tx => {
+			if (isFinanceType(tx.type)) return !!s.enableFinance;
+			if (isDebtType(tx.type)) return !!s.enableDebts;
+			return true
+		})
 	}
 	subscribe(fn) {
 		this.listeners.add(fn);
@@ -2188,7 +3192,7 @@ class AccountsStore {
 		for (const fn of [...this.listeners]) fn()
 	}
 	recompute() {
-		this.ledger = computeLedger(this.data, todayISO(), this.plugin.settings.dueSoonDays)
+		this.ledger = computeLedger(this.data, todayISO(), this.plugin.settings.dueSoonDays, this.calendar)
 	}
 	async reload() {
 		this.error = null;
@@ -2204,10 +3208,10 @@ class AccountsStore {
 	async ready() {
 		if (!this.loaded) await this.reload()
 	}
-	async persist() {
+	async persist(opts) {
 		if (this.error) throw new Error(this.error);
 		try {
-			await this.plugin.repo.save(this.data);
+			await this.plugin.repo.save(this.data, opts);
 			this.error = null
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
@@ -2215,6 +3219,85 @@ class AccountsStore {
 		}
 		this.recompute();
 		this.emit()
+	}
+	async ensureDefaultAccount() {
+		await this.ready();
+		if (this.plugin.settings.enableFinance && (!this.data.accounts || this.data.accounts.length === 0)) {
+			addAccount(this.data, {
+				name: t("defaultAccountName"),
+				type: "bank",
+				initialBalance: 0
+			});
+			await this.persist({ dirtyMonths: new Set, saveMaster: true })
+		}
+	}
+	async addAccount(input) {
+		await this.ready();
+		const a = addAccount(this.data, input);
+		await this.persist({ dirtyMonths: new Set, saveMaster: true });
+		return a
+	}
+	async updateAccount(id, patch) {
+		await this.ready();
+		updateAccount(this.data, id, patch);
+		await this.persist({ full: true });
+	}
+	async deleteAccount(id) {
+		await this.ready();
+		deleteAccount(this.data, id);
+		await this.persist({ full: true })
+	}
+	async addBudget(input) {
+		await this.ready();
+		const b = addBudget(this.data, input);
+		await this.persist({ dirtyMonths: new Set, saveMaster: true });
+		return b
+	}
+	async updateBudget(id, patch) {
+		await this.ready();
+		updateBudget(this.data, id, patch);
+		await this.persist({ dirtyMonths: new Set, saveMaster: true })
+	}
+	async deleteBudget(id) {
+		await this.ready();
+		deleteBudget(this.data, id);
+		await this.persist({ dirtyMonths: new Set, saveMaster: true })
+	}
+	async addRecurring(input) {
+		await this.ready();
+		const r = addRecurring(this.data, input);
+		await this.persist({ dirtyMonths: new Set, saveMaster: true });
+		return r
+	}
+	async updateRecurring(id, patch) {
+		await this.ready();
+		updateRecurring(this.data, id, patch);
+		await this.persist({ dirtyMonths: new Set, saveMaster: true })
+	}
+	async deleteRecurring(id) {
+		await this.ready();
+		deleteRecurring(this.data, id);
+		await this.persist({ dirtyMonths: new Set, saveMaster: true })
+	}
+	async runRecurring(id) {
+		await this.ready();
+		const r = this.data.recurring.find(x => x.id === id);
+		if (!r) return null;
+		const today = todayISO();
+		const mKey = currentMonthKey(this.calendar);
+		const tx = addTransaction(this.data, {
+			type: r.type,
+			amount: r.amount,
+			date: today,
+			accountId: r.accountId,
+			toAccountId: r.toAccountId,
+			personId: r.personId || "",
+			category: r.category,
+			description: r.description || r.name
+		});
+		r.lastRunMonth = mKey;
+		await this.persist({ dirtyMonths: new Set([monthKeyForISO(tx.date, this.calendar)]), saveMaster: true });
+		return tx
 	}
 	async ensurePerson(name) {
 		await this.ready();
@@ -2225,34 +3308,43 @@ class AccountsStore {
 	async addPerson(input) {
 		await this.ready();
 		const p = addPerson(this.data, input);
-		await this.persist();
+		await this.persist({ dirtyMonths: new Set, saveMaster: true });
 		return p
 	}
 	async updatePerson(id, patch) {
 		await this.ready();
 		updatePerson(this.data, id, patch);
-		await this.persist()
+		await this.persist({ full: true })
 	}
 	async deletePerson(id) {
 		await this.ready();
 		deletePerson(this.data, id);
-		await this.persist()
+		await this.persist({ full: true })
 	}
 	async addTransaction(input) {
 		await this.ready();
 		const tx = addTransaction(this.data, input);
-		await this.persist();
+		const dirty = new Set([monthKeyForISO(tx.date, this.calendar)]);
+		await this.persist({ dirtyMonths: dirty, saveMaster: true });
 		return tx
 	}
 	async updateTransaction(id, patch) {
 		await this.ready();
+		const old = this.data.transactions.find(x => x.id === id);
+		const dirty = new Set;
+		if (old) dirty.add(monthKeyForISO(old.date, this.calendar));
 		updateTransaction(this.data, id, patch);
-		await this.persist()
+		const updated = this.data.transactions.find(x => x.id === id);
+		if (updated) dirty.add(monthKeyForISO(updated.date, this.calendar));
+		await this.persist({ dirtyMonths: dirty, saveMaster: true })
 	}
 	async deleteTransaction(id) {
 		await this.ready();
+		const old = this.data.transactions.find(x => x.id === id);
+		const dirty = new Set;
+		if (old) dirty.add(monthKeyForISO(old.date, this.calendar));
 		deleteTransaction(this.data, id);
-		await this.persist()
+		await this.persist({ dirtyMonths: dirty, saveMaster: true })
 	}
 	async settleTransaction(txId) {
 		await this.ready();
@@ -2271,12 +3363,12 @@ class AccountsStore {
 			linkedTo: tx.id
 		})
 	}
-	/* ✅ FIX #5: settlePerson اتمیک با rollback */
 	async settlePerson(personId) {
 		await this.ready();
 		const b = this.ledger ? this.ledger.balances.get(personId) : null;
 		if (!b) return;
 		const snapshot = JSON.parse(JSON.stringify(this.data));
+		const dirty = new Set([currentMonthKey(this.calendar)]);
 		try {
 			if (b.remainingReceivable > EPS) {
 				addTransaction(this.data, {
@@ -2296,7 +3388,7 @@ class AccountsStore {
 					description: t("accountSettlement")
 				})
 			}
-			await this.persist()
+			await this.persist({ dirtyMonths: dirty, saveMaster: true })
 		} catch (e) {
 			this.data = snapshot;
 			this.recompute();
@@ -2306,11 +3398,16 @@ class AccountsStore {
 	}
 	async resetEmpty() {
 		this.data = emptyData();
-		await this.persist()
+		await this.persist({ full: true })
 	}
 }
+
 const DEFAULT_SETTINGS = {
 	lastSeenChangelogVersion: "",
+	hasChosenMode: false,
+	enableDebts: true,
+	enableFinance: false,
+	dataFolder: DEFAULT_DATA_FOLDER,
 	filePath: DEFAULT_FILE_PATH,
 	currency: "usd",
 	locale: "en",
@@ -2320,23 +3417,24 @@ const DEFAULT_SETTINGS = {
 	compact: false,
 	confirmDelete: true,
 	openAfterAdd: false,
+	categories: [],
+	expenseCategories: [],
+	incomeCategories: [],
 	savedViews: [],
 	recurringTemplates: [],
-	settingsVersion: 4,
+	settingsVersion: 5,
 	_migratedToMd: false,
 	_hadDataBefore: false
 };
+
 class PASettingTab extends PluginSettingTab {
 	constructor(app, plugin) {
 		super(app, plugin);
 		this.plugin = plugin
 	}
 	display() {
-		const {
-			containerEl
-		} = this;
+		const { containerEl } = this;
 		containerEl.empty();
-
 		containerEl.addClass("pa-settings");
 		containerEl.setAttribute("dir", this.plugin.settings.locale === "fa" ? "rtl" : "ltr");
 		const s = this.plugin.settings;
@@ -2344,38 +3442,60 @@ class PASettingTab extends PluginSettingTab {
 			fn();
 			await this.plugin.saveSettings()
 		};
-		containerEl.createEl("h3", {
-			text: t("setLang")
+
+		containerEl.createEl("h3", { text: t("setModules") });
+		new Setting(containerEl).setName(t("setEnableDebts")).setDesc(t("setEnableDebtsDesc")).addToggle(tg => {
+			tg.setValue(!!s.enableDebts).onChange(async v => {
+				if (!v && !s.enableFinance) {
+					new Notice("⚠ " + t("moduleAtLeastOne"));
+					tg.setValue(true);
+					return
+				}
+				await save(() => { s.enableDebts = v; s.hasChosenMode = true });
+				this.display()
+			})
 		});
+		new Setting(containerEl).setName(t("setEnableFinance")).setDesc(t("setEnableFinanceDesc")).addToggle(tg => {
+			tg.setValue(!!s.enableFinance).onChange(async v => {
+				if (!v && !s.enableDebts) {
+					new Notice("⚠ " + t("moduleAtLeastOne"));
+					tg.setValue(true);
+					return
+				}
+				await save(() => { s.enableFinance = v; s.hasChosenMode = true });
+				if (v) await this.plugin.accounts.ensureDefaultAccount();
+				this.display()
+			})
+		});
+		new Setting(containerEl).setName(t("setChangeMode")).setDesc(t("setChangeModeDesc")).addButton(b => b.setButtonText(t("changeModeBtn")).onClick(() => {
+			new ModeSetupModal(this.app, this.plugin, () => this.display()).open()
+		}));
+
+		containerEl.createEl("h3", { text: t("setLang") });
 		new Setting(containerEl).setName(t("setLang")).addDropdown(d => {
 			d.addOption("fa", "فارسی");
 			d.addOption("en", "English");
 			d.setValue(s.locale);
 			d.onChange(v => {
-				save(() => {
-					s.locale = v
-				}).then(() => this.display())
+				save(() => { s.locale = v }).then(() => this.display())
 			})
 		});
 		new Setting(containerEl).setName(t("setCurrency")).setDesc(t("setCurrencyDesc")).addDropdown(d => {
 			const fa = CURRENT.locale === "fa";
 			for (const c of CURRENCIES) d.addOption(c.code, fa ? c.labelFa : c.label);
 			d.setValue(s.currency);
-			d.onChange(v => save(() => {
-				s.currency = v
-			}))
+			d.onChange(v => save(() => { s.currency = v }))
 		});
-		containerEl.createEl("h3", {
-			text: t("setStorage")
-		});
-		new Setting(containerEl).setName(t("setCentralFile")).setDesc(t("setCentralFileDesc")).addText(tx => tx.setPlaceholder(DEFAULT_FILE_PATH).setValue(s.filePath).onChange(v => save(() => {
-			s.filePath = v.trim() || DEFAULT_FILE_PATH
-		}))).addButton(b => b.setButtonText(t("openFile")).onClick(async () => {
+
+		containerEl.createEl("h3", { text: t("setStorage") });
+		new Setting(containerEl).setName(t("setDataFolder")).setDesc(t("setDataFolderDesc")).addText(tx => tx.setPlaceholder(DEFAULT_DATA_FOLDER).setValue(s.dataFolder || DEFAULT_DATA_FOLDER).onChange(v => save(() => {
+			s.dataFolder = v.trim() || DEFAULT_DATA_FOLDER
+		}))).addButton(b => b.setButtonText(t("openMasterFile")).onClick(async () => {
 			try {
-				const path = normalizePath((s.filePath || "").trim() || DEFAULT_FILE_PATH);
+				const path = this.plugin.repo.masterPath();
 				let file = this.app.vault.getAbstractFileByPath(path);
 				if (!(file instanceof TFile)) {
-					await this.plugin.repo.writeReadableNote(this.plugin.accounts.data);
+					await this.plugin.repo.save(this.plugin.accounts.data, { full: true });
 					file = this.app.vault.getAbstractFileByPath(path)
 				}
 				if (file instanceof TFile) await this.app.workspace.getLeaf("tab").openFile(file)
@@ -2383,20 +3503,47 @@ class PASettingTab extends PluginSettingTab {
 				new Notice(String(e instanceof Error ? e.message : e))
 			}
 		}));
-		containerEl.createEl("h3", {
-			text: t("setCategories")
-		});
-		new Setting(containerEl).setName(t("setCategories")).setDesc(t("setCategoriesDesc")).addTextArea(tx => {
-			tx.setValue(this.plugin.settings.categories.join("\n"));
-			tx.inputEl.rows = 6;
-			tx.onChange(async v => {
-				this.plugin.settings.categories = v.split("\n").map(x => x.trim()).filter(Boolean);
-				await this.plugin.saveSettings()
+		new Setting(containerEl).setName(t("reorganizeFiles")).setDesc(t("reorganizeFilesDesc")).addButton(b => b.setButtonText(t("reorganizeFiles")).onClick(async () => {
+			try {
+				await this.plugin.accounts.ready();
+				await this.plugin.repo.save(this.plugin.accounts.data, { full: true });
+				new Notice("✅ " + t("reorganizeDone"))
+			} catch (e) {
+				new Notice("⚠ " + String(e instanceof Error ? e.message : e))
+			}
+		}));
+
+		containerEl.createEl("h3", { text: t("setCategories") });
+		if (s.enableFinance) {
+			new Setting(containerEl).setName(t("setExpenseCats")).setDesc(t("setCategoriesDesc")).addTextArea(tx => {
+				tx.setValue((s.expenseCategories || []).join("\n"));
+				tx.inputEl.rows = 5;
+				tx.onChange(async v => {
+					s.expenseCategories = v.split("\n").map(x => x.trim()).filter(Boolean);
+					await this.plugin.saveSettings()
+				})
+			});
+			new Setting(containerEl).setName(t("setIncomeCats")).setDesc(t("setCategoriesDesc")).addTextArea(tx => {
+				tx.setValue((s.incomeCategories || []).join("\n"));
+				tx.inputEl.rows = 4;
+				tx.onChange(async v => {
+					s.incomeCategories = v.split("\n").map(x => x.trim()).filter(Boolean);
+					await this.plugin.saveSettings()
+				})
 			})
-		});
-		containerEl.createEl("h3", {
-			text: t("setBackup")
-		});
+		}
+		if (s.enableDebts) {
+			new Setting(containerEl).setName(t("setDebtCats")).setDesc(t("setCategoriesDesc")).addTextArea(tx => {
+				tx.setValue((s.categories || []).join("\n"));
+				tx.inputEl.rows = 5;
+				tx.onChange(async v => {
+					s.categories = v.split("\n").map(x => x.trim()).filter(Boolean);
+					await this.plugin.saveSettings()
+				})
+			})
+		}
+
+		containerEl.createEl("h3", { text: t("setBackup") });
 		new Setting(containerEl).setName(t("setExportJSON")).setDesc(t("setExportJSONDesc")).addButton(b => b.setButtonText(t("exportBtn")).onClick(async () => {
 			try {
 				await this.plugin.accounts.ready();
@@ -2420,21 +3567,26 @@ class PASettingTab extends PluginSettingTab {
 
 		const csvFa = s.locale === "fa";
 		new Setting(containerEl).setName(csvFa ? "ورود اطلاعات از CSV" : "Import CSV")
-		.setDesc(csvFa ? "افزودن تراکنش‌ها با پیش‌نمایش، تشخیص موارد تکراری و پشتیبان خودکار. ستون‌های ضروری: تاریخ، شخص، نوع، مبلغ. فایل UTF-8 خروجی همین افزونه نیز پذیرفته می‌شود." : "Append transactions with preview, duplicate detection and automatic backup. Required columns: Date, Person, Type, Amount. Accepts this plugin’s UTF-8 CSV exports.")
-		.addButton(b => b.setButtonText(t("importBtn")).onClick(() => {
-			const input = document.createElement("input");input.type = "file"; input.accept = ".csv,text/csv";
-			input.onchange = async () => {
-				const file = input.files && input.files[0];if (!file) return;
-				try {
-					await this.plugin.accounts.reload();
-					if (this.plugin.accounts.error) throw new Error(this.plugin.accounts.error);
-					const rows = parseCSVTransactions(await file.text(), s.calendar);
-					new CSVImportModal(this.app, this.plugin, rows).open();
-				} catch(e) { new Notice(t("importError") + ": " + String(e.message || e)); }
-			};input.click();
-		}));
+			.setDesc(csvFa ? "افزودن تراکنش‌ها با پیش‌نمایش، تشخیص موارد تکراری و پشتیبان خودکار." : "Append transactions with preview, duplicate detection and automatic backup.")
+			.addButton(b => b.setButtonText(t("importBtn")).onClick(() => {
+				const input = document.createElement("input");
+				input.type = "file";
+				input.accept = ".csv,text/csv";
+				input.onchange = async () => {
+					const file = input.files && input.files[0];
+					if (!file) return;
+					try {
+						await this.plugin.accounts.reload();
+						if (this.plugin.accounts.error) throw new Error(this.plugin.accounts.error);
+						const rows = parseCSVTransactions(await file.text(), s.calendar);
+						new CSVImportModal(this.app, this.plugin, rows).open()
+					} catch (e) {
+						new Notice(t("importError") + ": " + String(e.message || e))
+					}
+				};
+				input.click()
+			}));
 
-		/* ✅ FIX #32: ایمپورت JSON با ConfirmModal */
 		new Setting(containerEl).setName(t("setImportJSON")).setDesc(t("setImportJSONDesc")).addButton(b => b.setButtonText(t("importBtn")).onClick(() => {
 			const input = document.createElement("input");
 			input.type = "file";
@@ -2451,17 +3603,15 @@ class PASettingTab extends PluginSettingTab {
 					return
 				}
 				const clean = sanitizeData(parsed);
-				const txCount = clean.transactions.length;
-				const peopleCount = clean.people.length;
 				new ConfirmModal(this.app, {
 					title: t("setImportJSON"),
-					lines: [peopleCount + " " + t("tabPeople") + " · " + txCount + " " + t("tabTransactions"), t("setImportJSONDesc")],
+					lines: [clean.people.length + " " + t("tabPeople") + " · " + clean.accounts.length + " " + t("statAccountsCount") + " · " + clean.transactions.length + " " + t("tabTransactions"), t("setImportJSONDesc")],
 					confirmLabel: t("importBtn"),
 					danger: true,
 					onConfirm: async () => {
 						try {
 							this.plugin.accounts.data = clean;
-							await this.plugin.accounts.persist();
+							await this.plugin.accounts.persist({ full: true });
 							new Notice(t("importDone"))
 						} catch (err) {
 							new Notice("⚠ " + t("importError") + ": " + (err instanceof Error ? err.message : String(err)))
@@ -2471,13 +3621,12 @@ class PASettingTab extends PluginSettingTab {
 			};
 			input.click()
 		}));
+
 		new Setting(containerEl).setName(t("setCalendar")).setDesc(t("setCalendarDesc")).addDropdown(d => {
 			d.addOption("jalali", t("calJalali"));
 			d.addOption("gregorian", t("calGregorian"));
 			d.setValue(s.calendar);
-			d.onChange(v => save(() => {
-				s.calendar = v
-			}))
+			d.onChange(v => save(() => { s.calendar = v }))
 		});
 		new Setting(containerEl).setName(t("setDateFormat")).setDesc(t("setDateFormatDesc")).addText(tx => tx.setValue(s.dateFormat).onChange(v => save(() => {
 			s.dateFormat = v
@@ -2487,9 +3636,7 @@ class PASettingTab extends PluginSettingTab {
 		})));
 		new Setting(containerEl).setName(t("setDueSoon")).addText(tx => tx.setValue(String(s.dueSoonDays)).onChange(v => {
 			const n = parseInt(v, 10);
-			if (!Number.isNaN(n) && n >= 0) save(() => {
-				s.dueSoonDays = n
-			})
+			if (!Number.isNaN(n) && n >= 0) save(() => { s.dueSoonDays = n })
 		}));
 		new Setting(containerEl).setName(t("setConfirmDel")).addToggle(tg => tg.setValue(s.confirmDelete).onChange(v => save(() => {
 			s.confirmDelete = v
@@ -2497,7 +3644,7 @@ class PASettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName(t("setOpenAfterAdd")).addToggle(tg => tg.setValue(s.openAfterAdd).onChange(v => save(() => {
 			s.openAfterAdd = v
 		})));
-		renderCreatorSupport(containerEl, this.plugin.settings.locale || 'fa');
+		renderCreatorSupport(containerEl, this.plugin.settings.locale || "fa")
 	}
 }
 
@@ -3213,13 +4360,300 @@ function numberToPersianWords(n) {
 	return chunks.join(" و ");
 }
 
+class ModeSetupModal extends Modal {
+	constructor(app, plugin, onSaved) {
+		super(app);
+		this.plugin = plugin;
+		this.onSaved = onSaved;
+		const s = plugin.settings;
+		this.selected = s.enableDebts && s.enableFinance ? "both" : s.enableFinance ? "finance" : "debts"
+	}
+	onOpen() {
+		modalRtl(this);
+		this.modalEl.addClass("pa-mode-modal");
+		this.titleEl.setText(t("modeSetupTitle"));
+		this.contentEl.createDiv("pa-muted pa-mode-intro").setText(t("modeSetupIntro"));
+		const grid = this.contentEl.createDiv("pa-mode-grid");
+		const options = [
+			{ id: "debts", icon: "users", title: t("modeDebtsOnly"), desc: t("modeDebtsOnlyDesc") },
+			{ id: "finance", icon: "wallet", title: t("modeFinanceOnly"), desc: t("modeFinanceOnlyDesc") },
+			{ id: "both", icon: "layers", title: t("modeBoth"), desc: t("modeBothDesc") }
+		];
+		const cards = new Map;
+		const updateActive = () => {
+			cards.forEach((c, id) => c.toggleClass("active", id === this.selected))
+		};
+		for (const opt of options) {
+			const card = grid.createDiv("pa-mode-card");
+			const ic = card.createDiv("pa-mode-icon");
+			setIcon(ic, opt.icon);
+			const copy = card.createDiv("pa-mode-copy");
+			copy.createDiv("pa-mode-title").setText(opt.title);
+			copy.createDiv("pa-mode-desc").setText(opt.desc);
+			const radio = card.createDiv("pa-mode-radio");
+			card.onclick = () => {
+				this.selected = opt.id;
+				updateActive()
+			};
+			cards.set(opt.id, card)
+		}
+		updateActive();
+		const actions = this.contentEl.createDiv("pa-actions pa-modal-footer");
+		const saveBtn = el("button", "pa-btn primary pa-btn-submit", t("modeStartBtn"));
+		saveBtn.onclick = async () => {
+			const s = this.plugin.settings;
+			s.enableDebts = this.selected === "debts" || this.selected === "both";
+			s.enableFinance = this.selected === "finance" || this.selected === "both";
+			s.hasChosenMode = true;
+			await this.plugin.saveSettings();
+			if (s.enableFinance) await this.plugin.accounts.ensureDefaultAccount();
+			if (this.onSaved) this.onSaved();
+			this.close()
+		};
+		actions.appendChild(saveBtn)
+	}
+	onClose() {
+		this.contentEl.empty()
+	}
+}
+
+class AccountModal extends Modal {
+	constructor(app, store, existing, opts = {}) {
+		super(app);
+		this.store = store;
+		this.existing = existing;
+		this.opts = opts
+	}
+	onOpen() {
+		modalRtl(this);
+		const a = this.existing;
+		const fa = CURRENT.locale === "fa";
+		this.titleEl.setText(a ? t("editAccountTitle") : t("addAccountTitle"));
+		const form = this.contentEl.createDiv("pa-form");
+		const err = form.createDiv("pa-form-error");
+		const fail = m => { err.setText(m); err.addClass("show") };
+
+		const name = inputText(fa ? "مثلاً کارت ملت، کیف‌پول نقدی" : "e.g. Main Bank, Cash Wallet");
+		name.value = a ? a.name : "";
+		field(form, t("fName"), name);
+
+		const typeSel = document.createElement("select");
+		for (const ty of ACCOUNT_TYPES) typeSel.appendChild(new Option(accountTypeLabel(ty), ty));
+		typeSel.value = a ? a.type : "bank";
+		field(form, t("fAccountType"), typeSel);
+
+		const initInput = inputText("0");
+		initInput.inputMode = "decimal";
+		initInput.value = a ? String(a.initialBalance || 0) : "0";
+		field(form, t("fInitialBalance"), initInput);
+		attachAmountInput(initInput, () => CURRENT.locale === "fa").refresh();
+
+		const note = document.createElement("textarea");
+		note.rows = 3;
+		note.placeholder = t("phNote");
+		note.value = a && a.note || "";
+		field(form, t("fNote"), note);
+
+		const submit = async () => {
+			const n = name.value.trim();
+			if (!n) return fail(t("nameRequired"));
+			const bal = cleanNumber(initInput.value);
+			const payload = { name: n, type: typeSel.value, initialBalance: bal, note: note.value.trim() };
+			if (a) await this.store.updateAccount(a.id, payload);
+			else await this.store.addAccount(payload);
+			new Notice(t("accountSaved"));
+			if (this.opts.onSaved) this.opts.onSaved();
+			this.close()
+		};
+		const actions = form.createDiv("pa-actions pa-modal-footer");
+		const cancel = el("button", "pa-btn pa-btn-cancel", t("cancel"));
+		cancel.onclick = () => this.close();
+		const saveBtn = el("button", "pa-btn primary pa-btn-submit", t("save"));
+		saveBtn.onclick = submit;
+		actions.append(cancel, saveBtn);
+		form.addEventListener("keydown", e => {
+			if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); void submit() }
+		});
+		this.modalEl.addClass("pa-mobile-modal");
+		this._cleanupKeyboard = attachMobileKeyboardHandler(this);
+		name.focus()
+	}
+	onClose() {
+		if (this._cleanupKeyboard) this._cleanupKeyboard();
+		this.contentEl.empty()
+	}
+}
+
+class BudgetModal extends Modal {
+	constructor(app, store, existing, opts = {}) {
+		super(app);
+		this.store = store;
+		this.existing = existing;
+		this.opts = opts
+	}
+	onOpen() {
+		modalRtl(this);
+		const b = this.existing;
+		this.titleEl.setText(b ? t("editBudgetTitle") : t("addBudgetTitle"));
+		const form = this.contentEl.createDiv("pa-form");
+		const err = form.createDiv("pa-form-error");
+		const fail = m => { err.setText(m); err.addClass("show") };
+
+		const catSel = document.createElement("select");
+		const cats = this.store.plugin.settings.expenseCategories || [];
+		for (const c of cats) catSel.appendChild(new Option(c, c));
+		if (b && !cats.includes(b.category)) catSel.appendChild(new Option(b.category, b.category));
+		if (b) catSel.value = b.category;
+		field(form, t("fCategory"), catSel);
+
+		const limitInput = inputText(t("phAmount"));
+		limitInput.inputMode = "decimal";
+		limitInput.value = b ? String(b.limit) : "";
+		field(form, t("fBudgetLimit"), limitInput);
+		attachAmountInput(limitInput, () => CURRENT.locale === "fa").refresh();
+
+		const submit = async () => {
+			const cat = catSel.value;
+			const lim = parseAmount(limitInput.value);
+			if (!cat) return fail(t("fCategory"));
+			if (!lim || lim <= 0) return fail(t("amountInvalid"));
+			if (b) await this.store.updateBudget(b.id, { category: cat, limit: lim });
+			else await this.store.addBudget({ category: cat, limit: lim });
+			new Notice(t("budgetSaved"));
+			if (this.opts.onSaved) this.opts.onSaved();
+			this.close()
+		};
+		const actions = form.createDiv("pa-actions pa-modal-footer");
+		const cancel = el("button", "pa-btn pa-btn-cancel", t("cancel"));
+		cancel.onclick = () => this.close();
+		const saveBtn = el("button", "pa-btn primary pa-btn-submit", t("save"));
+		saveBtn.onclick = submit;
+		actions.append(cancel, saveBtn);
+		form.addEventListener("keydown", e => {
+			if (e.key === "Enter") { e.preventDefault(); void submit() }
+		});
+		limitInput.focus()
+	}
+	onClose() {
+		this.contentEl.empty()
+	}
+}
+
+class RecurringModal extends Modal {
+	constructor(app, store, existing, opts = {}) {
+		super(app);
+		this.store = store;
+		this.existing = existing;
+		this.opts = opts
+	}
+	onOpen() {
+		modalRtl(this);
+		const r = this.existing;
+		const s = this.store.plugin.settings;
+		this.titleEl.setText(r ? t("editRecurringTitle") : t("addRecurringTitle"));
+		const form = this.contentEl.createDiv("pa-form");
+		const err = form.createDiv("pa-form-error");
+		const fail = m => { err.setText(m); err.addClass("show") };
+
+		const name = inputText(CURRENT.locale === "fa" ? "مثلاً اجاره خانه، اشتراک اینترنت" : "e.g. Monthly Rent, Internet");
+		name.value = r ? r.name : "";
+		field(form, t("fName"), name);
+
+		const typeSel = document.createElement("select");
+		const allowed = [];
+		if (s.enableFinance) allowed.push("expense", "income");
+		if (s.enableDebts) allowed.push("receivable", "debt");
+		for (const ty of allowed) typeSel.appendChild(new Option(typeLabel(ty), ty));
+		typeSel.value = r && allowed.includes(r.type) ? r.type : allowed[0];
+		field(form, t("fType"), typeSel);
+
+		const amt = inputText(t("phAmount"));
+		amt.inputMode = "decimal";
+		amt.value = r ? String(r.amount) : "";
+		field(form, t("fAmount"), amt);
+		attachAmountInput(amt, () => CURRENT.locale === "fa").refresh();
+
+		const dayInput = inputText("1");
+		dayInput.type = "number";
+		dayInput.min = "1";
+		dayInput.max = "31";
+		dayInput.value = r ? String(r.dayOfMonth) : "1";
+		field(form, t("fDayOfMonth"), dayInput);
+
+		const accSel = document.createElement("select");
+		accSel.appendChild(new Option(t("noAccount"), ""));
+		for (const a of this.store.data.accounts || []) accSel.appendChild(new Option(a.name, a.id));
+		accSel.value = r && r.accountId || "";
+		const accField = field(form, t("fAccount"), accSel);
+
+		const catSel = document.createElement("select");
+		const rebuildCats = () => {
+			const prev = catSel.value || (r && r.category) || "";
+			catSel.empty();
+			catSel.appendChild(new Option(t("noCategory"), ""));
+			const ty = typeSel.value;
+			const list = ty === "expense" ? s.expenseCategories : ty === "income" ? s.incomeCategories : s.categories;
+			for (const c of list || []) catSel.appendChild(new Option(c, c));
+			catSel.value = prev
+		};
+		field(form, t("fCategory"), catSel);
+		typeSel.onchange = () => {
+			accField.toggleClass("pa-hidden", !s.enableFinance);
+			rebuildCats()
+		};
+		accField.toggleClass("pa-hidden", !s.enableFinance);
+		rebuildCats();
+
+		const desc = inputText(t("phDesc"));
+		desc.value = r && r.description || "";
+		field(form, t("fDesc"), desc);
+
+		const submit = async () => {
+			const n = name.value.trim();
+			const v = parseAmount(amt.value);
+			const d = Math.max(1, Math.min(31, parseInt(dayInput.value, 10) || 1));
+			if (!n) return fail(t("nameRequired"));
+			if (!v || v <= 0) return fail(t("amountInvalid"));
+			const payload = {
+				name: n,
+				type: typeSel.value,
+				amount: v,
+				dayOfMonth: d,
+				accountId: accSel.value || undefined,
+				category: catSel.value || undefined,
+				description: desc.value.trim() || undefined
+			};
+			if (r) await this.store.updateRecurring(r.id, payload);
+			else await this.store.addRecurring(payload);
+			new Notice(t("recurringSaved"));
+			if (this.opts.onSaved) this.opts.onSaved();
+			this.close()
+		};
+		const actions = form.createDiv("pa-actions pa-modal-footer");
+		const cancel = el("button", "pa-btn pa-btn-cancel", t("cancel"));
+		cancel.onclick = () => this.close();
+		const saveBtn = el("button", "pa-btn primary pa-btn-submit", t("save"));
+		saveBtn.onclick = submit;
+		actions.append(cancel, saveBtn);
+		name.focus()
+	}
+	onClose() {
+		this.contentEl.empty()
+	}
+}
+
 class TransactionFormModal extends Modal {
 	constructor(app, store, existing, opts = {}) {
 		super(app);
 		this.store = store;
 		this.existing = existing;
 		this.opts = opts;
-		this.type = existing ? existing.type : opts.preset && opts.preset.type || "receivable";
+		const s = store.plugin.settings;
+		const defaultType = s.enableFinance ? "expense" : "receivable";
+		this.type = existing ? existing.type : opts.preset && opts.preset.type || defaultType;
+		this.group = isFinanceType(this.type) ? "finance" : "debts";
+		this._lastFinType = isFinanceType(this.type) ? this.type : "expense";
+		this._lastDebtType = isDebtType(this.type) ? this.type : "receivable";
 		this._calCloses = []
 	}
 	onOpen() {
@@ -3227,22 +4661,22 @@ class TransactionFormModal extends Modal {
 		const preset = this.opts.preset || {};
 		const editing = !!this.existing;
 		const fa = CURRENT.locale === "fa";
-		const calendar = this.store.plugin.settings.calendar;
+		const s = this.store.plugin.settings;
+		const calendar = s.calendar;
+		const bothModes = !!(s.enableFinance && s.enableDebts) && !preset.paymentOnly;
 		Cal.ensure(this.store.plugin.app);
 		this.titleEl.setText(editing ? t("editTxTitle") : t("addTxTitle"));
 		this.modalEl.setAttribute("data-tx-type", this.type);
-		const form = this.contentEl.createDiv("pa-form pa-modern-tx-form");
+		const form = this.contentEl.createDiv("pa-form pa-modern-tx-form pa-compact-tx-form");
 
-		/* نوار تب‌های مدرن با آیکون */
+		/* تب اصلی / جزئیات تکمیلی */
 		const tabs = form.createDiv("pa-form-tabs");
 		const mainTab = el("button", "pa-form-tab active");
-		const mainTabIcon = mainTab.createSpan("pa-tab-icon");
-		setIcon(mainTabIcon, "info");
+		setIcon(mainTab.createSpan("pa-tab-icon"), "info");
 		mainTab.createSpan().setText(fa ? "اطلاعات اصلی" : "Main Info");
 
 		const detailsTab = el("button", "pa-form-tab");
-		const detailsTabIcon = detailsTab.createSpan("pa-tab-icon");
-		setIcon(detailsTabIcon, "sliders-horizontal");
+		setIcon(detailsTab.createSpan("pa-tab-icon"), "sliders-horizontal");
 		detailsTab.createSpan().setText(fa ? "جزئیات تکمیلی" : "Details");
 		const detailsBadge = detailsTab.createSpan("pa-tab-badge pa-hidden");
 		detailsBadge.setText("•");
@@ -3257,39 +4691,112 @@ class TransactionFormModal extends Modal {
 			mainTab.toggleClass("active", isMain);
 			detailsTab.toggleClass("active", !isMain);
 			mainPane.toggleClass("active", isMain);
-			detailsPane.toggleClass("active", !isMain);
+			detailsPane.toggleClass("active", !isMain)
 		};
 		mainTab.onclick = () => switchTab("main");
 		detailsTab.onclick = () => switchTab("details");
 
 		const err = form.createDiv("pa-form-error");
-		const fail = m => {
-			err.setText(m);
-			err.addClass("show")
+		const fail = m => { err.setText(m); err.addClass("show") };
+
+		/* ۱) انتخاب گروه (فقط وقتی هر دو حالت فعال هستند) + دکمه‌های فشردهٔ نوع تراکنش */
+		const typeWrap = mainPane.createDiv("pa-field pa-field-type");
+		let groupBar = null;
+		const groupBtns = new Map;
+		if (bothModes) {
+			groupBar = typeWrap.createDiv("pa-group-switch");
+			const groups = [
+				{ id: "finance", icon: "wallet", label: t("grpFinance") },
+				{ id: "debts", icon: "users", label: t("grpDebts") }
+			];
+			for (const g of groups) {
+				const gb = el("button", "pa-group-btn" + (this.group === g.id ? " active" : ""));
+				gb.type = "button";
+				setIcon(gb.createSpan("pa-group-icon"), g.icon);
+				gb.createSpan().setText(g.label);
+				gb.onclick = () => {
+					if (this.group === g.id) return;
+					this.group = g.id;
+					this.type = g.id === "finance" ? this._lastFinType : this._lastDebtType;
+					this.modalEl.setAttribute("data-tx-type", this.type);
+					groupBtns.forEach((btn, id) => btn.toggleClass("active", id === g.id));
+					renderTypeButtons();
+					syncVisibility()
+				};
+				groupBtns.set(g.id, gb);
+				groupBar.appendChild(gb)
+			}
+		} else {
+			typeWrap.createEl("label").setText(t("fType"))
+		}
+
+		const seg = typeWrap.createDiv("pa-seg pa-seg-compact");
+		const typeIcons = {
+			expense: "arrow-up-circle",
+			income: "arrow-down-circle",
+			transfer: "arrow-left-right",
+			receivable: "arrow-down-left",
+			debt: "arrow-up-right",
+			payment_received: "check-circle-2",
+			payment_made: "send"
 		};
 
-		/* ۱) فیلد اول: مبلغ (Amount) */
+		const renderTypeButtons = () => {
+			seg.empty();
+			let opts = [];
+			if (preset.paymentOnly) {
+				opts = ["payment_received", "payment_made"]
+			} else if (bothModes) {
+				opts = this.group === "finance"
+					? ["expense", "income", "transfer"]
+					: ["receivable", "debt", "payment_received", "payment_made"]
+			} else if (s.enableFinance) {
+				opts = ["expense", "income", "transfer"]
+			} else {
+				opts = ["receivable", "debt", "payment_received", "payment_made"]
+			}
+			if (editing && !opts.includes(this.type)) opts.unshift(this.type);
+			seg.toggleClass("pa-seg-cols-3", opts.length === 3);
+			seg.toggleClass("pa-seg-cols-2", opts.length !== 3);
+			for (const ty of opts) {
+				const b = el("button", "pa-btn pa-type-pill" + (ty === this.type ? " active" : ""));
+				b.type = "button";
+				b.setAttribute("data-type", ty);
+				setIcon(b.createSpan("pa-type-icon"), typeIcons[ty] || "circle");
+				b.createSpan("pa-type-label").setText(typeLabel(ty));
+				if (ty === "transfer") {
+					attachTooltip(b, fa ? "جابه‌جایی پول بین حساب‌های خودتان" : "Move money between your own accounts", null, { delay: 400 })
+				}
+				b.onclick = () => {
+					this.type = ty;
+					if (isFinanceType(ty)) this._lastFinType = ty;
+					else this._lastDebtType = ty;
+					this.modalEl.setAttribute("data-tx-type", ty);
+					seg.querySelectorAll(".pa-type-pill").forEach(btn => {
+						btn.toggleClass("active", btn.getAttribute("data-type") === ty)
+					});
+					syncVisibility()
+				};
+				seg.appendChild(b)
+			}
+		};
+
+		/* ۲) مبلغ */
 		const amountFieldWrap = mainPane.createDiv("pa-field pa-field-amount");
 		const amountHead = amountFieldWrap.createDiv("pa-field-head");
 		amountHead.createEl("label").setText(t("fAmount"));
-		const currencyBadge = amountHead.createSpan("pa-currency-pill");
-		currencyBadge.setText(this.store.fmt.currencyLabel());
+		amountHead.createSpan("pa-currency-pill").setText(this.store.fmt.currencyLabel());
 
 		const amountInputBox = amountFieldWrap.createDiv("pa-input-icon-wrap pa-amount-box");
-		const amountIcon = amountInputBox.createSpan("pa-input-icon");
-		setIcon(amountIcon, "coins");
+		setIcon(amountInputBox.createSpan("pa-input-icon"), "coins");
 		const amount = inputText(t("phAmount"));
 		amount.inputMode = "decimal";
 		amount.value = editing ? String(this.existing.amount) : preset.amount != null ? String(preset.amount) : "";
 		amountInputBox.appendChild(amount);
 		const amtFmt = attachAmountInput(amount, () => CURRENT.locale === "fa");
 		amtFmt.refresh();
-		attachTooltip(amount, t("tipAmount"), null, {
-			both: true,
-			delay: 700
-		});
+		attachTooltip(amount, t("tipAmount"), null, { both: true, delay: 700 });
 
-		/* نمایش مبلغ به حروف و دکمه‌های سریع */
 		const amountWordsEl = amountFieldWrap.createDiv("pa-amount-words");
 		const updateAmountWords = () => {
 			let v = parseAmount(amount.value);
@@ -3298,20 +4805,20 @@ class TransactionFormModal extends Modal {
 				if (fa) {
 					const w = numberToPersianWords(v);
 					amountWordsEl.setText(w ? w + " " + this.store.fmt.currencyLabel() : "");
-					amountWordsEl.toggleClass("show", !!w);
+					amountWordsEl.toggleClass("show", !!w)
 				} else {
 					amountWordsEl.setText(this.store.fmt.amount(v));
-					amountWordsEl.addClass("show");
+					amountWordsEl.addClass("show")
 				}
 			} else {
 				amountWordsEl.setText("");
-				amountWordsEl.removeClass("show");
+				amountWordsEl.removeClass("show")
 			}
 		};
 		amount.addEventListener("input", updateAmountWords);
 
 		const quickChips = amountFieldWrap.createDiv("pa-quick-amounts");
-		const curCode = this.store.plugin.settings.currency;
+		const curCode = s.currency;
 		const isHighDenom = curCode === "toman" || curCode === "rial";
 		const presets = isHighDenom ? [
 			{ label: fa ? "+۱۰۰ هزار" : "+100K", add: 100000 },
@@ -3332,34 +4839,45 @@ class TransactionFormModal extends Modal {
 				if (cur === null) cur = evalAmountExpr(amount.value) || 0;
 				amount.value = String(cur + pr.add);
 				amtFmt.refresh();
-				updateAmountWords();
+				updateAmountWords()
 			};
-			quickChips.appendChild(chip);
+			quickChips.appendChild(chip)
 		}
-		const clearAmtChip = el("button", "pa-quick-chip pa-chip-clear", fa ? "پاک‌کردن" : "Clear");
+		const clearAmtChip = el("button", "pa-quick-chip pa-chip-clear", fa ? "پاک" : "Clear");
 		clearAmtChip.type = "button";
-		clearAmtChip.onclick = () => {
-			amount.value = "";
-			updateAmountWords();
-			amount.focus();
-		};
+		clearAmtChip.onclick = () => { amount.value = ""; updateAmountWords(); amount.focus() };
 		quickChips.appendChild(clearAmtChip);
 		updateAmountWords();
 
-		/* ۲) فیلد دوم: شخص (Person) */
+		/* ۳) حساب مبدأ و مقصد (در حالت انتقال کنار هم در یک ردیف) */
+		const accountsList = this.store.data.accounts || [];
+		const accRowWrap = mainPane.createDiv("pa-acc-row-wrap");
+
+		const accSel = document.createElement("select");
+		accSel.appendChild(new Option(t("noAccount"), ""));
+		for (const a of accountsList) accSel.appendChild(new Option(a.name, a.id));
+		accSel.value = editing && this.existing.accountId ? this.existing.accountId : preset.accountId || (accountsList[0] ? accountsList[0].id : "");
+		const accFieldWrap = field(accRowWrap, t("fAccount"), accSel);
+		const accLabelEl = accFieldWrap.querySelector("label");
+
+		const toAccSel = document.createElement("select");
+		toAccSel.appendChild(new Option(t("noAccount"), ""));
+		for (const a of accountsList) toAccSel.appendChild(new Option(a.name, a.id));
+		toAccSel.value = editing && this.existing.toAccountId ? this.existing.toAccountId : (accountsList[1] ? accountsList[1].id : "");
+		const toAccFieldWrap = field(accRowWrap, t("fToAccount"), toAccSel);
+
+		/* ۴) شخص (فقط برای طلب و بدهی) */
 		const lockedPersonId = preset.lockPerson ? this.existing ? this.existing.personId : preset.personId || "" : "";
 		const personWrap = mainPane.createDiv("pa-field pa-field-person");
 		personWrap.createEl("label").setText(t("fPerson"));
 		let personInput = null;
 		if (lockedPersonId) {
 			const lockedBox = personWrap.createDiv("pa-locked-box");
-			const pIcon = lockedBox.createSpan("pa-input-icon");
-			setIcon(pIcon, "user-check");
-			lockedBox.appendChild(el("span", "pa-locked", this.store.personName(lockedPersonId)));
+			setIcon(lockedBox.createSpan("pa-input-icon"), "user-check");
+			lockedBox.appendChild(el("span", "pa-locked", this.store.personName(lockedPersonId)))
 		} else {
 			const personInputBox = personWrap.createDiv("pa-input-icon-wrap");
-			const pIcon = personInputBox.createSpan("pa-input-icon");
-			setIcon(pIcon, "user");
+			setIcon(personInputBox.createSpan("pa-input-icon"), "user");
 			personInput = inputText(t("phPerson"));
 			personInput.setAttribute("list", "pa-person-options");
 			personInput.value = this.existing ? this.store.personName(this.existing.personId) : preset.personName || "";
@@ -3372,101 +4890,86 @@ class TransactionFormModal extends Modal {
 			const balances = this.store.ledger ? this.store.ledger.balances : computeBalances(this.store.data);
 			const unsettledPeople = this.store.data.people.filter(p => {
 				const b = balances.get(p.id);
-				return b && (b.remainingReceivable > EPS || b.remainingDebt > EPS);
+				return b && (b.remainingReceivable > EPS || b.remainingDebt > EPS)
 			});
 			if (unsettledPeople.length > 0) {
 				const recentWrap = personWrap.createDiv("pa-person-chips");
 				for (const p of unsettledPeople.slice(0, 5)) {
 					const pChip = el("button", "pa-person-chip", p.name);
 					pChip.type = "button";
-					pChip.onclick = () => {
-						personInput.value = p.name;
-					};
-					recentWrap.appendChild(pChip);
+					pChip.onclick = () => { personInput.value = p.name };
+					recentWrap.appendChild(pChip)
 				}
 			}
 		}
 
-		/* ۳) فیلد سوم: نوع تراکنش (Transaction Type) */
-		let dueField = null;
-		const updateDueVisibility = () => {
-			if (!dueField) return;
-			const origin = this.type === "receivable" || this.type === "debt";
-			dueField.toggleClass("pa-hidden", !origin)
-		};
-		const typeWrap = mainPane.createDiv("pa-field pa-field-type");
-		typeWrap.createEl("label").setText(t("fType"));
-		const seg = el("div", "pa-seg pa-seg-modern");
-		typeWrap.appendChild(seg);
-		const typeOptions = preset.paymentOnly ? ["payment_received", "payment_made"] : ["receivable", "debt", "payment_received", "payment_made"];
-		const typeIcons = {
-			receivable: "arrow-down-left",
-			debt: "arrow-up-right",
-			payment_received: "check-circle-2",
-			payment_made: "send"
-		};
-		const segBtns = new Map;
-		for (const ty of typeOptions) {
-			const b = el("button", "pa-btn pa-type-card" + (ty === this.type ? " active" : ""));
-			b.type = "button";
-			b.setAttribute("data-type", ty);
-			const ic = b.createSpan("pa-type-icon");
-			setIcon(ic, typeIcons[ty] || "circle");
-			const txt = b.createSpan("pa-type-label");
-			txt.setText(typeLabel(ty));
-			b.createSpan("pa-type-radio");
-			b.onclick = () => {
-				this.type = ty;
-				this.modalEl.setAttribute("data-tx-type", ty);
-				segBtns.forEach((bb, tt) => bb.toggleClass("active", tt === ty));
-				updateDueVisibility()
-			};
-			segBtns.set(ty, b);
-			seg.appendChild(b)
-		}
-
-		/* ۴) فیلد چهارم: تاریخ (Date) */
+		/* ۵) تاریخ */
 		const dateCtl = createDatePicker(calendar, fa);
 		this._calCloses.push(dateCtl.close);
 		field(mainPane, t("fDate"), dateCtl.el);
 		dateCtl.set(editing ? this.existing.date : todayISO());
-		attachTooltip(dateCtl.el, t("tipDatePicker"), null, {
-			delay: 700
-		});
+		attachTooltip(dateCtl.el, t("tipDatePicker"), null, { delay: 700 });
 
-		/* ===== تب دوم: جزئیات (۱. شرح، ۲. دسته‌بندی، ۳. سررسید) ===== */
+		/* ===== تب دوم: جزئیات تکمیلی ===== */
+		const payAccSel = document.createElement("select");
+		payAccSel.appendChild(new Option(t("noAccount"), ""));
+		for (const a of accountsList) payAccSel.appendChild(new Option(a.name, a.id));
+		payAccSel.value = editing && this.existing.accountId ? this.existing.accountId : "";
+		const payAccField = field(detailsPane, t("fAccount") + (fa ? " (اختیاری — برای تسویه)" : " (optional)"), payAccSel);
+
 		const desc = inputText(t("phDesc"));
 		desc.value = this.existing && this.existing.description || "";
 		field(detailsPane, t("fDesc"), desc);
 
 		const catSel = document.createElement("select");
-		catSel.appendChild(new Option(t("noCategory"), ""));
-		for (const c of this.store.plugin.settings.categories) {
-			catSel.appendChild(new Option(c, c))
-		}
-		catSel.value = this.existing && this.existing.category || "";
 		const catField = field(detailsPane, t("fCategory"), catSel);
+		const catPillsWrap = catField.createDiv("pa-cat-pills");
 
-		/* استخراج ۵ دسته اخیر استفاده‌شده در تراکنش‌ها */
-		const recentCats = [];
-		const sortedTxs = [...this.store.data.transactions].sort((a, b) => b.createdAt - a.createdAt || b.date.localeCompare(a.date));
-		for (const tx of sortedTxs) {
-			if (tx.category && this.store.plugin.settings.categories.includes(tx.category) && !recentCats.includes(tx.category)) {
-				recentCats.push(tx.category);
-				if (recentCats.length >= 5) break;
+		const dueCtl = createDatePicker(calendar, fa);
+		this._calCloses.push(dueCtl.close);
+		const dueField = field(detailsPane, t("fDue"), dueCtl.el);
+		dueCtl.set(editing && this.existing.dueDate ? this.existing.dueDate : "");
+
+		const updateDetailsBadge = () => {
+			const isPay = this.type === "payment_received" || this.type === "payment_made";
+			const hasDetails = Boolean(
+				(dueCtl.get() && (this.type === "receivable" || this.type === "debt")) ||
+				(isPay && s.enableFinance && payAccSel.value) ||
+				catSel.value ||
+				desc.value.trim()
+			);
+			detailsBadge.toggleClass("pa-hidden", !hasDetails)
+		};
+		payAccSel.addEventListener("change", updateDetailsBadge);
+
+		const rebuildCategories = () => {
+			const currentVal = catSel.value || (editing && this.existing.category) || "";
+			const list = this.type === "expense" ? (s.expenseCategories || [])
+				: this.type === "income" ? (s.incomeCategories || [])
+				: (s.categories || []);
+			catSel.empty();
+			catSel.appendChild(new Option(t("noCategory"), ""));
+			for (const c of list) catSel.appendChild(new Option(c, c));
+			if (currentVal && list.includes(currentVal)) catSel.value = currentVal;
+			else catSel.value = "";
+
+			catPillsWrap.empty();
+			const recentCats = [];
+			const sortedTxs = [...this.store.data.transactions].sort((a, b) => b.createdAt - a.createdAt || b.date.localeCompare(a.date));
+			for (const tx of sortedTxs) {
+				if (tx.category && list.includes(tx.category) && !recentCats.includes(tx.category)) {
+					recentCats.push(tx.category);
+					if (recentCats.length >= 5) break
+				}
 			}
-		}
-		for (const c of this.store.plugin.settings.categories) {
-			if (recentCats.length >= 5) break;
-			if (!recentCats.includes(c)) recentCats.push(c);
-		}
-
-		if (recentCats.length > 0) {
-			const catPills = catField.createDiv("pa-cat-pills");
-			const syncCatPills = () => {
-				catPills.querySelectorAll(".pa-cat-pill").forEach(btn => {
-					btn.toggleClass("active", btn.getAttribute("data-cat") === catSel.value);
-				});
+			for (const c of list) {
+				if (recentCats.length >= 5) break;
+				if (!recentCats.includes(c)) recentCats.push(c)
+			}
+			const syncPills = () => {
+				catPillsWrap.querySelectorAll(".pa-cat-pill").forEach(btn => {
+					btn.toggleClass("active", btn.getAttribute("data-cat") === catSel.value)
+				})
 			};
 			for (const c of recentCats) {
 				const pill = el("button", "pa-cat-pill", c);
@@ -3474,70 +4977,107 @@ class TransactionFormModal extends Modal {
 				pill.setAttribute("data-cat", c);
 				pill.onclick = () => {
 					catSel.value = catSel.value === c ? "" : c;
-					syncCatPills();
-					updateDetailsBadge();
+					syncPills();
+					updateDetailsBadge()
 				};
-				catPills.appendChild(pill);
+				catPillsWrap.appendChild(pill)
 			}
-			catSel.addEventListener("change", () => {
-				syncCatPills();
-				updateDetailsBadge();
-			});
-			syncCatPills();
-		}
-
-		const dueCtl = createDatePicker(calendar, fa);
-		this._calCloses.push(dueCtl.close);
-		dueField = field(detailsPane, t("fDue"), dueCtl.el);
-		dueCtl.set(editing && this.existing.dueDate ? this.existing.dueDate : "");
-		updateDueVisibility();
-
-		const updateDetailsBadge = () => {
-			const hasDetails = Boolean((dueCtl.get() && (this.type === "receivable" || this.type === "debt")) || catSel.value || desc.value.trim());
-			detailsBadge.toggleClass("pa-hidden", !hasDetails);
+			syncPills()
 		};
+		catSel.addEventListener("change", () => {
+			catPillsWrap.querySelectorAll(".pa-cat-pill").forEach(btn => {
+				btn.toggleClass("active", btn.getAttribute("data-cat") === catSel.value)
+			});
+			updateDetailsBadge()
+		});
+
+		const syncVisibility = () => {
+			const ty = this.type;
+			const isFin = isFinanceType(ty);
+			const isTr = ty === "transfer";
+			const isPay = ty === "payment_received" || ty === "payment_made";
+			const isOrig = ty === "receivable" || ty === "debt";
+
+			accRowWrap.toggleClass("pa-hidden", !(s.enableFinance && isFin));
+			accRowWrap.toggleClass("pa-acc-row-split", isTr);
+			if (accLabelEl) accLabelEl.setText(isTr ? t("fFromAccount") : t("fAccount"));
+			toAccFieldWrap.toggleClass("pa-hidden", !isTr);
+			personWrap.toggleClass("pa-hidden", isFin);
+			payAccField.toggleClass("pa-hidden", !(s.enableFinance && isPay));
+			catField.toggleClass("pa-hidden", isTr);
+			dueField.toggleClass("pa-hidden", !isOrig);
+			rebuildCategories();
+			updateDetailsBadge()
+		};
+
 		desc.addEventListener("input", updateDetailsBadge);
-		updateDetailsBadge();
+		renderTypeButtons();
+		syncVisibility();
 
 		const submit = async () => {
 			if (!dateCtl.validate()) return;
 			if ((this.type === "receivable" || this.type === "debt") && !dueCtl.validate()) {
 				switchTab("details");
-				return;
+				return
 			}
 			let amountVal = parseAmount(amount.value);
 			if (amountVal === null) amountVal = evalAmountExpr(amount.value);
 			if (amountVal === null || amountVal <= 0) {
 				switchTab("main");
 				amount.focus();
-				return fail(t("amountInvalid"));
+				return fail(t("amountInvalid"))
 			}
+
 			let personId = lockedPersonId;
-			if (!personId) {
-				const nameVal = personInput.value.trim();
-				if (!nameVal) {
+			let accountId = undefined;
+			let toAccountId = undefined;
+
+			if (isFinanceType(this.type)) {
+				personId = "";
+				accountId = accSel.value || undefined;
+				if (accountsList.length > 0 && !accountId) {
 					switchTab("main");
-					personInput.focus();
-					return fail(t("personRequired"));
+					return fail(t("accountRequired"))
 				}
-				personId = (await this.store.ensurePerson(nameVal)).id
+				if (this.type === "transfer") {
+					toAccountId = toAccSel.value || undefined;
+					if (!toAccountId) {
+						switchTab("main");
+						return fail(t("accountRequired"))
+					}
+					if (toAccountId === accountId) {
+						switchTab("main");
+						return fail(t("transferSameAccount"))
+					}
+				}
+			} else {
+				if (!personId) {
+					const nameVal = personInput.value.trim();
+					if (!nameVal) {
+						switchTab("main");
+						personInput.focus();
+						return fail(t("personRequired"))
+					}
+					personId = (await this.store.ensurePerson(nameVal)).id
+				}
+				if (s.enableFinance && (this.type === "payment_received" || this.type === "payment_made")) {
+					accountId = payAccSel.value || undefined
+				}
 			}
+
 			const origin = this.type === "receivable" || this.type === "debt";
 			const common = {
 				type: this.type,
 				amount: amountVal,
 				date: dateCtl.get() || todayISO(),
-				category: catSel.value || undefined,
+				accountId,
+				toAccountId,
+				category: this.type === "transfer" ? undefined : catSel.value || undefined,
 				description: desc.value.trim() || undefined,
 				dueDate: origin && dueCtl.get() ? dueCtl.get() : undefined
 			};
-			if (editing) await this.store.updateTransaction(this.existing.id, Object.assign({}, common, {
-				personId
-			}));
-			else await this.store.addTransaction(Object.assign({}, common, {
-				personId,
-				linkedTo: preset.linkedTo
-			}));
+			if (editing) await this.store.updateTransaction(this.existing.id, Object.assign({}, common, { personId }));
+			else await this.store.addTransaction(Object.assign({}, common, { personId, linkedTo: preset.linkedTo }));
 			new Notice(editing ? t("txUpdated") : t("txAdded"));
 			if (this.opts.onSaved) this.opts.onSaved();
 			this.close()
@@ -3548,8 +5088,7 @@ class TransactionFormModal extends Modal {
 		cancel.onclick = () => this.close();
 		const saveBtn = el("button", "pa-btn primary pa-btn-submit");
 		saveBtn.type = "button";
-		const saveIcon = saveBtn.createSpan("pa-btn-icon");
-		setIcon(saveIcon, editing ? "check" : "plus");
+		setIcon(saveBtn.createSpan("pa-btn-icon"), editing ? "check" : "plus");
 		saveBtn.createSpan().setText(editing ? t("save") : t("addTxTitle"));
 		saveBtn.onclick = submit;
 		actions.append(cancel, saveBtn);
@@ -3566,18 +5105,14 @@ class TransactionFormModal extends Modal {
 	onClose() {
 		if (this._cleanupKeyboard) this._cleanupKeyboard();
 		closeActivePicker();
-		for (const c of this._calCloses) {
-			try {
-				c()
-			} catch (e) {}
-		}
+		for (const c of this._calCloses) { try { c() } catch (e) {} }
 		this._calCloses = [];
 		this.contentEl.empty()
 	}
 }
 
 function transactionDateBadge(tx, fmt) {
-	const payment = tx.type === "payment_received" || tx.type === "payment_made";
+	const payment = tx.type === "payment_received" || tx.type === "payment_made" || tx.type === "income";
 	const fa = CURRENT.locale === "fa";
 	const label = fa ? "تاریخ تراکنش" : "Transaction date";
 	const badge = el("div", "pa-transaction-date" + (payment ? " pa-payment-date" : ""));
@@ -3589,7 +5124,7 @@ function transactionDateBadge(tx, fmt) {
 	const value = el("time", "pa-transaction-date-value", fmt.date(tx.date));
 	value.setAttribute("datetime", tx.date);
 	badge.appendChild(value);
-	return badge;
+	return badge
 }
 
 class TransactionDetailModal extends Modal {
@@ -3609,9 +5144,11 @@ class TransactionDetailModal extends Modal {
 		this.contentEl.appendChild(transactionDateBadge(tx, fmt));
 		const box = this.contentEl.createDiv("pa-detail");
 		const rows = [
-			[t("dPerson"), this.store.personName(tx.personId)],
 			[t("dAmount"), fmt.amount(tx.amount)]
 		];
+		if (tx.accountId) rows.push([tx.type === "transfer" ? t("fFromAccount").replace(" *", "") : t("dAccount"), this.store.accountName(tx.accountId)]);
+		if (tx.type === "transfer" && tx.toAccountId) rows.push([t("dToAccount"), this.store.accountName(tx.toAccountId)]);
+		if (tx.personId) rows.push([t("dPerson"), this.store.personName(tx.personId)]);
 		if (tx.category) rows.push([t("dCategory"), tx.category]);
 		if (origin && st) {
 			rows.push([t("dStatus"), st.status === "settled" ? t("settled") : st.status === "partial" ? t("statusPartial", {
@@ -3622,9 +5159,7 @@ class TransactionDetailModal extends Modal {
 			}
 		}
 		if (tx.description) rows.push([t("dDesc"), tx.description]);
-		if (tx.linkedTo) rows.push([t("dLinked"), t("settleFor", {
-			id: tx.linkedTo
-		})]);
+		if (tx.linkedTo) rows.push([t("dLinked"), t("settleFor", { id: tx.linkedTo })]);
 		for (const [k, v] of rows) {
 			const r = box.createDiv("pa-detail-row");
 			r.createDiv("pa-detail-key").setText(k);
@@ -3634,16 +5169,12 @@ class TransactionDetailModal extends Modal {
 		const edit = el("button", "pa-btn", t("edit"));
 		edit.onclick = () => {
 			this.close();
-			new TransactionFormModal(this.app, this.store, tx, {
-				onSaved: this.opts.onChanged
-			}).open()
+			new TransactionFormModal(this.app, this.store, tx, { onSaved: this.opts.onChanged }).open()
 		};
 		actions.appendChild(edit);
 		if (origin && st && st.remaining > EPS) {
 			const settle = el("button", "pa-btn primary", t("settleRemaining"));
-			attachTooltip(settle, t("tipSettleRemaining"), null, {
-				both: true
-			});
+			attachTooltip(settle, t("tipSettleRemaining"), null, { both: true });
 			settle.onclick = () => {
 				this.close();
 				new ConfirmModal(this.app, {
@@ -3674,7 +5205,7 @@ class TransactionDetailModal extends Modal {
 			}
 			new ConfirmModal(this.app, {
 				title: t("deleteTxTitle"),
-				lines: [this.store.personName(tx.personId), fmt.amount(tx.amount) + " — " + (tx.description || typeLabel(tx.type)), t("deleteTxNote")],
+				lines: [tx.personId ? this.store.personName(tx.personId) : this.store.accountName(tx.accountId), fmt.amount(tx.amount) + " — " + (tx.description || typeLabel(tx.type)), t("deleteTxNote")],
 				confirmLabel: t("delete"),
 				danger: true,
 				onConfirm: doDelete
@@ -3686,6 +5217,7 @@ class TransactionDetailModal extends Modal {
 		this.contentEl.empty()
 	}
 }
+
 const CHART_COLORS = ["#4e79a7", "#f28e2c", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7", "#9c755f", "#bab0ab"];
 
 function svgEl(tag, attrs) {
@@ -4745,6 +6277,128 @@ const SORTS = [
 	["lowest", "sortLowest"],
 	["due", "sortDue"]
 ];
+
+function renderIncomeExpenseChart(data, fmt, calendar) {
+	const wrap = el("div", "pa-chart-wrap");
+	const months = new Map;
+	for (const tx of data.transactions) {
+		if (tx.type !== "income" && tx.type !== "expense") continue;
+		const key = monthKeyForISO(tx.date, calendar);
+		if (!months.has(key)) months.set(key, { inc: 0, exp: 0 });
+		const m = months.get(key);
+		if (tx.type === "income") m.inc += tx.amount;
+		else m.exp += tx.amount
+	}
+	const keys = [...months.keys()].sort().slice(-12);
+	if (!keys.length) {
+		wrap.createDiv("pa-empty").setText(t("noData"));
+		return wrap
+	}
+	const W = 640, H = 260, PAD = { t: 20, r: 20, b: 42, l: 60 };
+	const innerW = W - PAD.l - PAD.r;
+	const innerH = H - PAD.t - PAD.b;
+	const maxVal = Math.max(...keys.map(k => Math.max(months.get(k).inc, months.get(k).exp)), 1);
+	const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, class: "pa-chart" });
+	for (let i = 0; i <= 4; i++) {
+		const gy = PAD.t + i * innerH / 4;
+		svg.appendChild(svgEl("line", {
+			x1: PAD.l, x2: W - PAD.r, y1: gy, y2: gy,
+			stroke: "var(--background-modifier-border)", "stroke-dasharray": "2 4", opacity: ".45"
+		}));
+		svg.appendChild(svgText(fmtShort(maxVal * (1 - i / 4)), {
+			x: PAD.l - 6, y: gy + 3, "text-anchor": "end", "font-size": "10", fill: "var(--text-muted)"
+		}))
+	}
+	const step = innerW / keys.length;
+	const barW = Math.min(22, step * .34);
+	keys.forEach((k, i) => {
+		const m = months.get(k);
+		const cx = PAD.l + i * step + step / 2;
+		const incH = m.inc / maxVal * innerH;
+		const expH = m.exp / maxVal * innerH;
+		const r1 = svgEl("rect", {
+			x: cx - barW - 2, y: PAD.t + innerH - incH, width: barW, height: incH,
+			fill: "var(--color-green)", rx: 3
+		});
+		r1.addEventListener("mouseenter", () => showTooltip(r1, formatMonthKey(k, calendar), t("typeIncome") + ": " + fmt.amount(m.inc)));
+		r1.addEventListener("mouseleave", hideTooltip);
+		svg.appendChild(r1);
+		const r2 = svgEl("rect", {
+			x: cx + 2, y: PAD.t + innerH - expH, width: barW, height: expH,
+			fill: "var(--color-red)", rx: 3
+		});
+		r2.addEventListener("mouseenter", () => showTooltip(r2, formatMonthKey(k, calendar), t("typeExpense") + ": " + fmt.amount(m.exp)));
+		r2.addEventListener("mouseleave", hideTooltip);
+		svg.appendChild(r2);
+		svg.appendChild(svgText(k.slice(2), {
+			x: cx, y: H - 14, "text-anchor": "middle", "font-size": "10", fill: "var(--text-muted)"
+		}))
+	});
+	wrap.appendChild(svg);
+	const legend = el("div", "pa-chart-legend");
+	const mkItem = (color, label) => {
+		const w = el("span", "pa-legend-item");
+		const dot = el("span", "pa-legend-dot");
+		dot.style.background = color;
+		w.append(dot, document.createTextNode(label));
+		return w
+	};
+	legend.appendChild(mkItem("var(--color-green)", t("typeIncome")));
+	legend.appendChild(mkItem("var(--color-red)", t("typeExpense")));
+	wrap.appendChild(legend);
+	return wrap
+}
+
+function renderExpensePieChart(data, fmt) {
+	const wrap = el("div", "pa-chart-wrap");
+	const byCat = new Map;
+	for (const tx of data.transactions) {
+		if (tx.type !== "expense") continue;
+		const c = tx.category || (CURRENT.locale === "fa" ? "بدون دسته" : "Uncategorized");
+		byCat.set(c, (byCat.get(c) || 0) + tx.amount)
+	}
+	const items = [...byCat.entries()].sort((a, b) => b[1] - a[1]);
+	if (!items.length) {
+		wrap.createDiv("pa-empty").setText(t("noData"));
+		return wrap
+	}
+	const total = items.reduce((s, [, v]) => s + v, 0);
+	const container = el("div", "pa-donut-container");
+	const svg = svgEl("svg", { viewBox: "0 0 200 200", class: "pa-donut" });
+	const cx = 100, cy = 100, r = 70, stroke = 26;
+	let angle = -90;
+	items.forEach(([cat, val], i) => {
+		const pct = val / total;
+		const arc = Math.min(359.9, pct * 360);
+		const color = CHART_COLORS[i % CHART_COLORS.length];
+		const path = svgPath(describeArc(cx, cy, r - stroke / 2, angle, angle + arc), {
+			fill: "none", stroke: color, "stroke-width": stroke, "stroke-linecap": "butt"
+		});
+		path.addEventListener("mouseenter", () => showTooltip(path, cat, fmt.amount(val) + " (" + (pct * 100).toFixed(1) + "%)"));
+		path.addEventListener("mouseleave", hideTooltip);
+		svg.appendChild(path);
+		angle += pct * 360
+	});
+	svg.appendChild(svgText(fmtShort(total), {
+		x: cx, y: cy - 4, "text-anchor": "middle", "font-size": "16", "font-weight": "700", fill: "var(--text-normal)"
+	}));
+	svg.appendChild(svgText(fmt.currencyLabel(), {
+		x: cx, y: cy + 14, "text-anchor": "middle", "font-size": "10", fill: "var(--text-muted)"
+	}));
+	container.appendChild(svg);
+	const legend = el("div", "pa-donut-legend");
+	items.slice(0, 8).forEach(([cat, val], i) => {
+		const row = el("div", "pa-donut-legend-row");
+		const dot = el("span", "pa-legend-dot");
+		dot.style.background = CHART_COLORS[i % CHART_COLORS.length];
+		row.append(dot, el("span", "pa-donut-legend-label", cat), el("span", "pa-donut-legend-val", fmt.amount(val, false) + " (" + (val / total * 100).toFixed(0) + "%)"));
+		legend.appendChild(row)
+	});
+	container.appendChild(legend);
+	wrap.appendChild(container);
+	return wrap
+}
+
 class AccountsView extends ItemView {
 	constructor(leaf, plugin) {
 		super(leaf);
@@ -4756,8 +6410,9 @@ class AccountsView extends ItemView {
 			search: "",
 			filter: "all",
 			sort: "newest",
-			analyticsTab: "charts",
-			categoryFilter: ""
+			analyticsTab: "overview",
+			categoryFilter: "",
+			accountFilter: ""
 		};
 		this.unsub = null
 	}
@@ -4786,8 +6441,12 @@ class AccountsView extends ItemView {
 	render() {
 		const root = this.contentEl;
 		root.empty();
-		root.toggleClass("pa-compact", this.plugin.settings.compact);
+		const s = this.plugin.settings;
+		root.toggleClass("pa-compact", s.compact);
 		root.toggleClass("pa-rtl", CURRENT.locale === "fa");
+		if (this.nav.screen === "accounts" && !s.enableFinance) this.nav.screen = "dashboard";
+		if ((this.nav.screen === "people" || this.nav.screen === "person") && !s.enableDebts) this.nav.screen = "dashboard";
+
 		const store = this.plugin.accounts;
 		const header = root.createDiv("pa-header");
 		header.createDiv("pa-title").setText(t("appTitle"));
@@ -4795,30 +6454,29 @@ class AccountsView extends ItemView {
 		const mkTab = (label, screen, tipKey) => {
 			const active = this.nav.screen === screen || screen === "people" && this.nav.screen === "person";
 			const tab = el("div", "pa-tab" + (active ? " active" : ""), label);
-			tab.onclick = () => this.navigate({
-				screen
-			});
-			if (tipKey) attachTooltip(tab, t(tipKey), null, {
-				both: true
-			});
+			tab.onclick = () => this.navigate({ screen });
+			if (tipKey) attachTooltip(tab, t(tipKey), null, { both: true });
 			tabs.appendChild(tab)
 		};
 		mkTab(t("tabDashboard"), "dashboard", "tipDashboard");
-		mkTab(t("tabPeople"), "people", "tipPeople");
+		if (s.enableFinance) mkTab(t("tabAccounts"), "accounts", "tipAccounts");
+		if (s.enableDebts) mkTab(t("tabPeople"), "people", "tipPeople");
 		mkTab(t("tabTransactions"), "transactions", "tipTransactions");
 		mkTab(t("tabAnalytics"), "analytics", "tipAnalytics");
+
 		const addBtn = el("button", "pa-btn primary", t("addTx"));
 		addBtn.onclick = () => new TransactionFormModal(this.app, store, null, {}).open();
-		attachTooltip(addBtn, t("tipAddTx"), null, {
-			both: true
-		});
+		attachTooltip(addBtn, t("tipAddTx"), null, { both: true });
 		header.appendChild(addBtn);
-		header.appendChild(iconButton("file-text", t("openNote"), async () => {
+		header.appendChild(iconButton("sliders-horizontal", t("changeModeBtn"), () => {
+			new ModeSetupModal(this.app, this.plugin, () => this.render()).open()
+		}));
+		header.appendChild(iconButton("file-text", t("openMasterFile"), async () => {
 			try {
-				const path = normalizePath((this.plugin.settings.filePath || "").trim() || DEFAULT_FILE_PATH);
+				const path = this.plugin.repo.masterPath();
 				let file = this.app.vault.getAbstractFileByPath(path);
 				if (!(file instanceof TFile)) {
-					await this.plugin.repo.save(store.data);
+					await this.plugin.repo.save(store.data, { full: true });
 					file = this.app.vault.getAbstractFileByPath(path)
 				}
 				if (file instanceof TFile) await this.app.workspace.getLeaf("tab").openFile(file)
@@ -4826,30 +6484,20 @@ class AccountsView extends ItemView {
 				new Notice(String(e instanceof Error ? e.message : e))
 			}
 		}, "tipOpenNote"));
-		header.appendChild(iconButton("refresh-cw", t("reload"), () => {
-			void store.reload()
-		}, "tipReload"));
+		header.appendChild(iconButton("refresh-cw", t("reload"), () => { void store.reload() }, "tipReload"));
+
 		const body = root.createDiv("pa-body");
 		if (store.error) {
 			this.renderError(body);
 			return
 		}
 		switch (this.nav.screen) {
-			case "dashboard":
-				this.renderDashboard(body);
-				break;
-			case "people":
-				this.renderPeople(body);
-				break;
-			case "person":
-				this.renderPerson(body);
-				break;
-			case "transactions":
-				this.renderTransactions(body);
-				break;
-			case "analytics":
-				this.renderAnalytics(body);
-				break
+			case "dashboard": this.renderDashboard(body); break;
+			case "accounts": this.renderAccounts(body); break;
+			case "people": this.renderPeople(body); break;
+			case "person": this.renderPerson(body); break;
+			case "transactions": this.renderTransactions(body); break;
+			case "analytics": this.renderAnalytics(body); break
 		}
 	}
 	renderError(body) {
@@ -4859,9 +6507,7 @@ class AccountsView extends ItemView {
 		card.createDiv("pa-muted").setText(store.error || t("unknownError"));
 		const actions = card.createDiv("pa-actions");
 		const retry = el("button", "pa-btn", t("retry"));
-		retry.onclick = () => {
-			void store.reload()
-		};
+		retry.onclick = () => { void store.reload() };
 		actions.appendChild(retry)
 	}
 	dueChipFor(tx) {
@@ -4881,11 +6527,19 @@ class AccountsView extends ItemView {
 		const st = store.ledger ? store.ledger.states.get(tx.id) : null;
 		const row = el("div", "pa-row");
 		const main = row.createDiv("pa-row-main");
-		const title = tx.description || typeLabel(tx.type);
-		main.createDiv("pa-row-title").setText(showPerson ? store.personName(tx.personId) + " — " + title : title);
+		let title = tx.description || typeLabel(tx.type);
+		if (tx.type === "transfer") {
+			const fromN = store.accountName(tx.accountId) || "?";
+			const toN = store.accountName(tx.toAccountId) || "?";
+			title = fromN + " → " + toN + (tx.description ? " — " + tx.description : "")
+		} else if (showPerson && tx.personId) {
+			title = store.personName(tx.personId) + " — " + title
+		}
+		main.createDiv("pa-row-title").setText(title);
 		main.appendChild(transactionDateBadge(tx, fmt));
 		const sub = main.createDiv("pa-row-sub");
-		sub.appendChild(el("span", "pa-chip", typeLabel(tx.type)));
+		sub.appendChild(el("span", "pa-chip pa-chip-type-" + tx.type, typeLabel(tx.type)));
+		if (tx.accountId && tx.type !== "transfer") sub.appendChild(el("span", "pa-chip", store.accountName(tx.accountId)));
 		if (tx.category) sub.appendChild(el("span", "pa-chip", tx.category));
 		const chip = this.dueChipFor(tx);
 		if (chip) sub.appendChild(chip);
@@ -4895,14 +6549,12 @@ class AccountsView extends ItemView {
 		if (st && st.status === "settled") {
 			sub.appendChild(el("span", "pa-chip settled", t("settled")))
 		}
-		const positive = tx.type === "receivable" || tx.type === "payment_made";
-		const amt = row.createDiv("pa-row-amt pa-money " + (positive ? "pos" : "neg"));
-		amt.setText((positive ? "+" : "−") + fmt.amount(tx.amount, false));
+		const positive = tx.type === "income" || tx.type === "receivable" || tx.type === "payment_made";
+		const neutral = tx.type === "transfer";
+		const amt = row.createDiv("pa-row-amt pa-money " + (neutral ? "dim" : positive ? "pos" : "neg"));
+		amt.setText((neutral ? "⇄ " : positive ? "+" : "−") + fmt.amount(tx.amount, false));
 		attachTooltip(amt, fmt.amount(tx.amount), fmt.date(tx.date));
-		attachTooltip(row, t("tipTxRow"), title, {
-			both: true,
-			delay: 500
-		});
+		attachTooltip(row, t("tipTxRow"), title, { both: true, delay: 500 });
 		row.onclick = () => new TransactionDetailModal(this.app, store, tx, {}).open();
 		return row
 	}
@@ -4924,10 +6576,7 @@ class AccountsView extends ItemView {
 			wrap.appendChild(el("div", "pa-money " + (pos ? "pos" : "neg"), fmt.amount(Math.abs(b.net))));
 			wrap.createDiv("pa-row-sub").setText(pos ? t("receivable") : t("debt"))
 		}
-		attachTooltip(row, t("tipOpenPerson"), b.person.name, {
-			both: true,
-			delay: 500
-		});
+		attachTooltip(row, t("tipOpenPerson"), b.person.name, { both: true, delay: 500 });
 		row.onclick = () => this.openPerson(b.person.id);
 		return row
 	}
@@ -4942,77 +6591,268 @@ class AccountsView extends ItemView {
 		row.onclick = () => this.openPerson(item.tx.personId);
 		return row
 	}
-	/* ✅ FIX: stat با پشتیبانی از آیکون (برای آمار ثانویه در موبایل) */
 	stat(parent, label, value, accent, tipKey, extraCls, iconName) {
 		const d = parent.createDiv("pa-stat" + (accent ? " " + accent : "") + (extraCls ? " " + extraCls : ""));
 		const labelRow = d.createDiv("pa-stat-label");
 		if (iconName) {
 			const iconWrap = labelRow.createSpan("pa-stat-icon");
 			setIcon(iconWrap, iconName);
-			const text = labelRow.createSpan("pa-stat-label-text");
-			text.setText(label)
+			labelRow.createSpan("pa-stat-label-text").setText(label)
 		} else {
 			labelRow.setText(label)
 		}
 		d.createDiv("pa-stat-value").setText(value);
-		if (tipKey) attachTooltip(d, t(tipKey), label, {
-			both: true
-		});
+		if (tipKey) attachTooltip(d, t(tipKey), label, { both: true });
 		return d
 	}
 	openPerson(personId) {
-		this.navigate({
-			screen: "person",
-			personId
-		})
+		this.navigate({ screen: "person", personId })
+	}
+	renderBudgetRow(parent, u, withActions) {
+		const store = this.plugin.accounts;
+		const fmt = store.fmt;
+		const fa = CURRENT.locale === "fa";
+		const pctClamped = Math.min(100, Math.max(0, u.pct));
+		const statusCls = u.pct >= 100 ? "over" : u.pct >= 75 ? "warn" : "ok";
+		const item = parent.createDiv("pa-budget-item");
+		const top = item.createDiv("pa-budget-top");
+		const left = top.createDiv("pa-budget-cat");
+		left.setText(u.budget.category);
+		if (u.pct >= 100) left.appendChild(el("span", "pa-chip overdue", t("overBudget")));
+		const right = top.createDiv("pa-budget-nums");
+		right.setText(t("spentOf", { spent: fmt.amount(u.spent, false), limit: fmt.amount(u.budget.limit) }) + " (" + localizeDigits(Math.round(u.pct) + "%", fa) + ")");
+		if (withActions) {
+			right.appendChild(iconButton("pencil", t("edit"), () => new BudgetModal(this.app, store, u.budget).open()));
+			right.appendChild(iconButton("trash-2", t("delete"), () => {
+				new ConfirmModal(this.app, {
+					title: t("deleteBudgetTitle"),
+					lines: [t("deleteBudgetLine", { name: u.budget.category })],
+					confirmLabel: t("delete"),
+					danger: true,
+					onConfirm: () => store.deleteBudget(u.budget.id)
+				}).open()
+			}))
+		}
+		const track = item.createDiv("pa-budget-track");
+		const fill = track.createDiv("pa-budget-fill " + statusCls);
+		fill.style.width = pctClamped + "%"
 	}
 	renderDashboard(body) {
 		const store = this.plugin.accounts;
 		const fmt = store.fmt;
 		const L = store.ledger;
 		const s = L.stats;
-		const tIso = todayISO();
-		const tWd = isoWeekday(tIso);
-		const tDate = calDateFromISO(tIso, this.plugin.settings.calendar);
-		const evs = tDate ? Cal.eventsOf(tDate) : [];
-		body.createDiv("pa-todayline").setText(fmt.date(tIso) + (tWd === null ? "" : " · " + Cal.weekdayName(tWd)) + (evs.length ? "  •  " + evs.slice(0, 2).join(" • ") : ""));
+		const f = L.finance;
+		const cfg = this.plugin.settings;
 		const fa = CURRENT.locale === "fa";
 		const faNum = n => localizeDigits(String(n), fa);
-		const primary = body.createDiv("pa-stats-primary");
-		this.stat(primary, t("statTotalRec"), fmt.amount(s.totalReceivables), "accent-rec", "tipStatRec");
-		this.stat(primary, t("statTotalDebt"), fmt.amount(s.totalDebts), "accent-debt", "tipStatDebt");
-		this.stat(primary, t("statNet"), fmt.amount(s.net), "accent-net", "tipStatNet");
-		const secondary = body.createDiv("pa-stats-secondary");
-		/* ✅ FIX: آیکون برای آمار ثانویه — در موبایل فقط آیکون دیده می‌شود */
-		this.stat(secondary, t("statPeople"), faNum(s.peopleCount), null, "tipStatPeople", null, "users");
-		this.stat(secondary, t("statUnsettled"), faNum(s.unpaidCount), null, "tipStatUnsettled", null, "circle-dot");
-		this.stat(secondary, t("statSettled"), faNum(s.settledCount), null, "tipStatSettled", null, "check-circle-2");
-		this.stat(secondary, t("statOverdue"), faNum(s.overdueCount), s.overdueCount > 0 ? "danger" : null, "tipStatOverdue", null, "alert-triangle");
-		this.stat(secondary, t("statDueSoon"), faNum(s.dueSoonCount), s.dueSoonCount > 0 ? "warn" : null, "tipStatDueSoon", null, "clock");
-		if (s.peopleCount === 0) {
-			const c = body.createDiv("pa-card");
-			c.createDiv("pa-empty").setText(t("getStarted"));
-			return
-		}
-		const upc = body.createDiv("pa-card");
-		upc.createDiv("pa-card-title").setText(t("upcoming"));
-		if (!L.attention.length) {
-			upc.createDiv("pa-empty").setText(t("nothingDue"))
+
+		const tIso = todayISO();
+		const tWd = isoWeekday(tIso);
+		const tDate = calDateFromISO(tIso, cfg.calendar);
+		const evs = tDate ? Cal.eventsOf(tDate) : [];
+		body.createDiv("pa-todayline").setText(fmt.date(tIso) + (tWd === null ? "" : " · " + Cal.weekdayName(tWd)) + (evs.length ? "  •  " + evs.slice(0, 2).join(" • ") : ""));
+
+		if (cfg.enableFinance && cfg.enableDebts) {
+			const primary = body.createDiv("pa-stats-primary");
+			this.stat(primary, t("statNetWorth"), fmt.amount(s.netWorth), "accent-net");
+			this.stat(primary, t("statTotalBalance"), fmt.amount(f.totalBalance), "accent-rec");
+			this.stat(primary, t("statNet"), fmt.amount(s.net), s.net >= 0 ? "accent-rec" : "accent-debt", "tipStatNet");
+			const finRow = body.createDiv("pa-stats-primary");
+			this.stat(finRow, t("statMonthIncome"), fmt.amount(f.monthIncome), "accent-rec");
+			this.stat(finRow, t("statMonthExpense"), fmt.amount(f.monthExpense), "accent-debt");
+			this.stat(finRow, t("statSavingsRate"), localizeDigits(f.savingsRate.toFixed(0) + "%", fa), f.savingsRate >= 20 ? "accent-rec" : "accent-net");
+		} else if (cfg.enableFinance) {
+			const primary = body.createDiv("pa-stats-primary");
+			this.stat(primary, t("statTotalBalance"), fmt.amount(f.totalBalance), "accent-net");
+			this.stat(primary, t("statMonthIncome"), fmt.amount(f.monthIncome), "accent-rec");
+			this.stat(primary, t("statMonthExpense"), fmt.amount(f.monthExpense), "accent-debt");
+			const secondary = body.createDiv("pa-stats-secondary");
+			this.stat(secondary, t("statMonthNet"), fmt.amount(f.monthNet, false), f.monthNet < 0 ? "danger" : null, null, null, "scale");
+			this.stat(secondary, t("statSavingsRate"), localizeDigits(f.savingsRate.toFixed(0) + "%", fa), null, null, null, "piggy-bank");
+			this.stat(secondary, t("statDailyAvg"), fmt.amount(Math.round(f.dailyAvgExpense), false), null, null, null, "flame");
+			this.stat(secondary, t("statAccountsCount"), faNum(f.accountsCount), null, null, null, "credit-card");
+			this.stat(secondary, t("statMonthTxCount"), faNum(f.monthTxCount), null, null, null, "list")
 		} else {
-			const list = upc.createDiv("pa-scroll");
-			for (const item of L.attention.slice(0, 10)) list.appendChild(this.attentionRow(item))
+			const primary = body.createDiv("pa-stats-primary");
+			this.stat(primary, t("statTotalRec"), fmt.amount(s.totalReceivables), "accent-rec", "tipStatRec");
+			this.stat(primary, t("statTotalDebt"), fmt.amount(s.totalDebts), "accent-debt", "tipStatDebt");
+			this.stat(primary, t("statNet"), fmt.amount(s.net), "accent-net", "tipStatNet");
+			const secondary = body.createDiv("pa-stats-secondary");
+			this.stat(secondary, t("statPeople"), faNum(s.peopleCount), null, "tipStatPeople", null, "users");
+			this.stat(secondary, t("statUnsettled"), faNum(s.unpaidCount), null, "tipStatUnsettled", null, "circle-dot");
+			this.stat(secondary, t("statSettled"), faNum(s.settledCount), null, "tipStatSettled", null, "check-circle-2");
+			this.stat(secondary, t("statOverdue"), faNum(s.overdueCount), s.overdueCount > 0 ? "danger" : null, "tipStatOverdue", null, "alert-triangle");
+			this.stat(secondary, t("statDueSoon"), faNum(s.dueSoonCount), s.dueSoonCount > 0 ? "warn" : null, "tipStatDueSoon", null, "clock")
 		}
-		const pc = body.createDiv("pa-card");
-		const title = pc.createDiv("pa-card-title");
-		title.setText(t("peopleCard"));
-		const all = el("a", "pa-link", t("viewAll"));
-		all.onclick = () => this.navigate({
-			screen: "people"
-		});
-		title.appendChild(all);
-		const balances = [...L.balances.values()].filter(b => b.txCount > 0).sort((a, b) => Math.abs(b.net) - Math.abs(a.net) || a.person.name.localeCompare(b.person.name));
-		const rows = pc.createDiv("pa-scroll");
-		for (const b of balances.slice(0, 10)) rows.appendChild(this.personRow(b))
+
+		if (cfg.enableFinance) {
+			const accCard = body.createDiv("pa-card");
+			const accTitle = accCard.createDiv("pa-card-title");
+			accTitle.setText(t("accountsCard"));
+			const allAcc = el("a", "pa-link", t("viewAll"));
+			allAcc.onclick = () => this.navigate({ screen: "accounts" });
+			accTitle.appendChild(allAcc);
+			const accs = [...L.accountBalances.values()];
+			if (!accs.length) {
+				accCard.createDiv("pa-empty").setText(t("noAccounts"))
+			} else {
+				const grid = accCard.createDiv("pa-acc-mini-grid");
+				for (const ab of accs.slice(0, 6)) {
+					const chip = grid.createDiv("pa-acc-mini");
+					chip.createDiv("pa-acc-mini-name").setText(ab.account.name);
+					chip.createDiv("pa-acc-mini-type").setText(accountTypeLabel(ab.account.type));
+					chip.createDiv("pa-acc-mini-bal pa-money " + (ab.balance >= 0 ? "pos" : "neg")).setText(fmt.amount(ab.balance));
+					chip.onclick = () => this.navigate({ screen: "accounts" })
+				}
+			}
+			if (f.budgetUsage.length) {
+				const budCard = body.createDiv("pa-card");
+				budCard.createDiv("pa-card-title").setText(t("budgetsTitle") + " — " + formatMonthKey(f.curMonth, cfg.calendar));
+				for (const u of f.budgetUsage.slice(0, 5)) this.renderBudgetRow(budCard, u, false)
+			}
+		}
+
+		if (cfg.enableDebts) {
+			if (s.peopleCount === 0 && !cfg.enableFinance) {
+				const c = body.createDiv("pa-card");
+				c.createDiv("pa-empty").setText(t("getStarted"));
+				return
+			}
+			const upc = body.createDiv("pa-card");
+			upc.createDiv("pa-card-title").setText(t("upcoming"));
+			if (!L.attention.length) {
+				upc.createDiv("pa-empty").setText(t("nothingDue"))
+			} else {
+				const list = upc.createDiv("pa-scroll");
+				for (const item of L.attention.slice(0, 10)) list.appendChild(this.attentionRow(item))
+			}
+			if (s.peopleCount > 0) {
+				const pc = body.createDiv("pa-card");
+				const title = pc.createDiv("pa-card-title");
+				title.setText(t("peopleCard"));
+				const all = el("a", "pa-link", t("viewAll"));
+				all.onclick = () => this.navigate({ screen: "people" });
+				title.appendChild(all);
+				const balances = [...L.balances.values()].filter(b => b.txCount > 0).sort((a, b) => Math.abs(b.net) - Math.abs(a.net) || a.person.name.localeCompare(b.person.name));
+				const rows = pc.createDiv("pa-scroll");
+				for (const b of balances.slice(0, 8)) rows.appendChild(this.personRow(b))
+			}
+		}
+	}
+	renderAccounts(body) {
+		const store = this.plugin.accounts;
+		const fmt = store.fmt;
+		const L = store.ledger;
+		const f = L.finance;
+		const fa = CURRENT.locale === "fa";
+
+		/* ۱) کارت حساب‌ها و کیف‌پول‌ها */
+		const accCard = body.createDiv("pa-card");
+		const accHead = accCard.createDiv("pa-card-title");
+		accHead.setText(t("accountsCard"));
+		const addAccBtn = el("button", "pa-btn small primary", t("addAccountBtn"));
+		addAccBtn.style.marginInlineStart = "auto";
+		addAccBtn.onclick = () => new AccountModal(this.app, store, null).open();
+		accHead.appendChild(addAccBtn);
+
+		const accs = [...L.accountBalances.values()];
+		if (!accs.length) {
+			accCard.createDiv("pa-empty").setText(t("noAccounts"))
+		} else {
+			const grid = accCard.createDiv("pa-acc-grid");
+			for (const ab of accs) {
+				const c = grid.createDiv("pa-acc-card");
+				const top = c.createDiv("pa-acc-top");
+				const info = top.createDiv();
+				info.createDiv("pa-acc-name").setText(ab.account.name);
+				info.createDiv("pa-chip").setText(accountTypeLabel(ab.account.type));
+				const btns = top.createDiv("pa-acc-btns");
+				btns.appendChild(iconButton("pencil", t("edit"), () => new AccountModal(this.app, store, ab.account).open()));
+				btns.appendChild(iconButton("trash-2", t("delete"), () => {
+					new ConfirmModal(this.app, {
+						title: t("deleteAccountTitle"),
+						lines: [t("deleteAccountLine", { name: ab.account.name })],
+						confirmLabel: t("delete"),
+						danger: true,
+						onConfirm: () => store.deleteAccount(ab.account.id)
+					}).open()
+				}));
+				c.createDiv("pa-acc-bal pa-money " + (ab.balance >= 0 ? "pos" : "neg")).setText(fmt.amount(ab.balance));
+				if (ab.account.note) c.createDiv("pa-muted").setText(ab.account.note);
+				const qActs = c.createDiv("pa-acc-actions");
+				const bExp = el("button", "pa-btn small", "+ " + t("typeExpense"));
+				bExp.onclick = () => new TransactionFormModal(this.app, store, null, { preset: { type: "expense", accountId: ab.account.id } }).open();
+				const bInc = el("button", "pa-btn small", "+ " + t("typeIncome"));
+				bInc.onclick = () => new TransactionFormModal(this.app, store, null, { preset: { type: "income", accountId: ab.account.id } }).open();
+				const bTr = el("button", "pa-btn small", t("typeTransfer"));
+				bTr.onclick = () => new TransactionFormModal(this.app, store, null, { preset: { type: "transfer", accountId: ab.account.id } }).open();
+				qActs.append(bExp, bInc, bTr)
+			}
+		}
+
+		/* ۲) بودجه‌های ماهانه */
+		const budCard = body.createDiv("pa-card");
+		const budHead = budCard.createDiv("pa-card-title");
+		budHead.setText(t("budgetsTitle") + " — " + formatMonthKey(f.curMonth, this.plugin.settings.calendar));
+		const addBudBtn = el("button", "pa-btn small primary", t("addBudgetBtn"));
+		addBudBtn.style.marginInlineStart = "auto";
+		addBudBtn.onclick = () => new BudgetModal(this.app, store, null).open();
+		budHead.appendChild(addBudBtn);
+		if (!f.budgetUsage.length) {
+			budCard.createDiv("pa-empty").setText(t("noBudgets"))
+		} else {
+			for (const u of f.budgetUsage) this.renderBudgetRow(budCard, u, true)
+		}
+
+		/* ۳) تراکنش‌های تکراری */
+		const recCard = body.createDiv("pa-card");
+		const recHead = recCard.createDiv("pa-card-title");
+		recHead.setText(t("recurringTitle"));
+		const addRecBtn = el("button", "pa-btn small primary", t("addRecurringBtn"));
+		addRecBtn.style.marginInlineStart = "auto";
+		addRecBtn.onclick = () => new RecurringModal(this.app, store, null).open();
+		recHead.appendChild(addRecBtn);
+		const recs = store.data.recurring || [];
+		if (!recs.length) {
+			recCard.createDiv("pa-empty").setText(t("noRecurring"))
+		} else {
+			for (const r of recs) {
+				const row = el("div", "pa-row");
+				const main = row.createDiv("pa-row-main");
+				main.createDiv("pa-row-title").setText(r.name);
+				const sub = main.createDiv("pa-row-sub");
+				sub.appendChild(el("span", "pa-chip", typeLabel(r.type)));
+				sub.appendChild(el("span", "pa-chip", (fa ? "روز " : "Day ") + localizeDigits(String(r.dayOfMonth), fa)));
+				if (r.category) sub.appendChild(el("span", "pa-chip", r.category));
+				if (r.accountId) sub.appendChild(el("span", "pa-chip", store.accountName(r.accountId)));
+				const amt = row.createDiv("pa-row-amt pa-money");
+				amt.setText(fmt.amount(r.amount));
+				const doneThisMonth = r.lastRunMonth === f.curMonth;
+				const runBtn = el("button", "pa-btn small" + (doneThisMonth ? "" : " primary"), doneThisMonth ? "✓ " + t("recordedThisMonth") : t("recordNow"));
+				runBtn.onclick = async e => {
+					e.stopPropagation();
+					await store.runRecurring(r.id);
+					new Notice(t("txAdded"))
+				};
+				row.appendChild(runBtn);
+				row.appendChild(iconButton("pencil", t("edit"), e => {
+					e.stopPropagation();
+					new RecurringModal(this.app, store, r).open()
+				}));
+				row.appendChild(iconButton("trash-2", t("delete"), e => {
+					e.stopPropagation();
+					new ConfirmModal(this.app, {
+						title: t("deleteRecurringTitle"),
+						lines: [t("deleteRecurringLine", { name: r.name })],
+						confirmLabel: t("delete"),
+						danger: true,
+						onConfirm: () => store.deleteRecurring(r.id)
+					}).open()
+				}));
+				recCard.appendChild(row)
+			}
+		}
 	}
 	renderPeople(body) {
 		const store = this.plugin.accounts;
@@ -5022,85 +6862,50 @@ class AccountsView extends ItemView {
 		search.type = "search";
 		search.placeholder = t("searchPeople");
 		search.value = this.nav.search;
-		attachTooltip(search, t("tipSearchPeople"), null, {
-			both: true,
-			delay: 700
-		});
 		bar.appendChild(search);
 		const add = el("button", "pa-btn primary", t("addPersonBtn"));
 		add.onclick = () => new PersonModal(this.app, store, null, {}).open();
-		attachTooltip(add, t("tipAddPerson"), null, {
-			both: true
-		});
 		bar.appendChild(add);
 		const listWrap = body.createDiv("pa-card");
 		const renderList = () => {
 			listWrap.empty();
 			const q = this.nav.search.trim().toLowerCase();
 			let people = [...store.data.people].sort((a, b) => {
-				const ba = L.balances.get(a.id),
-					bb = L.balances.get(b.id);
-				const na = ba ? Math.abs(ba.net) : 0,
-					nb = bb ? Math.abs(bb.net) : 0;
+				const ba = L.balances.get(a.id), bb = L.balances.get(b.id);
+				const na = ba ? Math.abs(ba.net) : 0, nb = bb ? Math.abs(bb.net) : 0;
 				return nb - na || a.name.localeCompare(b.name)
 			});
 			if (q) {
-				people = people.filter(p => {
-					if (p.name.toLowerCase().includes(q)) return true;
-					if (p.phone && p.phone.toLowerCase().includes(q)) return true;
-					if (p.email && p.email.toLowerCase().includes(q)) return true;
-					if (p.tags && p.tags.some(x => x.toLowerCase().includes(q))) return true;
-					if (p.note && p.note.toLowerCase().includes(q)) return true;
-					return false
-				})
+				people = people.filter(p =>
+					p.name.toLowerCase().includes(q) ||
+					(p.phone && p.phone.toLowerCase().includes(q)) ||
+					(p.email && p.email.toLowerCase().includes(q)) ||
+					(p.tags && p.tags.some(x => x.toLowerCase().includes(q))) ||
+					(p.note && p.note.toLowerCase().includes(q))
+				)
 			}
-			if (!people.length) {
-				listWrap.createDiv("pa-empty").setText(t("noPeople"));
-				return
-			}
+			if (!people.length) { listWrap.createDiv("pa-empty").setText(t("noPeople")); return }
 			for (const p of people) {
 				const b = L.balances.get(p.id);
-				const row = this.personRow(b || {
-					person: p,
-					net: 0,
-					txCount: 0,
-					remainingReceivable: 0,
-					remainingDebt: 0
-				});
-				row.appendChild(iconButton("pencil", t("edit"), e => {
-					e.stopPropagation();
-					new PersonModal(this.app, store, p, {}).open()
-				}, "tipEditPerson"));
-				row.appendChild(iconButton("trash-2", t("delete"), e => {
-					e.stopPropagation();
-					this.confirmDeletePerson(p.id, p.name)
-				}, "tipDeletePerson"));
+				const row = this.personRow(b || { person: p, net: 0, txCount: 0, remainingReceivable: 0, remainingDebt: 0 });
+				row.appendChild(iconButton("pencil", t("edit"), e => { e.stopPropagation(); new PersonModal(this.app, store, p, {}).open() }, "tipEditPerson"));
+				row.appendChild(iconButton("trash-2", t("delete"), e => { e.stopPropagation(); this.confirmDeletePerson(p.id, p.name) }, "tipDeletePerson"));
 				listWrap.appendChild(row)
 			}
 		};
-		search.oninput = () => {
-			this.nav.search = search.value;
-			renderList()
-		};
+		search.oninput = () => { this.nav.search = search.value; renderList() };
 		renderList()
 	}
 	confirmDeletePerson(id, name) {
 		const store = this.plugin.accounts;
 		const doDelete = async () => {
 			await store.deletePerson(id);
-			if (this.nav.personId === id) this.navigate({
-				screen: "people"
-			})
+			if (this.nav.personId === id) this.navigate({ screen: "people" })
 		};
-		if (!store.confirmDelete) {
-			void doDelete();
-			return
-		}
+		if (!store.confirmDelete) { void doDelete(); return }
 		new ConfirmModal(this.app, {
 			title: t("deletePersonTitle"),
-			lines: [t("deletePersonLine", {
-				name
-			}), t("deleteTxNote")],
+			lines: [t("deletePersonLine", { name }), t("deleteTxNote")],
 			confirmLabel: t("delete"),
 			danger: true,
 			onConfirm: doDelete
@@ -5111,21 +6916,10 @@ class AccountsView extends ItemView {
 		const fmt = store.fmt;
 		const L = store.ledger;
 		const person = store.data.people.find(p => p.id === this.nav.personId);
-		if (!person) {
-			body.createDiv("pa-empty").setText(t("noPeople"));
-			return
-		}
-		const b = L.balances.get(person.id) || {
-			person,
-			net: 0,
-			txCount: 0,
-			remainingReceivable: 0,
-			remainingDebt: 0
-		};
+		if (!person) { body.createDiv("pa-empty").setText(t("noPeople")); return }
+		const b = L.balances.get(person.id) || { person, net: 0, txCount: 0, remainingReceivable: 0, remainingDebt: 0 };
 		const back = el("button", "pa-btn small", t("back"));
-		back.onclick = () => this.navigate({
-			screen: "people"
-		});
+		back.onclick = () => this.navigate({ screen: "people" });
 		body.appendChild(back);
 		const card = body.createDiv("pa-card");
 		const head = card.createDiv("pa-person-head");
@@ -5134,30 +6928,14 @@ class AccountsView extends ItemView {
 		nameEl.style.fontSize = "1.15em";
 		head.appendChild(iconButton("pencil", t("edit"), () => new PersonModal(this.app, store, person, {}).open(), "tipEditPerson"));
 		const info = card.createDiv("pa-person-info");
-		if (person.phone) {
-			const r = info.createDiv("pa-info-row");
-			r.createSpan({
-				cls: "pa-info-key"
-			}).setText(t("fPhone") + ": ");
-			r.createSpan().setText(person.phone)
-		}
-		if (person.email) {
-			const r = info.createDiv("pa-info-row");
-			r.createSpan({
-				cls: "pa-info-key"
-			}).setText(t("fEmail") + ": ");
-			r.createSpan().setText(person.email)
-		}
+		if (person.phone) { const r = info.createDiv("pa-info-row"); r.createSpan({ cls: "pa-info-key" }).setText(t("fPhone") + ": "); r.createSpan().setText(person.phone) }
+		if (person.email) { const r = info.createDiv("pa-info-row"); r.createSpan({ cls: "pa-info-key" }).setText(t("fEmail") + ": "); r.createSpan().setText(person.email) }
 		if (person.tags && person.tags.length) {
 			const r = info.createDiv("pa-info-row pa-tags");
-			r.createSpan({
-				cls: "pa-info-key"
-			}).setText(t("fTags") + ": ");
+			r.createSpan({ cls: "pa-info-key" }).setText(t("fTags") + ": ");
 			for (const tag of person.tags) r.appendChild(el("span", "pa-tag", tag))
 		}
-		if (person.note) {
-			info.createDiv("pa-note").setText(person.note)
-		}
+		if (person.note) info.createDiv("pa-note").setText(person.note);
 		const tiles = card.createDiv("pa-tiles");
 		this.stat(tiles, t("recRemaining"), fmt.amount(b.remainingReceivable), "accent-rec", "tipStatRec");
 		this.stat(tiles, t("debtRemaining"), fmt.amount(b.remainingDebt), "accent-debt", "tipStatDebt");
@@ -5167,55 +6945,23 @@ class AccountsView extends ItemView {
 		const btn = (label, fn, cls, tipKey) => {
 			const x = el("button", "pa-btn " + (cls || ""), label);
 			x.onclick = fn;
-			if (tipKey) attachTooltip(x, t(tipKey), null, {
-				both: true
-			});
+			if (tipKey) attachTooltip(x, t(tipKey), null, { both: true });
 			actions.appendChild(x)
 		};
-		btn(t("addRec"), () => new TransactionFormModal(this.app, store, null, {
-			preset: {
-				personId: person.id,
-				type: "receivable",
-				lockPerson: true
-			}
-		}).open(), "", "tipAddRec");
-		btn(t("addDebt"), () => new TransactionFormModal(this.app, store, null, {
-			preset: {
-				personId: person.id,
-				type: "debt",
-				lockPerson: true
-			}
-		}).open(), "", "tipAddDebt");
+		btn(t("addRec"), () => new TransactionFormModal(this.app, store, null, { preset: { personId: person.id, type: "receivable", lockPerson: true } }).open(), "", "tipAddRec");
+		btn(t("addDebt"), () => new TransactionFormModal(this.app, store, null, { preset: { personId: person.id, type: "debt", lockPerson: true } }).open(), "", "tipAddDebt");
 		btn(t("recordPayment"), () => {
 			const bb = store.ledger.balances.get(person.id);
 			const type = bb.remainingReceivable > EPS ? "payment_received" : "payment_made";
 			const amount = bb.remainingReceivable > EPS ? bb.remainingReceivable : bb.remainingDebt > EPS ? bb.remainingDebt : undefined;
-			new TransactionFormModal(this.app, store, null, {
-				preset: {
-					personId: person.id,
-					type,
-					amount,
-					lockPerson: true,
-					paymentOnly: true
-				}
-			}).open()
+			new TransactionFormModal(this.app, store, null, { preset: { personId: person.id, type, amount, lockPerson: true, paymentOnly: true } }).open()
 		}, "", "tipRecordPayment");
 		if (b.remainingReceivable > EPS || b.remainingDebt > EPS) {
 			btn(t("settleAccount"), () => {
 				const bb = store.ledger.balances.get(person.id);
 				const lines = [];
-				if (bb.remainingReceivable > EPS) {
-					lines.push(t("settleRecLine", {
-						amt: fmt.amount(bb.remainingReceivable),
-						name: person.name
-					}))
-				}
-				if (bb.remainingDebt > EPS) {
-					lines.push(t("settleDebtLine", {
-						amt: fmt.amount(bb.remainingDebt),
-						name: person.name
-					}))
-				}
+				if (bb.remainingReceivable > EPS) lines.push(t("settleRecLine", { amt: fmt.amount(bb.remainingReceivable), name: person.name }));
+				if (bb.remainingDebt > EPS) lines.push(t("settleDebtLine", { amt: fmt.amount(bb.remainingDebt), name: person.name }));
 				new ConfirmModal(this.app, {
 					title: t("settleAccount"),
 					lines: [...lines, t("settleNote")],
@@ -5233,10 +6979,7 @@ class AccountsView extends ItemView {
 		} else {
 			let lastDate = "";
 			for (const tx of txs) {
-				if (tx.date !== lastDate) {
-					lastDate = tx.date;
-					hist.createDiv("pa-date-group").setText(fmt.date(tx.date))
-				}
+				if (tx.date !== lastDate) { lastDate = tx.date; hist.createDiv("pa-date-group").setText(fmt.date(tx.date)) }
 				hist.appendChild(this.txRow(tx, false))
 			}
 			const footer = hist.createDiv("pa-remaining");
@@ -5249,43 +6992,61 @@ class AccountsView extends ItemView {
 		const store = this.plugin.accounts;
 		const fmt = store.fmt;
 		const L = store.ledger;
+		const s = this.plugin.settings;
 		const bar = body.createDiv("pa-toolbar");
 		const search = el("input");
 		search.type = "search";
 		search.placeholder = t("searchTx");
 		search.value = this.nav.search;
+
 		const filterSel = el("select");
-		for (const [v, key] of FILTERS) filterSel.appendChild(new Option(t(key), v));
+		const dynFilters = [["all", "filterAll"]];
+		if (s.enableFinance) dynFilters.push(["expense", "filterExpense"], ["income", "filterIncome"], ["transfer", "filterTransfer"]);
+		if (s.enableDebts) dynFilters.push(["receivables", "filterRec"], ["debts", "filterDebt"], ["settled", "filterSettled"], ["unsettled", "filterUnsettled"], ["overdue", "filterOverdue"], ["due-soon", "filterDueSoon"]);
+		for (const [v, key] of dynFilters) filterSel.appendChild(new Option(t(key), v));
+		if (!dynFilters.some(([v]) => v === this.nav.filter)) this.nav.filter = "all";
 		filterSel.value = this.nav.filter;
+
+		let accFilter = null;
+		if (s.enableFinance && store.data.accounts.length) {
+			accFilter = el("select");
+			accFilter.appendChild(new Option(t("filterAccount"), ""));
+			for (const a of store.data.accounts) accFilter.appendChild(new Option(a.name, a.id));
+			accFilter.value = this.nav.accountFilter || ""
+		}
+
 		const catFilter = el("select");
 		catFilter.appendChild(new Option(t("filterCategory"), ""));
-		for (const c of this.plugin.settings.categories) {
-			catFilter.appendChild(new Option(c, c))
+		const allCats = new Set;
+		if (s.enableFinance) {
+			for (const c of s.expenseCategories || []) allCats.add(c);
+			for (const c of s.incomeCategories || []) allCats.add(c)
 		}
+		if (s.enableDebts) {
+			for (const c of s.categories || []) allCats.add(c)
+		}
+		for (const c of allCats) catFilter.appendChild(new Option(c, c));
 		catFilter.value = this.nav.categoryFilter || "";
+
 		const sortSel = el("select");
 		for (const [v, key] of SORTS) sortSel.appendChild(new Option(t(key), v));
 		sortSel.value = this.nav.sort;
-		bar.append(search, filterSel, catFilter, sortSel);
-		if (this.plugin.settings.savedViews.length) {
+
+		bar.append(search, filterSel);
+		if (accFilter) bar.appendChild(accFilter);
+		bar.append(catFilter, sortSel);
+
+		if (s.savedViews.length) {
 			const vSel = el("select");
 			vSel.appendChild(new Option("— " + t("savedViews") + " —", ""));
-			for (const v of this.plugin.settings.savedViews) {
-				vSel.appendChild(new Option(v.name, v.id))
-			}
+			for (const v of s.savedViews) vSel.appendChild(new Option(v.name, v.id));
 			vSel.onchange = () => {
-				const v = this.plugin.settings.savedViews.find(x => x.id === vSel.value);
-				if (v) {
-					this.nav.search = v.query || "";
-					this.nav.filter = v.filter || "all";
-					this.nav.sort = v.sort || "newest";
-					this.render()
-				}
+				const v = s.savedViews.find(x => x.id === vSel.value);
+				if (v) { this.nav.search = v.query || ""; this.nav.filter = v.filter || "all"; this.nav.sort = v.sort || "newest"; this.render() }
 			};
 			bar.appendChild(vSel)
 		}
 		const saveViewBtn = el("button", "pa-btn small", "💾 " + t("saveView"));
-		/* ✅ FIX #22: جایگزینی prompt() با TextPromptModal */
 		saveViewBtn.onclick = () => {
 			new TextPromptModal(this.app, {
 				title: t("saveView"),
@@ -5293,19 +7054,10 @@ class AccountsView extends ItemView {
 				placeholder: t("viewName"),
 				requiredMsg: t("viewName"),
 				confirmLabel: t("save"),
-				onSubmit: async (name) => {
+				onSubmit: async name => {
 					const trimmed = name.trim();
-					if (this.plugin.settings.savedViews.some(v => v.name === trimmed)) {
-						new Notice("⚠ " + trimmed);
-						return
-					}
-					this.plugin.settings.savedViews.push({
-						id: randomId("v"),
-						name: trimmed,
-						query: this.nav.search,
-						filter: this.nav.filter,
-						sort: this.nav.sort
-					});
+					if (s.savedViews.some(v => v.name === trimmed)) { new Notice("⚠ " + trimmed); return }
+					s.savedViews.push({ id: randomId("v"), name: trimmed, query: this.nav.search, filter: this.nav.filter, sort: this.nav.sort });
 					await this.plugin.saveSettings();
 					new Notice(t("viewSaved"));
 					this.render()
@@ -5313,53 +7065,31 @@ class AccountsView extends ItemView {
 			}).open()
 		};
 		bar.appendChild(saveViewBtn);
-		attachTooltip(filterSel, t("tipFilter"), null, {
-			delay: 500
-		});
-		attachTooltip(catFilter, t("tipCategoryFilter"), null, {
-			delay: 500
-		});
-		attachTooltip(sortSel, t("tipSort"), null, {
-			delay: 500
-		});
-		attachTooltip(saveViewBtn, t("tipSaveView"), null, {
-			delay: 500
-		});
+
 		const list = body.createDiv("pa-card");
 		const renderList = () => {
 			list.empty();
 			const filters = parseQuery(this.nav.search.trim());
-			const txs = store.data.transactions.filter(tx => {
+			const txs = store.visibleTransactions().filter(tx => {
 				const st = L.states.get(tx.id);
 				switch (this.nav.filter) {
-					case "receivables":
-						if (!(tx.type === "receivable" || tx.type === "payment_received")) return false;
-						break;
-					case "debts":
-						if (!(tx.type === "debt" || tx.type === "payment_made")) return false;
-						break;
-					case "settled":
-						if (!st || st.status !== "settled") return false;
-						break;
-					case "unsettled":
-						if (!st || st.status === "settled") return false;
-						break;
-					case "overdue":
-						if (!st || !st.due || st.due.kind !== "overdue") return false;
-						break;
-					case "due-soon":
-						if (!st || !st.due || st.due.kind !== "today" && st.due.kind !== "soon") return false;
-						break
+					case "expense": if (tx.type !== "expense") return false; break;
+					case "income": if (tx.type !== "income") return false; break;
+					case "transfer": if (tx.type !== "transfer") return false; break;
+					case "receivables": if (!(tx.type === "receivable" || tx.type === "payment_received")) return false; break;
+					case "debts": if (!(tx.type === "debt" || tx.type === "payment_made")) return false; break;
+					case "settled": if (!st || st.status !== "settled") return false; break;
+					case "unsettled": if (!st || st.status === "settled") return false; break;
+					case "overdue": if (!st || !st.due || st.due.kind !== "overdue") return false; break;
+					case "due-soon": if (!st || !st.due || st.due.kind !== "today" && st.due.kind !== "soon") return false; break
 				}
+				if (this.nav.accountFilter && tx.accountId !== this.nav.accountFilter && tx.toAccountId !== this.nav.accountFilter) return false;
 				if (this.nav.categoryFilter && tx.category !== this.nav.categoryFilter) return false;
 				return matchesQuery(tx, filters, store)
 			});
 			const byDue = (a, b) => {
-				const sa = L.states.get(a.id),
-					sb = L.states.get(b.id);
-				const da = sa && sa.due ? sa.due.days : 999999;
-				const db = sb && sb.due ? sb.due.days : 999999;
-				return da - db || b.date.localeCompare(a.date)
+				const sa = L.states.get(a.id), sb = L.states.get(b.id);
+				return (sa && sa.due ? sa.due.days : 999999) - (sb && sb.due ? sb.due.days : 999999) || b.date.localeCompare(a.date)
 			};
 			const comparators = {
 				newest: (a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt,
@@ -5373,64 +7103,58 @@ class AccountsView extends ItemView {
 			let lastDate = "";
 			for (const tx of txs) {
 				if (this.nav.sort === "newest" || this.nav.sort === "oldest") {
-					if (tx.date !== lastDate) {
-						lastDate = tx.date;
-						list.createDiv("pa-date-group").setText(fmt.date(tx.date))
-					}
+					if (tx.date !== lastDate) { lastDate = tx.date; list.createDiv("pa-date-group").setText(fmt.date(tx.date)) }
 				}
 				list.appendChild(this.txRow(tx, true))
 			}
 		};
-		search.oninput = () => {
-			this.nav.search = search.value;
-			renderList()
-		};
-		filterSel.onchange = () => {
-			this.nav.filter = filterSel.value;
-			renderList()
-		};
-		catFilter.onchange = () => {
-			this.nav.categoryFilter = catFilter.value;
-			renderList()
-		};
-		sortSel.onchange = () => {
-			this.nav.sort = sortSel.value;
-			renderList()
-		};
+		search.oninput = () => { this.nav.search = search.value; renderList() };
+		filterSel.onchange = () => { this.nav.filter = filterSel.value; renderList() };
+		if (accFilter) accFilter.onchange = () => { this.nav.accountFilter = accFilter.value; renderList() };
+		catFilter.onchange = () => { this.nav.categoryFilter = catFilter.value; renderList() };
+		sortSel.onchange = () => { this.nav.sort = sortSel.value; renderList() };
 		renderList()
 	}
 	renderAnalytics(body) {
 		const store = this.plugin.accounts;
 		const fmt = store.fmt;
 		const data = store.data;
-		if (!data.transactions.length) {
+		const s = this.plugin.settings;
+		if (!store.visibleTransactions().length) {
 			body.createDiv("pa-empty").setText(t("noTx"));
 			return
 		}
-		const kpiCard = body.createDiv("pa-card pa-kpi-card");
-		kpiCard.appendChild(renderKpiCards(data, fmt));
+		if (s.enableDebts) {
+			const kpiCard = body.createDiv("pa-card pa-kpi-card");
+			kpiCard.appendChild(renderKpiCards(data, fmt))
+		}
+		const tabs = [];
+		if (s.enableFinance) tabs.push(["finance", t("anaFinance")]);
+		if (s.enableDebts) tabs.push(["overview", t("anaOverview")], ["trends", t("anaTrends")], ["breakdown", t("anaBreakdown")], ["cashflow", t("anaCashflow")]);
+		tabs.push(["report", t("anaReport")]);
+
+		if (!tabs.some(([id]) => id === this.nav.analyticsTab)) this.nav.analyticsTab = tabs[0][0];
+		const current = this.nav.analyticsTab;
 		const sub = body.createDiv("pa-analytics-tabs");
-		const tabs = [
-			["overview", t("anaOverview")],
-			["trends", t("anaTrends")],
-			["breakdown", t("anaBreakdown")],
-			["cashflow", t("anaCashflow")],
-			["report", t("anaReport")]
-		];
-		const current = this.nav.analyticsTab || "overview";
 		for (const [id, label] of tabs) {
 			const b = el("button", "pa-btn" + (id === current ? " active" : ""), label);
-			b.onclick = () => {
-				this.nav.analyticsTab = id;
-				this.render()
-			};
+			b.onclick = () => { this.nav.analyticsTab = id; this.render() };
 			sub.appendChild(b)
 		}
-		if (current === "overview") this.renderAnaOverview(body, data, fmt);
+		if (current === "finance") this.renderAnaFinance(body, data, fmt);
+		else if (current === "overview") this.renderAnaOverview(body, data, fmt);
 		else if (current === "trends") this.renderAnaTrends(body, data, fmt);
 		else if (current === "breakdown") this.renderAnaBreakdown(body, data, fmt);
 		else if (current === "cashflow") this.renderAnaCashflow(body, data, fmt);
 		else if (current === "report") this.renderMonthlyReport(body, data, fmt)
+	}
+	renderAnaFinance(body, data, fmt) {
+		const c1 = body.createDiv("pa-card");
+		this.cardTitle(c1, "chartIncomeExpense", "helpIncomeExpense");
+		c1.appendChild(renderIncomeExpenseChart(data, fmt, this.plugin.settings.calendar));
+		const c2 = body.createDiv("pa-card");
+		this.cardTitle(c2, "chartExpensePie", "helpExpensePie");
+		c2.appendChild(renderExpensePieChart(data, fmt))
 	}
 	renderAnaOverview(body, data, fmt) {
 		const row1 = body.createDiv("pa-grid-2");
@@ -5481,19 +7205,16 @@ class AccountsView extends ItemView {
 		this.renderCashFlowContent(body, data, fmt)
 	}
 	renderMonthlyReport(body, data, fmt) {
+		const s = this.plugin.settings;
+		const cal = s.calendar;
+		const visible = this.plugin.accounts.visibleTransactions();
 		const months = new Set;
-		for (const tx of data.transactions) months.add(tx.date.slice(0, 7));
+		for (const tx of visible) months.add(monthKeyForISO(tx.date, cal));
 		const list = [...months].sort().reverse();
-		if (!list.length) {
-			body.createDiv("pa-empty").setText(t("noTx"));
-			return
-		}
+		if (!list.length) { body.createDiv("pa-empty").setText(t("noTx")); return }
 		const bar = body.createDiv("pa-toolbar");
 		const sel = el("select");
-		for (const m of list) {
-			const label = this.plugin.settings.calendar === "jalali" ? this.fmtMonthFa(m) : this.fmtMonthEn(m);
-			sel.appendChild(new Option(label, m))
-		}
+		for (const m of list) sel.appendChild(new Option(formatMonthKey(m, cal), m));
 		bar.appendChild(sel);
 		const grid = body.createDiv("pa-report-grid");
 		const listCard = body.createDiv("pa-card");
@@ -5502,65 +7223,49 @@ class AccountsView extends ItemView {
 		const render = () => {
 			grid.empty();
 			listWrap.empty();
-			const ym = sel.value;
-			const txs = data.transactions.filter(tx => tx.date.startsWith(ym));
-			const sum = type => txs.filter(t => t.type === type).reduce((s, t) => s + t.amount, 0);
-			const rec = sum("receivable"),
-				debt = sum("debt");
-			const got = sum("payment_received"),
-				paid = sum("payment_made");
-			const net = rec - got - (debt - paid);
+			const mk = sel.value;
+			const txs = visible.filter(tx => monthKeyForISO(tx.date, cal) === mk);
+			const sum = type => txs.filter(x => x.type === type).reduce((acc, x) => acc + x.amount, 0);
 			const tile = (label, value, cls) => {
 				const d = el("div", "pa-stat" + (cls ? " " + cls : ""));
 				d.createDiv("pa-stat-label").setText(label);
 				d.createDiv("pa-stat-value").setText(value);
 				grid.appendChild(d)
 			};
-			tile(t("statTotalRec"), fmt.amount(rec), "accent-rec");
-			tile(t("statTotalDebt"), fmt.amount(debt), "accent-debt");
-			tile(t("repGot"), fmt.amount(got), "accent-rec");
-			tile(t("repPaid"), fmt.amount(paid), "accent-debt");
-			tile(t("statNet"), fmt.amount(net), "accent-net");
+			if (s.enableFinance) {
+				const inc = sum("income"), exp = sum("expense");
+				tile(t("typeIncome"), fmt.amount(inc), "accent-rec");
+				tile(t("typeExpense"), fmt.amount(exp), "accent-debt");
+				tile(t("statMonthNet"), fmt.amount(inc - exp), "accent-net")
+			}
+			if (s.enableDebts) {
+				const rec = sum("receivable"), debt = sum("debt");
+				const got = sum("payment_received"), paid = sum("payment_made");
+				tile(t("statTotalRec"), fmt.amount(rec), "accent-rec");
+				tile(t("statTotalDebt"), fmt.amount(debt), "accent-debt");
+				tile(t("repGot"), fmt.amount(got), "accent-rec");
+				tile(t("repPaid"), fmt.amount(paid), "accent-debt")
+			}
 			tile(t("repCount"), localizeDigits(String(txs.length), CURRENT.locale === "fa"));
 			if (!txs.length) listWrap.createDiv("pa-empty").setText(t("noTx"));
-			else
-				for (const tx of txs.sort((a, b) => b.date.localeCompare(a.date))) {
-					listWrap.appendChild(this.txRow(tx, true))
-				}
+			else for (const tx of txs.sort((a, b) => b.date.localeCompare(a.date))) listWrap.appendChild(this.txRow(tx, true))
 		};
 		sel.onchange = render;
 		render()
 	}
-	fmtMonthFa(ym) {
-		const j = Cal.isoToJ(ym + "-01");
-		if (!j) return ym;
-		return Cal.monthName(j.jm) + " " + localizeDigits(String(j.jy), true)
-	}
-	fmtMonthEn(ym) {
-		const [y, m] = ym.split("-").map(Number);
-		return GREG_MONTHS_EN[m - 1] + " " + y
-	}
-	/* ✅ FIX #27: استفاده از this.plugin.accounts به‌جای store تعریف‌نشده */
 	renderCashFlowContent(body, data, fmt) {
-		const wrap = body;
-		const periods = [{
-			days: 7,
-			label: t("cfWeek")
-		}, {
-			days: 30,
-			label: t("cfMonth")
-		}, {
-			days: 90,
-			label: t("cfQuarter")
-		}];
+		const periods = [
+			{ days: 7, label: t("cfWeek") },
+			{ days: 30, label: t("cfMonth") },
+			{ days: 90, label: t("cfQuarter") }
+		];
 		const today = todayISO();
 		const states = computeTxStates(data, today, 7);
 		const names = new Map(data.people.map(p => [p.id, p.name]));
-		const container = wrap.createDiv("pa-cashflow");
+		const container = body.createDiv("pa-cashflow");
 		for (const p of periods) {
 			const end = toISO(new Date(Date.now() + p.days * 864e5));
-			let inc = 0,
-				out = 0;
+			let inc = 0, out = 0;
 			for (const tx of data.transactions) {
 				if (!tx.dueDate || tx.dueDate < today || tx.dueDate > end) continue;
 				const st = states.get(tx.id);
@@ -5570,11 +7275,10 @@ class AccountsView extends ItemView {
 			}
 			const row = el("div", "pa-cashflow-row " + (inc - out >= 0 ? "pos" : "neg"));
 			row.createDiv("pa-cashflow-label").setText(p.label);
-			const amt = row.createDiv("pa-cashflow-amt");
-			amt.setText("+" + fmt.amount(inc, false) + " / −" + fmt.amount(out, false));
+			row.createDiv("pa-cashflow-amt").setText("+" + fmt.amount(inc, false) + " / −" + fmt.amount(out, false));
 			container.appendChild(row)
 		}
-		const detail = wrap.createDiv("pa-scroll");
+		const detail = body.createDiv("pa-scroll");
 		detail.style.marginTop = "12px";
 		detail.createDiv("pa-card-title").setText(t("cfDetail"));
 		const end30 = toISO(new Date(Date.now() + 30 * 864e5));
@@ -5583,25 +7287,17 @@ class AccountsView extends ItemView {
 			if (!tx.dueDate || tx.dueDate < today || tx.dueDate > end30) continue;
 			const st = states.get(tx.id);
 			if (!st || st.status === "settled") continue;
-			upcoming.push({
-				tx,
-				st
-			})
+			upcoming.push({ tx, st })
 		}
 		upcoming.sort((a, b) => a.tx.dueDate.localeCompare(b.tx.dueDate));
 		if (!upcoming.length) detail.createDiv("pa-empty").setText(t("nothingDue"));
-		for (const {
-				tx,
-				st
-			}
-			of upcoming) {
+		for (const { tx, st } of upcoming) {
 			const row = el("div", "pa-row");
 			const main = row.createDiv("pa-row-main");
 			main.createDiv("pa-row-title").setText(names.get(tx.personId) + " — " + fmt.amount(st.remaining));
 			const sub = main.createDiv("pa-row-sub");
 			sub.appendChild(el("span", "pa-chip", fmt.date(tx.dueDate)));
 			sub.appendChild(el("span", "pa-chip", typeLabel(tx.type)));
-			/* ✅ FIX: store → this.plugin.accounts */
 			row.onclick = () => new TransactionDetailModal(this.app, this.plugin.accounts, tx, {}).open();
 			detail.appendChild(row)
 		}
@@ -5617,21 +7313,17 @@ class WhatsNewModal extends Modal {
 		const fa = CURRENT.locale === "fa";
 		const version = this.plugin.manifest.version;
 		const features = fa ? [
-			{ icon: "languages", title: "نمایش مبلغ به حروف", description: "معادل حروفی مبلغ هنگام واردکردن آن به‌صورت خودکار نمایش داده می‌شود." },
-			{ icon: "layout", title: "فرم بازطراحی‌شده", description: "اطلاعات تراکنش در دو بخش اطلاعات اصلی و جزئیات تکمیلی مرتب شده‌اند." },
-			{ icon: "zap", title: "دکمه‌های مبلغ سریع", description: "با مبالغ پیشنهادی، مبلغ تراکنش را سریع‌تر وارد یا افزایش دهید." },
-			{ icon: "users", title: "پیشنهاد اشخاص", description: "اشخاص دارای مانده تسویه‌نشده برای انتخاب سریع‌تر پیشنهاد می‌شوند." },
-			{ icon: "wallet", title: "انتخاب دیداری نوع تراکنش", description: "طلب، بدهی، دریافت و پرداخت با کارت‌های جداگانه نمایش داده می‌شوند." },
-			{ icon: "tags", title: "دسترسی سریع به دسته‌ها", description: "دسته‌های پرکاربرد برای انتخاب آسان‌تر در دسترس هستند." },
-			{ icon: "shield-check", title: "اعتبارسنجی بهتر فرم", description: "در صورت ناقص‌بودن اطلاعات، فرم به فیلد موردنیاز بازمی‌گردد." }
+			{ icon: "sliders-horizontal", title: "انتخاب حالت کاری (ماژولار)", description: "می‌توانید پلاگین را برای «فقط طلب و بدهی»، «فقط مدیریت مالی» یا «هر دو با هم» تنظیم کنید." },
+			{ icon: "folder-kanban", title: "ذخیره‌سازی ماهانه (یک فایل برای هر ماه)", description: "تراکنش‌ها به تفکیک ماه در پوشهٔ Transactions و اطلاعات پایه در Master.md ذخیره می‌شوند تا سرعت همیشه بالا بماند." },
+			{ icon: "wallet", title: "مدیریت حساب‌ها، درآمد، هزینه و انتقال وجه", description: "کیف‌پول و حساب بانکی بسازید، هزینه‌ها و درآمدهای روزانه را ثبت کنید و موجودی واقعی خود را ببینید." },
+			{ icon: "target", title: "بودجه‌بندی ماهانه و تراکنش‌های تکراری", description: "برای هر دسته سقف ماهانه تعیین کنید و تراکنش‌های ثابت ماهانه را با یک کلیک ثبت نمایید." },
+			{ icon: "bar-chart-3", title: "نمودار درآمد در برابر هزینه و دارایی خالص", description: "روند پس‌انداز، سهم دسته‌های هزینه و دارایی خالص کل را در داشبورد و تحلیل ببینید." }
 		] : [
-			{ icon: "languages", title: "Amount in Persian words", description: "The amount is automatically displayed in Persian words as you type." },
-			{ icon: "layout", title: "Redesigned transaction form", description: "Transaction fields are organized into Main Information and Additional Details tabs." },
-			{ icon: "zap", title: "Quick amount buttons", description: "Enter or increase transaction amounts faster with preset values." },
-			{ icon: "users", title: "Contact suggestions", description: "Contacts with outstanding balances are suggested for quicker selection." },
-			{ icon: "wallet", title: "Visual transaction types", description: "Receivables, debts, received payments, and made payments use distinct cards." },
-			{ icon: "tags", title: "Quick category access", description: "Frequently used categories are easier to select." },
-			{ icon: "shield-check", title: "Better form validation", description: "When required information is missing, the form returns to the relevant field." }
+			{ icon: "sliders-horizontal", title: "Modular Mode Switcher", description: "Use the plugin for Debts & Receivables only, Personal Finance only, or Both together." },
+			{ icon: "folder-kanban", title: "Monthly Markdown Files", description: "Transactions are saved in monthly files inside Transactions/ with Master.md for accounts, budgets, and people." },
+			{ icon: "wallet", title: "Accounts, Income, Expenses & Transfers", description: "Manage bank accounts and cash wallets, record daily income/expenses, and transfer between accounts." },
+			{ icon: "target", title: "Monthly Budgets & Recurring Templates", description: "Set monthly spending limits per category with progress bars and 1-click recurring transactions." },
+			{ icon: "bar-chart-3", title: "Income vs Expense Charts & Net Worth", description: "Track real Net Worth, savings rate, and monthly income vs expense breakdowns." }
 		];
 		this.modalEl.addClass("pa-plugin-modal", "pa-whats-new-modal");
 		this.titleEl.setText(fa ? "تازه‌های نسخه " + version : "What's new in " + version);
@@ -5639,28 +7331,24 @@ class WhatsNewModal extends Modal {
 		this.contentEl.addClass("pa-whats-new");
 		this.contentEl.setAttr("dir", fa ? "rtl" : "ltr");
 		this.contentEl.createEl("p", {
-			text: fa ? "در این نسخه، ثبت و ویرایش تراکنش‌ها سریع‌تر و ساده‌تر شده است." : "This update makes recording and editing transactions faster and easier.",
+			text: fa ? "نسخهٔ ۳ پلاگین اکنون از مدیریت مالی کامل و ذخیره‌سازی ماهانه پشتیبانی می‌کند." : "Version 3 adds full personal finance management and monthly Markdown storage.",
 			cls: "pa-whats-new-intro"
 		});
 		const list = this.contentEl.createDiv({ cls: "pa-whats-new-list" });
 		for (const feature of features) {
 			const item = list.createDiv({ cls: "pa-whats-new-item" });
-			const icon = item.createDiv({ cls: "pa-whats-new-icon" });
-			setIcon(icon, feature.icon);
+			setIcon(item.createDiv({ cls: "pa-whats-new-icon" }), feature.icon);
 			const copy = item.createDiv({ cls: "pa-whats-new-copy" });
 			copy.createEl("strong", { text: feature.title });
-			copy.createEl("p", { text: feature.description });
+			copy.createEl("p", { text: feature.description })
 		}
 		const footer = this.contentEl.createDiv({ cls: "pa-whats-new-footer" });
-		const done = footer.createEl("button", {
-			text: fa ? "متوجه شدم" : "Got it",
-			cls: "mod-cta pa-whats-new-done"
-		});
-		done.addEventListener("click", () => this.close());
+		const done = footer.createEl("button", { text: fa ? "متوجه شدم" : "Got it", cls: "mod-cta pa-whats-new-done" });
+		done.addEventListener("click", () => this.close())
 	}
 	onClose() {
 		this.contentEl.empty();
-		void this.plugin.markWhatsNewSeen();
+		void this.plugin.markWhatsNewSeen()
 	}
 }
 
@@ -5672,16 +7360,10 @@ class PersonalAccountsPlugin extends Plugin {
 		this.accounts = new AccountsStore(this);
 		Cal.appRef = this.app;
 		Cal.refresh(this.app);
-		this.app.workspace.onLayoutReady(() => {
-			Cal.refresh(this.app)
-		});
+		this.app.workspace.onLayoutReady(() => { Cal.refresh(this.app) });
 		this.registerView(VIEW_TYPE_PERSONAL_ACCOUNTS, leaf => new AccountsView(leaf, this));
-		this.addRibbonIcon("wallet", t("ribDashboard"), () => {
-			void this.openView("dashboard")
-		});
-		this.addRibbonIcon("banknote-arrow-up", t("ribQuickAdd"), () => {
-			void this.quickAddTransaction()
-		});
+		this.addRibbonIcon("wallet", t("ribDashboard"), () => { void this.openView("dashboard") });
+		this.addRibbonIcon("banknote-arrow-up", t("ribQuickAdd"), () => { void this.quickAddTransaction() });
 		this.addSettingTab(new PASettingTab(this.app, this));
 		this.addCommand({
 			id: "show-whats-new",
@@ -5689,18 +7371,19 @@ class PersonalAccountsPlugin extends Plugin {
 			callback: () => this.openWhatsNew()
 		});
 		this.addCommand({
+			id: "switch-mode",
+			name: t("setChangeMode"),
+			callback: () => new ModeSetupModal(this.app, this).open()
+		});
+		this.addCommand({
 			id: "open-dashboard",
 			name: t("cmdOpen"),
-			callback: () => {
-				void this.openView("dashboard")
-			}
+			callback: () => { void this.openView("dashboard") }
 		});
 		this.addCommand({
 			id: "add-transaction",
 			name: t("cmdAddTx"),
-			callback: () => {
-				void this.quickAddTransaction()
-			}
+			callback: () => { void this.quickAddTransaction() }
 		});
 		this.addCommand({
 			id: "add-person",
@@ -5708,18 +7391,23 @@ class PersonalAccountsPlugin extends Plugin {
 			callback: () => new PersonModal(this.app, this.accounts, null, {}).open()
 		});
 		this.addCommand({
+			id: "add-account",
+			name: t("addAccountTitle"),
+			callback: () => new AccountModal(this.app, this.accounts, null).open()
+		});
+		this.addCommand({
 			id: "search-transactions",
 			name: t("cmdSearch"),
-			callback: () => {
-				void this.openView("transactions")
-			}
+			callback: () => { void this.openView("transactions") }
 		});
 		this.app.workspace.onLayoutReady(() => {
 			setTimeout(() => {
-				if (this.settings.lastSeenChangelogVersion !== this.manifest.version) {
+				if (!this.settings.hasChosenMode) {
+					new ModeSetupModal(this.app, this).open()
+				} else if (this.settings.lastSeenChangelogVersion !== this.manifest.version) {
 					this.openWhatsNew()
 				}
-			}, 6500)
+			}, 3000)
 		});
 		if (!this.settings._migratedToMd) {
 			setTimeout(() => this._migrateToMd(), 2e3)
@@ -5730,122 +7418,107 @@ class PersonalAccountsPlugin extends Plugin {
 					await this.accounts.ready();
 					const L = this.accounts.ledger;
 					if (!L) return;
-					const path = this.repo.filePath();
-					const file = this.app.vault.getAbstractFileByPath(path);
-					if (!file && this.settings._hadDataBefore) {
-						new Notice(t("fileMissingWarn"), 12e3)
+					if (this.settings.enableDebts) {
+						const { overdueCount, dueSoonCount } = L.stats;
+						if (overdueCount > 0 || dueSoonCount > 0) {
+							const fa = CURRENT.locale === "fa";
+							const parts = [];
+							if (overdueCount) parts.push(localizeDigits(String(overdueCount), fa) + " " + t("statOverdue"));
+							if (dueSoonCount) parts.push(localizeDigits(String(dueSoonCount), fa) + " " + t("statDueSoon"));
+							new Notice("⏰ " + t("appTitle") + ": " + parts.join(" · "), 7e3)
+						}
 					}
-					if (this.accounts.data.transactions.length > 0 || this.accounts.data.people.length > 0) {
-						this.settings._hadDataBefore = true;
-						void this.saveSettings()
-					}
-					const {
-						overdueCount,
-						dueSoonCount
-					} = L.stats;
-					if (overdueCount > 0 || dueSoonCount > 0) {
-						const fa = CURRENT.locale === "fa";
-						const parts = [];
-						if (overdueCount) parts.push(localizeDigits(String(overdueCount), fa) + " " + t("statOverdue"));
-						if (dueSoonCount) parts.push(localizeDigits(String(dueSoonCount), fa) + " " + t("statDueSoon"));
-						new Notice("⏰ " + t("appTitle") + ": " + parts.join(" · "), 7e3)
-					}
-					const today = new Date;
-					const dayOfMonth = today.getDate();
-					const monthKey = todayISO().slice(0, 7);
-					for (const tpl of this.settings.recurringTemplates || []) {
+					const curMonth = currentMonthKey(this.settings.calendar);
+					const dayOfMonth = this.settings.calendar === "jalali" ? ((Cal.isoToJ(todayISO()) || {}).jd || 1) : (new Date).getDate();
+					for (const tpl of this.accounts.data.recurring || []) {
 						if (tpl.dayOfMonth !== dayOfMonth) continue;
-						if (tpl._lastRun === monthKey) continue;
-						new Notice("🔁 " + t("recurringDue", {
-							name: tpl.name
-						}), 8e3)
+						if (tpl.lastRunMonth === curMonth) continue;
+						new Notice("🔁 " + t("recurringDue", { name: tpl.name }), 8e3)
 					}
 				} catch (e) {}
 			}, 3500)
 		})
 	}
 	onunload() {}
+	openWhatsNew() {
+		new WhatsNewModal(this.app, this).open()
+	}
+	async markWhatsNewSeen() {
+		if (this.settings.lastSeenChangelogVersion !== this.manifest.version) {
+			this.settings.lastSeenChangelogVersion = this.manifest.version;
+			await this.saveSettings()
+		}
+	}
 	async _migrateToMd() {
 		try {
 			const raw = await this.loadData();
 			if (raw && (Array.isArray(raw.people) || Array.isArray(raw.transactions))) {
 				const oldData = sanitizeData(raw);
 				if (oldData.people.length || oldData.transactions.length) {
-					/* ✅ FIX #4: جایگزینی confirm() با ConfirmModal */
 					new ConfirmModal(this.app, {
 						title: CURRENT.locale === "fa" ? "داده‌های قدیمی پیدا شد" : "Old data found",
 						lines: [
-							CURRENT.locale === "fa" ? "داده‌های قدیمی در data.json پیدا شد. به فایل MD منتقل شود؟" : "Old data found in data.json. Migrate to MD file?",
+							CURRENT.locale === "fa" ? "داده‌های قدیمی در data.json پیدا شد. به فایل‌های ماهانه منتقل شود؟" : "Old data found in data.json. Migrate to monthly MD files?",
 							oldData.people.length + " " + t("tabPeople") + " · " + oldData.transactions.length + " " + t("tabTransactions")
 						],
 						confirmLabel: CURRENT.locale === "fa" ? "انتقال" : "Migrate",
 						onConfirm: async () => {
 							try {
-								await this.repo.save(oldData);
-								await this.saveData({
-									settings: this.settings,
-									settingsVersion: this.settings.settingsVersion
-								});
-								new Notice(CURRENT.locale === "fa" ? "✅ داده‌ها به فایل MD منتقل شد" : "✅ Data migrated to MD file");
+								await this.repo.save(oldData, { full: true });
+								await this.saveData({ settings: this.settings, settingsVersion: this.settings.settingsVersion });
+								new Notice(CURRENT.locale === "fa" ? "✅ داده‌ها منتقل شد" : "✅ Data migrated");
 								await this.accounts.reload()
-							} catch (e) {
-								console.error("Migration error:", e)
-							}
+							} catch (e) { console.error("Migration error:", e) }
 						}
 					}).open()
 				}
 			}
 			this.settings._migratedToMd = true;
 			await this.saveSettings()
-		} catch (e) {
-			console.error("Migration error:", e)
-		}
+		} catch (e) { console.error("Migration error:", e) }
 	}
 	async loadSettings() {
 		const raw = await this.loadData() || {};
 		const saved = raw.settings ? raw.settings : {};
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
-		if (!raw.settingsVersion || raw.settingsVersion < 4) {
-			if (!raw.settingsVersion || raw.settingsVersion < 3) {
-				this.settings.locale = "en";
-				this.settings.calendar = "gregorian";
-				this.settings.currency = "usd"
-			}
-			this.settings.settingsVersion = 4
+		if (!this.settings.enableDebts && !this.settings.enableFinance) {
+			this.settings.enableDebts = true
 		}
 		if (!Array.isArray(this.settings.categories) || this.settings.categories.length === 0) {
 			this.settings.categories = this.settings.locale === "fa" ? [...DEFAULT_CATEGORIES_FA] : [...DEFAULT_CATEGORIES_EN]
 		}
+		if (!Array.isArray(this.settings.expenseCategories) || this.settings.expenseCategories.length === 0) {
+			this.settings.expenseCategories = this.settings.locale === "fa" ? [...DEFAULT_EXPENSE_CATEGORIES_FA] : [...DEFAULT_EXPENSE_CATEGORIES_EN]
+		}
+		if (!Array.isArray(this.settings.incomeCategories) || this.settings.incomeCategories.length === 0) {
+			this.settings.incomeCategories = this.settings.locale === "fa" ? [...DEFAULT_INCOME_CATEGORIES_FA] : [...DEFAULT_INCOME_CATEGORIES_EN]
+		}
+		this.settings.settingsVersion = 5;
 		CURRENT.locale = this.settings.locale
 	}
 	async saveSettings() {
 		const oldLocale = CURRENT.locale;
 		CURRENT.locale = this.settings.locale;
 		if (oldLocale !== this.settings.locale) {
-			const oldDefaults = oldLocale === "fa" ? DEFAULT_CATEGORIES_FA : DEFAULT_CATEGORIES_EN;
-			const isDefault = JSON.stringify(this.settings.categories) === JSON.stringify(oldDefaults);
-			if (isDefault) {
-				this.settings.categories = this.settings.locale === "fa" ? [...DEFAULT_CATEGORIES_FA] : [...DEFAULT_CATEGORIES_EN]
-			}
+			const swapDefault = (cur, faDef, enDef) => {
+				const oldDef = oldLocale === "fa" ? faDef : enDef;
+				const newDef = this.settings.locale === "fa" ? faDef : enDef;
+				return JSON.stringify(cur) === JSON.stringify(oldDef) ? [...newDef] : cur
+			};
+			this.settings.categories = swapDefault(this.settings.categories, DEFAULT_CATEGORIES_FA, DEFAULT_CATEGORIES_EN);
+			this.settings.expenseCategories = swapDefault(this.settings.expenseCategories, DEFAULT_EXPENSE_CATEGORIES_FA, DEFAULT_EXPENSE_CATEGORIES_EN);
+			this.settings.incomeCategories = swapDefault(this.settings.incomeCategories, DEFAULT_INCOME_CATEGORIES_FA, DEFAULT_INCOME_CATEGORIES_EN)
 		}
-		await this.saveData({
-			settings: this.settings,
-			settingsVersion: this.settings.settingsVersion
-		});
+		await this.saveData({ settings: this.settings, settingsVersion: this.settings.settingsVersion });
 		if (this.accounts) await this.accounts.reload()
 	}
 	async openView(screen) {
 		try {
 			const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_PERSONAL_ACCOUNTS);
 			const leaf = existing.length ? existing[0] : this.app.workspace.getLeaf(this.app.isMobile ? false : true);
-			await leaf.setViewState({
-				type: VIEW_TYPE_PERSONAL_ACCOUNTS,
-				active: true
-			});
+			await leaf.setViewState({ type: VIEW_TYPE_PERSONAL_ACCOUNTS, active: true });
 			this.app.workspace.revealLeaf(leaf);
-			if (leaf.view instanceof AccountsView) leaf.view.navigate({
-				screen: screen || "dashboard"
-			})
+			if (leaf.view instanceof AccountsView) leaf.view.navigate({ screen: screen || "dashboard" })
 		} catch (e) {
 			new Notice("⚠ " + (e instanceof Error ? e.message : String(e)))
 		}
@@ -5854,9 +7527,7 @@ class PersonalAccountsPlugin extends Plugin {
 		try {
 			await this.accounts.ready();
 			new TransactionFormModal(this.app, this.accounts, null, {
-				onSaved: () => {
-					if (this.settings.openAfterAdd) void this.openView("dashboard")
-				}
+				onSaved: () => { if (this.settings.openAfterAdd) void this.openView("dashboard") }
 			}).open()
 		} catch (e) {
 			new Notice("⚠ " + (e instanceof Error ? e.message : String(e)))
@@ -5865,7 +7536,6 @@ class PersonalAccountsPlugin extends Plugin {
 }
 module.exports = PersonalAccountsPlugin;
 module.exports.default = PersonalAccountsPlugin;
-
 
 
 // Settings footer: three original channel logos and a separate support panel.
@@ -5960,5 +7630,7 @@ function renderCreatorSupport(container, language) {
 }
 
 
+
+/* nosourcemap */
 
 /* nosourcemap */
