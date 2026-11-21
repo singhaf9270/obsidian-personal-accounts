@@ -2561,3 +2561,463 @@ body.theme-dark .pa-whats-new-icon {
     width: 100%;
   }
 }
+
+
+/* ==========================================================================
+   ۲۳) نسخه ۳ — ماژول انتخاب حالت کاری، حساب‌ها/کیف‌پول‌ها و بودجه‌بندی
+   ========================================================================== */
+
+body .modal.pa-plugin-modal[data-tx-type="income"]::before {
+  background: linear-gradient(90deg, var(--pa-emerald-500), #34d399);
+}
+body .modal.pa-plugin-modal[data-tx-type="expense"]::before {
+  background: linear-gradient(90deg, var(--pa-rose-500), #f87171);
+}
+body .modal.pa-plugin-modal[data-tx-type="transfer"]::before {
+  background: linear-gradient(90deg, var(--pa-indigo-500), #60a5fa);
+}
+body .modal.pa-plugin-modal[data-tx-type="income"] .modal-title::before {
+  background: linear-gradient(180deg, var(--pa-emerald-500), #34d399);
+}
+body .modal.pa-plugin-modal[data-tx-type="expense"] .modal-title::before {
+  background: linear-gradient(180deg, var(--pa-rose-500), #f87171);
+}
+
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="income"].active {
+  background: linear-gradient(135deg, var(--pa-emerald-500), var(--pa-emerald-600));
+  border-color: var(--pa-emerald-600);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--pa-emerald-glow);
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="income"].active .pa-type-icon {
+  background: rgba(255, 255, 255, .2);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="income"].active .pa-type-radio {
+  color: var(--pa-emerald-600);
+}
+
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="expense"].active {
+  background: linear-gradient(135deg, var(--pa-rose-500), var(--pa-rose-600));
+  border-color: var(--pa-rose-600);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--pa-rose-glow);
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="expense"].active .pa-type-icon {
+  background: rgba(255, 255, 255, .2);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="expense"].active .pa-type-radio {
+  color: var(--pa-rose-600);
+}
+
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="transfer"].active {
+  background: linear-gradient(135deg, var(--pa-indigo-500), var(--pa-indigo-600));
+  border-color: var(--pa-indigo-600);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--pa-indigo-glow);
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="transfer"].active .pa-type-icon {
+  background: rgba(255, 255, 255, .2);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg button.pa-btn[data-type="transfer"].active .pa-type-radio {
+  color: var(--pa-indigo-600);
+}
+
+/* مودال انتخاب حالت کاری (Mode Setup) */
+.pa-mode-intro {
+  margin-bottom: 14px;
+  line-height: 1.65;
+}
+.pa-mode-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pa-mode-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--pa-border);
+  background: var(--pa-surface-2);
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease, transform .15s ease;
+}
+.pa-mode-card:hover {
+  border-color: var(--pa-indigo-500);
+  background: var(--pa-hover);
+}
+.pa-mode-card.active {
+  border-color: var(--pa-indigo-600);
+  background: var(--pa-indigo-50);
+  box-shadow: 0 4px 14px var(--pa-indigo-glow);
+}
+body.theme-dark .pa-mode-card.active {
+  background: rgba(99, 102, 241, .16);
+  border-color: #818cf8;
+}
+.pa-mode-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--pa-surface);
+  color: var(--pa-indigo-600);
+  border: 1px solid var(--pa-border);
+}
+body.theme-dark .pa-mode-icon {
+  color: #a5b4fc;
+}
+.pa-mode-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.pa-mode-copy {
+  flex: 1;
+  min-width: 0;
+}
+.pa-mode-title {
+  font-weight: 750;
+  font-size: .95em;
+  color: var(--text-normal);
+  margin-bottom: 3px;
+}
+.pa-mode-desc {
+  font-size: .82em;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.pa-mode-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--text-faint);
+  flex-shrink: 0;
+  position: relative;
+}
+.pa-mode-card.active .pa-mode-radio {
+  border-color: var(--pa-indigo-600);
+  background: var(--pa-indigo-600);
+}
+.pa-mode-card.active .pa-mode-radio::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+/* کارت‌های حساب و کیف‌پول */
+.pa-acc-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 10px;
+}
+.pa-acc-mini {
+  padding: 12px 14px;
+  border-radius: 13px;
+  border: 1px solid var(--pa-border);
+  background: var(--pa-surface-2);
+  cursor: pointer;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.pa-acc-mini:hover {
+  border-color: var(--pa-indigo-500);
+  transform: translateY(-1px);
+}
+.pa-acc-mini-name {
+  font-weight: 700;
+  font-size: .92em;
+  margin-bottom: 2px;
+}
+.pa-acc-mini-type {
+  font-size: .74em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.pa-acc-mini-bal {
+  font-size: 1.05em;
+  font-weight: 800;
+}
+
+.pa-acc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.pa-acc-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--pa-border);
+  background: linear-gradient(145deg, var(--pa-surface), var(--pa-surface-2));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pa-acc-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pa-acc-name {
+  font-weight: 800;
+  font-size: 1em;
+  margin-bottom: 4px;
+}
+.pa-acc-btns {
+  display: flex;
+  gap: 4px;
+}
+.pa-acc-bal {
+  font-size: 1.35em;
+  font-weight: 850;
+  margin-block: 4px;
+}
+.pa-acc-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid var(--pa-border);
+}
+
+/* نوار پیشرفت بودجه ماهانه */
+.pa-budget-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--pa-border);
+}
+.pa-budget-item:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+.pa-budget-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+  flex-wrap: wrap;
+}
+.pa-budget-cat {
+  font-weight: 700;
+  font-size: .92em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pa-budget-nums {
+  font-size: .82em;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.pa-budget-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--pa-hover);
+  overflow: hidden;
+}
+.pa-budget-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .35s ease;
+}
+.pa-budget-fill.ok { background: var(--pa-emerald-500); }
+.pa-budget-fill.warn { background: var(--pa-amber-500); }
+.pa-budget-fill.over { background: var(--pa-rose-500); }
+
+@media (max-width: 600px) {
+  .pa-acc-grid,
+  .pa-acc-mini-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================================================
+   ۲۴) بهینه‌سازی و خلوت‌سازی مودال تراکنش (با حفظ کامل پالت رنگی نسخه قبل)
+   ========================================================================== */
+
+body .modal.pa-plugin-modal .pa-compact-tx-form .pa-field {
+  margin-bottom: 12px;
+}
+
+/* سوییچر دوتایی مدیریت مالی / طلب و بدهی */
+body .modal.pa-plugin-modal .pa-group-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  padding: 4px;
+  margin-bottom: 8px;
+  border-radius: 11px;
+  border: 1px solid var(--pa-border);
+  background: var(--pa-surface-2);
+}
+body .modal.pa-plugin-modal button.pa-group-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: .82em;
+  font-weight: 700;
+  cursor: pointer;
+}
+body .modal.pa-plugin-modal button.pa-group-btn:hover:not(.active) {
+  color: var(--text-normal);
+  background: var(--pa-hover);
+}
+body .modal.pa-plugin-modal button.pa-group-btn.active {
+  background: var(--pa-surface);
+  color: var(--pa-indigo-600);
+  border-color: var(--pa-indigo-line);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .08);
+}
+body.theme-dark .modal.pa-plugin-modal button.pa-group-btn.active {
+  background: #1e293b;
+  color: #a5b4fc;
+  border-color: rgba(129, 140, 248, .35);
+}
+body .modal.pa-plugin-modal .pa-group-icon {
+  display: inline-flex;
+  align-items: center;
+}
+body .modal.pa-plugin-modal .pa-group-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* دکمه‌های فشردهٔ نوع تراکنش — فقط حالت غیرفعال استایل پایه می‌گیرد تا رنگ‌های فعال حفظ شوند */
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact {
+  display: grid;
+  gap: 6px;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact.pa-seg-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact.pa-seg-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact button.pa-type-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  font-size: .84em;
+  font-weight: 700;
+  min-width: 0;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact button.pa-type-pill::before {
+  display: none;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact button.pa-type-pill:not(.active) {
+  border: 1.5px solid var(--pa-border);
+  background: var(--pa-surface-2);
+  color: var(--text-normal);
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact button.pa-type-pill:not(.active):hover {
+  border-color: var(--pa-indigo-500);
+  background: var(--pa-hover);
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact button.pa-type-pill:not(.active) .pa-type-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--pa-surface);
+  color: var(--text-muted);
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact button.pa-type-pill.active .pa-type-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .22);
+  color: #ffffff;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact .pa-type-icon svg {
+  width: 14px;
+  height: 14px;
+}
+body .modal.pa-plugin-modal .pa-seg.pa-seg-compact .pa-type-label {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* رنگ‌های چیپ نوع تراکنش در لیست تراکنش‌ها */
+.pa-view .pa-chip.pa-chip-type-income,
+.pa-view .pa-chip.pa-chip-type-receivable {
+  color: var(--pa-emerald-600);
+  background: rgba(16, 185, 129, .12);
+}
+.pa-view .pa-chip.pa-chip-type-expense,
+.pa-view .pa-chip.pa-chip-type-debt {
+  color: var(--pa-rose-600);
+  background: rgba(239, 68, 68, .12);
+}
+.pa-view .pa-chip.pa-chip-type-transfer,
+.pa-view .pa-chip.pa-chip-type-payment_received {
+  color: var(--pa-indigo-600);
+  background: rgba(99, 102, 241, .12);
+}
+.pa-view .pa-chip.pa-chip-type-payment_made {
+  color: var(--pa-amber-600);
+  background: rgba(245, 158, 11, .14);
+}
+.theme-dark .pa-view .pa-chip.pa-chip-type-income,
+.theme-dark .pa-view .pa-chip.pa-chip-type-receivable {
+  color: #34d399;
+}
+.theme-dark .pa-view .pa-chip.pa-chip-type-expense,
+.theme-dark .pa-view .pa-chip.pa-chip-type-debt {
+  color: #f87171;
+}
+.theme-dark .pa-view .pa-chip.pa-chip-type-transfer,
+.theme-dark .pa-view .pa-chip.pa-chip-type-payment_received {
+  color: #a5b4fc;
+}
+.theme-dark .pa-view .pa-chip.pa-chip-type-payment_made {
+  color: #fbbf24;
+}
+
+/* ردیف دوتایی حساب مبدأ و مقصد برای انتقال داخلی */
+body .modal.pa-plugin-modal .pa-acc-row-wrap.pa-acc-row-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 500px) {
+  body .modal.pa-plugin-modal .pa-seg.pa-seg-compact.pa-seg-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  body .modal.pa-plugin-modal .pa-seg.pa-seg-compact button.pa-type-pill {
+    padding: 6px 5px;
+    font-size: .78em;
+    gap: 4px;
+  }
+  body .modal.pa-plugin-modal .pa-acc-row-wrap.pa-acc-row-split {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
