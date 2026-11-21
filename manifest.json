@@ -1,9 +1,9 @@
 {
   "id": "personal-accounts",
   "name": "Personal Accounts",
-  "version": "2.0.13",
+  "version": "3.0.0",
   "minAppVersion": "1.0.0",
-  "description": "Manage personal debts and receivables in one central note — with dashboard, people, transactions, analytics, Jalali/Gregorian calendar, and multi-currency support.",
+  "description": "Modular personal finance & debt manager in Obsidian — with monthly Markdown files, accounts/wallets, income/expenses, budgets, recurring transactions, people/debts, Jalali/Gregorian calendar, and analytics.",
   "author": "saeedghobadi",
   "authorUrl": "https://github.com/saeedghobadi",
   "isDesktopOnly": false,
