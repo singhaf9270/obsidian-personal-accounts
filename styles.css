@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Personal Accounts — styles.css (v3.0.0)
+   Personal Accounts — styles.css (v2.0.3)
    ساختار: ۱) پایه  ۲) هدر  ۳) کارت‌ها و آمار  ۴) مبالغ و چیپ‌ها
            ۵) ردیف‌ها  ۶) نوار ابزار  ۷) دکمه‌ها  ۸) فرم‌ها
            ۹) Date Picker  ۱۰) Tooltip و Help  ۱۱) نمودارها
@@ -3020,4 +3020,13 @@ body .modal.pa-plugin-modal .pa-acc-row-wrap.pa-acc-row-split {
     grid-template-columns: 1fr;
     gap: 0;
   }
+}
+
+/* رفع تداخل display:flex روی .pa-field با .pa-hidden (بدون !important) */
+.pa-hidden,
+.pa-field.pa-hidden,
+body .modal.pa-plugin-modal .pa-hidden,
+body .modal.pa-plugin-modal .pa-field.pa-hidden,
+body .modal.pa-plugin-modal .pa-acc-row-wrap.pa-hidden {
+  display: none;
 }
