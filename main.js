@@ -1497,6 +1497,20 @@ function computeAccountBalances(data) {
 				ab.outflow += tx.amount;
 				ab.txCount += 1
 			}
+		} else if (tx.type === "receivable" && tx.accountId) {
+			const ab = map.get(tx.accountId);
+			if (ab) {
+				ab.balance -= tx.amount;
+				ab.outflow += tx.amount;
+				ab.txCount += 1
+			}
+		} else if (tx.type === "debt" && tx.accountId) {
+			const ab = map.get(tx.accountId);
+			if (ab) {
+				ab.balance += tx.amount;
+				ab.inflow += tx.amount;
+				ab.txCount += 1
+			}
 		}
 	}
 	return map
@@ -4915,7 +4929,8 @@ class TransactionFormModal extends Modal {
 		payAccSel.appendChild(new Option(t("noAccount"), ""));
 		for (const a of accountsList) payAccSel.appendChild(new Option(a.name, a.id));
 		payAccSel.value = editing && this.existing.accountId ? this.existing.accountId : "";
-		const payAccField = field(detailsPane, t("fAccount") + (fa ? " (اختیاری — برای تسویه)" : " (optional)"), payAccSel);
+		const payAccField = field(detailsPane, t("fAccount"), payAccSel);
+		const payAccLabelEl = payAccField.querySelector("label");
 
 		const desc = inputText(t("phDesc"));
 		desc.value = this.existing && this.existing.description || "";
@@ -4931,10 +4946,10 @@ class TransactionFormModal extends Modal {
 		dueCtl.set(editing && this.existing.dueDate ? this.existing.dueDate : "");
 
 		const updateDetailsBadge = () => {
-			const isPay = this.type === "payment_received" || this.type === "payment_made";
+			const isDebt = isDebtType(this.type);
 			const hasDetails = Boolean(
 				(dueCtl.get() && (this.type === "receivable" || this.type === "debt")) ||
-				(isPay && s.enableFinance && payAccSel.value) ||
+				(isDebt && s.enableFinance && payAccSel.value) ||
 				catSel.value ||
 				desc.value.trim()
 			);
@@ -5003,7 +5018,14 @@ class TransactionFormModal extends Modal {
 			if (accLabelEl) accLabelEl.setText(isTr ? t("fFromAccount") : t("fAccount"));
 			toAccFieldWrap.toggleClass("pa-hidden", !isTr);
 			personWrap.toggleClass("pa-hidden", isFin);
-			payAccField.toggleClass("pa-hidden", !(s.enableFinance && isPay));
+			payAccField.toggleClass("pa-hidden", !(s.enableFinance && !isFin));
+			if (payAccLabelEl && !isFin) {
+				const isIn = ty === "debt" || ty === "payment_received";
+				payAccLabelEl.setText(isIn
+					? (fa ? "واریز به حساب (اختیاری)" : "Deposit to account (optional)")
+					: (fa ? "برداشت از حساب (اختیاری)" : "Withdraw from account (optional)")
+				)
+			}
 			catField.toggleClass("pa-hidden", isTr);
 			dueField.toggleClass("pa-hidden", !isOrig);
 			rebuildCategories();
@@ -5060,7 +5082,7 @@ class TransactionFormModal extends Modal {
 					}
 					personId = (await this.store.ensurePerson(nameVal)).id
 				}
-				if (s.enableFinance && (this.type === "payment_received" || this.type === "payment_made")) {
+				if (s.enableFinance) {
 					accountId = payAccSel.value || undefined
 				}
 			}
