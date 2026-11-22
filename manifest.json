@@ -1,7 +1,7 @@
 {
   "id": "personal-accounts",
   "name": "Personal Accounts",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "minAppVersion": "1.0.0",
   "description": "Modular personal finance & debt manager in Obsidian — with monthly Markdown files, accounts/wallets, income/expenses, budgets, recurring transactions, people/debts, Jalali/Gregorian calendar, and analytics.",
   "author": "saeedghobadi",
